@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { ir, PainelTeste, Sino, Toasts, type FiltroNotif } from './ui';
 
-export interface ItemMenu { id: string; ic: string; nome: string; badge?: number; grupo?: string }
+/** `curto`: nome usado nas abas de baixo do celular (onde cabem ~7 palavras curtas). */
+export interface ItemMenu { id: string; ic: string; nome: string; curto?: string; badge?: number; grupo?: string }
 
 /** Layout com menu lateral (desktop) e abas embaixo (celular) — motorista e escola. */
 export function ShellPainel({ base, menu, atual, perfil, filtro, titulo, sub, acoes, children }: {
@@ -39,7 +40,7 @@ export function ShellPainel({ base, menu, atual, perfil, filtro, titulo, sub, ac
       <nav className="tabs-mobile">
         {menu.map((m) => (
           <a key={m.id} className={atual === m.id ? 'ativo' : ''} onClick={() => ir(`${base}/${m.id}`)}>
-            <i>{m.ic}</i>{m.nome}{!!m.badge && <span className="bolinha">{m.badge}</span>}
+            <i>{m.ic}</i><span className="rot">{m.curto ?? m.nome}</span>{!!m.badge && <span className="bolinha">{m.badge}</span>}
           </a>
         ))}
       </nav>

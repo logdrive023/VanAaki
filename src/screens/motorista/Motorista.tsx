@@ -23,10 +23,10 @@ export default function Motorista({ aba = 'painel' }: { aba?: string }) {
     { id: 'painel', ic: '📊', nome: 'Painel', grupo: 'Operação' },
     { id: 'rota', ic: '🗺️', nome: 'Rota', grupo: 'Operação', badge: d.ativa ? 1 : 0 },
     { id: 'alunos', ic: '👦', nome: 'Alunos', grupo: 'Operação' },
-    { id: 'financeiro', ic: '💰', nome: 'Financeiro', grupo: 'Gestão', badge: pend },
+    { id: 'financeiro', ic: '💰', nome: 'Financeiro', curto: 'Caixa', grupo: 'Gestão', badge: pend },
     { id: 'conduta', ic: '⭐', nome: 'Conduta', grupo: 'Gamificação' },
     { id: 'premios', ic: '🎁', nome: 'Prêmios', grupo: 'Gamificação', badge: pedidos },
-    { id: 'mensagens', ic: '💬', nome: 'Mensagens', grupo: 'Gestão', badge: msgs },
+    { id: 'mensagens', ic: '💬', nome: 'Mensagens', curto: 'Chat', grupo: 'Gestão', badge: msgs },
   ];
   const titulos: Record<string, string> = {
     painel: `Bom dia, ${d.van.motorista} 👋`, rota: d.ativa ? 'Rota em andamento' : 'Rota do dia', alunos: 'Alunos',
@@ -41,7 +41,7 @@ export default function Motorista({ aba = 'painel' }: { aba?: string }) {
   return (
     <ShellPainel base="motorista" menu={menu} atual={aba} perfil={perfil} filtro={{ para: 'motorista', vanId: VAN_PRINCIPAL }}
       titulo={titulos[aba] ?? 'Painel'} sub={dataLonga()}
-      acoes={aba !== 'rota' && <button className="btn btn-primario" onClick={() => ir('motorista/rota')}>{d.ativa ? '📍 Ver rota ao vivo' : '▶ Iniciar rota'}</button>}>
+      acoes={aba !== 'rota' && <button className="btn btn-primario" onClick={() => ir('motorista/rota')}>{d.ativa ? '📍' : '▶'} <span className="esconde-celular">{d.ativa ? 'Ver rota ao vivo' : 'Iniciar rota'}</span><span className="so-celular">Rota</span></button>}>
       {aba === 'painel' && <Painel d={d} pedidos={pedidos} />}
       {aba === 'rota' && <Rota d={d} />}
       {aba === 'alunos' && <Alunos d={d} />}
@@ -135,11 +135,11 @@ function Alunos({ d }: { d: DadosVan }) {
               return (
                 <tr key={a.id}>
                   <td><div className="aluno-cel"><Avatar aluno={a} /><div><strong>{a.nome}</strong><span className="muted small">{a.responsavel} · {a.telefoneResp}</span></div></div></td>
-                  <td>{d.escolas.find((e) => e.id === a.escolaId)?.nome}<br /><span className="muted small">{a.turno === 'manha' ? 'Manhã' : 'Tarde'} · {a.serie}</span></td>
-                  <td className="small">{a.endereco}</td>
-                  <td>{reais(a.mensalidade)}<br />{p && <span className={`tag ${p.status === 'pago' ? 'tag-verde' : atrasado(p) ? 'tag-vermelho' : 'tag-laranja'}`}>{p.status === 'pago' ? '✓ Pago' : atrasado(p) ? 'Atrasado' : 'Pendente'}</span>}</td>
-                  <td>{a.ativo && <Toggle on={!d.naoVao.has(a.id)} onChange={(v) => void definirPresenca(a.id, v, v ? undefined : 'Marcado pelo tio')} />}</td>
-                  <td><button className="btn btn-claro btn-sm" onClick={() => setEditando(a)}>Editar</button></td>
+                  <td data-rot="Escola / turno">{d.escolas.find((e) => e.id === a.escolaId)?.nome}<br /><span className="muted small">{a.turno === 'manha' ? 'Manhã' : 'Tarde'} · {a.serie}</span></td>
+                  <td className="small td-largo" data-rot="Endereço">{a.endereco}</td>
+                  <td data-rot="Mensalidade">{reais(a.mensalidade)}<br />{p && <span className={`tag ${p.status === 'pago' ? 'tag-verde' : atrasado(p) ? 'tag-vermelho' : 'tag-laranja'}`}>{p.status === 'pago' ? '✓ Pago' : atrasado(p) ? 'Atrasado' : 'Pendente'}</span>}</td>
+                  <td data-rot="Vai hoje?">{a.ativo && <Toggle on={!d.naoVao.has(a.id)} onChange={(v) => void definirPresenca(a.id, v, v ? undefined : 'Marcado pelo tio')} />}</td>
+                  <td className="td-acoes"><button className="btn btn-claro btn-sm" onClick={() => setEditando(a)}>Editar</button></td>
                 </tr>
               );
             })}

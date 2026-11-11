@@ -106,11 +106,11 @@ function Vans({ vans, alunos }: { vans: Van[]; alunos: Aluno[] }) {
               return (
                 <tr key={v.id}>
                   <td><strong>{v.nome}</strong><br /><span className="muted small">{v.modelo} · <span className="placa">{v.placa}</span></span></td>
-                  <td>{v.motorista}<br /><span className="muted small">{v.telefone}</span></td>
-                  <td>{alunos.filter((a) => a.vanId === v.id).length}</td>
-                  <td>⭐ {v.avaliacao.toFixed(1)}</td>
-                  <td><span className={`tag ${s === 'credenciada' ? 'tag-verde' : s === 'pendente' ? 'tag-laranja' : 'tag-vermelho'}`}>{s}</span></td>
-                  <td style={{ textAlign: 'right' }}>
+                  <td data-rot="Motorista">{v.motorista}<br /><span className="muted small">{v.telefone}</span></td>
+                  <td data-rot="Alunos daqui">{alunos.filter((a) => a.vanId === v.id).length}</td>
+                  <td data-rot="Avaliação">⭐ {v.avaliacao.toFixed(1)}</td>
+                  <td data-rot="Situação"><span className={`tag ${s === 'credenciada' ? 'tag-verde' : s === 'pendente' ? 'tag-laranja' : 'tag-vermelho'}`}>{s}</span></td>
+                  <td className="td-acoes" style={{ textAlign: 'right' }}>
                     {s !== 'credenciada' && <button className="btn btn-verde btn-sm" onClick={() => void credenciar(v.id, ESCOLA_PRINCIPAL, 'credenciada')}>Credenciar</button>}
                     {s === 'credenciada' && <button className="btn btn-claro btn-sm" onClick={() => void credenciar(v.id, ESCOLA_PRINCIPAL, 'suspensa')}>Suspender</button>}
                   </td>
@@ -143,7 +143,7 @@ function AlunosEscola({ alunos, vans, viagens, naoVao }: { alunos: Aluno[]; vans
       <div className="tabela-wrap">
         <table className="tabela">
           <thead><tr><th>Aluno</th><th>Série</th><th>Van</th><th>Hoje</th></tr></thead>
-          <tbody>{alunos.map((a) => <tr key={a.id}><td><div className="aluno-cel"><Avatar aluno={a} tam={34} /><strong>{a.nome}</strong></div></td><td>{a.serie}</td><td>{vans.find((v) => v.id === a.vanId)?.nome}</td><td>{status(a)}</td></tr>)}</tbody>
+          <tbody>{alunos.map((a) => <tr key={a.id}><td><div className="aluno-cel"><Avatar aluno={a} tam={34} /><strong>{a.nome}</strong></div></td><td data-rot="Série">{a.serie}</td><td data-rot="Van">{vans.find((v) => v.id === a.vanId)?.nome}</td><td className="td-largo" data-rot="Hoje">{status(a)}</td></tr>)}</tbody>
         </table>
         {!alunos.length && <Vazio ic="🎒">Nenhum aluno</Vazio>}
       </div>

@@ -57,10 +57,10 @@ export function Financeiro({ d }: { d: DadosVan }) {
                 return (
                   <tr key={p.id}>
                     <td><div className="aluno-cel"><Avatar aluno={a} tam={36} /><div><strong>{a.nome}</strong><span className="muted small">{a.responsavel}</span></div></div></td>
-                    <td>{p.vencimento.split('-').reverse().join('/')}</td>
-                    <td><strong>{reais(p.valor)}</strong></td>
-                    <td>{p.status === 'pago' ? <span className="tag tag-verde">✓ Pago {p.metodo ? `· ${p.metodo}` : ''}</span> : atrasado(p) ? <span className="tag tag-vermelho">Atrasado</span> : <span className="tag tag-laranja">Pendente</span>}</td>
-                    <td style={{ textAlign: 'right' }}>
+                    <td data-rot="Vencimento">{p.vencimento.split('-').reverse().join('/')}</td>
+                    <td data-rot="Valor"><strong>{reais(p.valor)}</strong></td>
+                    <td data-rot="Situação">{p.status === 'pago' ? <span className="tag tag-verde">✓ Pago {p.metodo ? `· ${p.metodo}` : ''}</span> : atrasado(p) ? <span className="tag tag-vermelho">Atrasado</span> : <span className="tag tag-laranja">Pendente</span>}</td>
+                    <td className="td-acoes" style={{ textAlign: 'right' }}>
                       {p.status === 'pago'
                         ? <button className="btn btn-claro btn-sm" onClick={() => void desfazerPagamento(p.id)}>Desfazer</button>
                         : <div className="linha" style={{ justifyContent: 'flex-end' }}>
@@ -193,21 +193,32 @@ export function Mensagens({ d }: { d: DadosVan }) {
     const m = msgs.filter((x) => x.alunoId === a.id).sort((x, y) => x.criadoEm.localeCompare(y.criadoEm));
     return { a, m, ultima: m[m.length - 1], naoLidas: m.filter((x) => x.de === 'pais' && !x.lida).length };
   }).sort((x, y) => (y.ultima?.criadoEm ?? '').localeCompare(x.ultima?.criadoEm ?? ''));
+  // computador: lista + conversa lado a lado (abre a mais recente)
+  // celular: só a lista; ao tocar, só a conversa (com botão de voltar) — igual WhatsApp
   const atual = porAluno.find((c) => c.a.id === sel) ?? porAluno.find((c) => c.ultima);
   useEffect(() => { if (atual?.naoLidas) void lerMensagens(atual.a.id, 'motorista'); }, [atual?.a.id, atual?.naoLidas]);
   return (
-    <div className="grade-painel" style={{ gridTemplateColumns: '1fr 1.4fr' }}>
+    <div className={`mensagens ${sel ? 'com-conversa' : ''}`}>
       <section className="card lista-conversas">
         <h3 style={{ marginBottom: 8 }}>Conversas</h3>
         {porAluno.map((c) => (
-          <div key={c.a.id} className="linha-item" onClick={() => setSel(c.a.id)} style={{ background: atual?.a.id === c.a.id ? 'var(--amarelo-claro)' : undefined, borderRadius: 12, padding: '10px 8px' }}>
-            <div className="aluno-cel"><Avatar aluno={c.a} tam={36} /><div><strong>{c.a.responsavel}</strong><span className="muted small">{c.ultima ? c.ultima.texto.slice(0, 40) : `Responsável por ${primeiroNome(c.a.nome)}`}</span></div></div>
-            {c.naoLidas > 0 && <span className="tag tag-vermelho">{c.naoLidas}</span>}
-          </div>
+          <button key={c.a.id} type="button" className={`conversa ${atual?.a.id === c.a.id ? 'ativa' : ''}`} onClick={() => setSel(c.a.id)}>
+            <Avatar aluno={c.a} tam={44} />
+            <span className="conversa-texto">
+              <span className="entre"><strong>{c.a.responsavel}</strong>{c.ultima && <small className="muted">{hora(c.ultima.criadoEm)}</small>}</span>
+              <span className="muted small conversa-previa">{c.ultima ? `${c.ultima.de === 'motorista' ? 'Você: ' : ''}${c.ultima.texto}` : `Responsável por ${primeiroNome(c.a.nome)}`}</span>
+            </span>
+            {c.naoLidas > 0 && <span className="conversa-nao-lidas">{c.naoLidas}</span>}
+          </button>
         ))}
       </section>
-      <section className="card">
-        {atual ? <Chat alunoId={atual.a.id} eu="motorista" titulo={`${atual.a.responsavel} · ${primeiroNome(atual.a.nome)}`} /> : <Vazio ic="💬">Sem conversas</Vazio>}
+      <section className="card painel-conversa">
+        {atual ? (
+          <>
+            <button type="button" className="btn btn-claro btn-sm so-celular" style={{ marginBottom: 10 }} onClick={() => setSel(null)}>← Conversas</button>
+            <Chat alunoId={atual.a.id} eu="motorista" titulo={`${atual.a.responsavel} · ${primeiroNome(atual.a.nome)}`} />
+          </>
+        ) : <Vazio ic="💬">Sem conversas</Vazio>}
       </section>
     </div>
   );
@@ -230,10 +241,10 @@ export function Chat({ alunoId, eu, titulo }: { alunoId: string; eu: 'pais' | 'm
         {msgs.map((m) => <div key={m.id} className={`bolha ${m.de === eu ? 'minha' : 'dele'}`}>{m.texto}<small>{hora(m.criadoEm)}</small></div>)}
         <div ref={fim} />
       </div>
-      <div className="linha" style={{ marginTop: 10 }}>{rapidas.map((r) => <button key={r} className="tag tag-cinza" onClick={() => void enviarMensagem(alunoId, eu, r)}>{r}</button>)}</div>
+      <div className="respostas-rapidas">{rapidas.map((r) => <button key={r} type="button" className="tag tag-cinza" onClick={() => void enviarMensagem(alunoId, eu, r)}>{r}</button>)}</div>
       <form className="chat-envio" onSubmit={(e) => { e.preventDefault(); void enviar(); }}>
-        <input className="inp" value={txt} onChange={(e) => setTxt(e.target.value)} placeholder="Escreva uma mensagem…" />
-        <button className="btn btn-primario" disabled={!txt.trim()}>Enviar</button>
+        <input className="inp" value={txt} onChange={(e) => setTxt(e.target.value)} placeholder="Escreva uma mensagem…" enterKeyHint="send" />
+        <button className="btn btn-primario chat-enviar" disabled={!txt.trim()} aria-label="Enviar">➤</button>
       </form>
     </div>
   );

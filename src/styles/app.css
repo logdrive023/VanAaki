@@ -207,3 +207,101 @@ hr.sep { border: 0; border-top: 1px solid var(--borda); margin: 6px 0; }
   .rota-grid .alvo-card { order: -1; }
   .alvo-card .botoes .btn { padding: 16px; font-size: 16px; }
 }
+
+/* ===================== MOBILE (refino) ===================== */
+/* item de grid não pode ser mais largo que a tela por causa de conteúdo com rolagem lateral */
+.grade-painel > *, .rota-grid > *, .grade2 > *, .grade3 > *, .kpis > *, .mensagens > * { min-width: 0; }
+.so-celular { display: none !important; }
+
+/* ---------- mensagens (lista + conversa) ---------- */
+.mensagens { display: grid; grid-template-columns: minmax(260px, 1fr) 1.5fr; gap: 22px; align-items: start; }
+.lista-conversas { display: flex; flex-direction: column; gap: 2px; }
+.conversa { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px; border-radius: 14px; background: transparent; text-align: left; color: var(--texto); }
+.conversa:hover { background: var(--fundo); }
+.conversa.ativa { background: var(--amarelo-claro); }
+.conversa-texto { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.conversa-texto strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.conversa-previa { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.conversa-nao-lidas { background: var(--verde); color: #fff; font-size: 12px; font-weight: 900; min-width: 22px; height: 22px; border-radius: 999px; display: grid; place-items: center; padding: 0 6px; }
+.respostas-rapidas { display: flex; gap: 6px; margin-top: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+.respostas-rapidas::-webkit-scrollbar { display: none; }
+.respostas-rapidas .tag { flex-shrink: 0; padding: 7px 12px; font-size: 13px; }
+.chat-envio .inp { flex: 1; min-width: 0; border-radius: 999px; padding: 12px 16px; }
+.chat-enviar { width: 48px; height: 48px; padding: 0; border-radius: 50%; flex-shrink: 0; font-size: 18px; }
+
+@media (max-width: 1000px) {
+  .so-celular { display: inline-flex !important; }
+  .esconde-celular { display: none; }
+
+  /* topo compacto: título à esquerda, ações à direita */
+  .main { gap: 16px; }
+  .main-topo { flex-wrap: nowrap; align-items: center; }
+  .main-topo h1 { font-size: 22px; line-height: 1.15; }
+  .main-topo .acoes { width: auto; flex-shrink: 0; gap: 8px; }
+  .main-topo .acoes .btn { padding: 10px 14px; font-size: 14px; }
+  .main-topo .busca-mini { display: none; }
+
+  /* abas de baixo: cabem 7 sem apertar */
+  .tabs-mobile { overflow-x: visible; padding-left: 2px; padding-right: 2px; }
+  .tabs-mobile a { flex: 1; min-width: 0; font-size: 10px; gap: 2px; }
+  .tabs-mobile a span.rot { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .tabs-mobile a i { font-size: 21px; }
+  .tabs-mobile a.ativo i { transform: translateY(-1px); }
+  .tabs-mobile a.ativo::before { content: ''; position: absolute; top: -8px; width: 26px; height: 3px; border-radius: 3px; background: var(--amarelo); }
+
+  /* botão de teste: bolinha discreta acima das abas, no canto direito */
+  .demo-btn { left: auto; right: 14px; bottom: 82px; width: 44px; height: 44px; padding: 0; display: grid; place-items: center; font-size: 0; }
+  .demo-btn::before { content: '🧪'; font-size: 20px; }
+  .demo-painel { left: auto; right: 14px; bottom: 134px; }
+
+  /* mensagens: lista OU conversa */
+  .mensagens { grid-template-columns: 1fr; }
+  .mensagens .painel-conversa { display: none; }
+  .mensagens.com-conversa .lista-conversas { display: none; }
+  .mensagens.com-conversa .painel-conversa { display: block; }
+  .mensagens .chat { max-height: calc(100vh - 380px); min-height: 220px; }
+
+  /* conduta: 2 botões por linha, alunos rolando de lado */
+  .conduta-btns { grid-template-columns: 1fr 1fr; }
+  .conduta-btns button { padding: 12px 10px; font-size: 13px; min-height: 56px; }
+  .aluno-chips { margin: 0 -4px; padding: 2px 4px 8px; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .aluno-chips::-webkit-scrollbar { display: none; }
+  .aluno-chip { scroll-snap-align: start; flex-shrink: 0; }
+
+  /* cards e tabelas com menos respiro no celular */
+  .card { padding: 16px; border-radius: 18px; }
+  .card-topo { flex-wrap: wrap; }
+}
+@media (max-width: 600px) {
+  .fone-shell .demo-btn { bottom: 92px; }
+}
+
+/* ---------- tabelas → cartões no celular ---------- */
+@media (max-width: 760px) {
+  .tabela-wrap { overflow-x: visible; }
+  .tabela, .tabela tbody { display: block; }
+  .tabela thead { display: none; }
+  .tabela tr { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; padding: 14px 2px; border-top: 1px solid var(--borda); }
+  .tabela tr:first-child { border-top: 0; }
+  .tabela tr:hover td { background: none; }
+  .tabela td { display: block; border: 0; padding: 0; min-width: 0; }
+  .tabela td:first-child, .tabela td.td-largo, .tabela td.td-acoes { grid-column: 1 / -1; }
+  .tabela td[data-rot]::before { content: attr(data-rot); display: block; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; color: var(--texto-2); margin-bottom: 2px; }
+  .tabela td.td-acoes { text-align: left !important; }
+  .tabela td.td-acoes .linha { justify-content: stretch !important; }
+  .tabela td.td-acoes .btn { flex: 1; padding: 11px 14px; }
+  .tabela td.td-acoes > .btn { width: 100%; }
+
+  /* indicadores: 2 por linha, compactos */
+  .kpis { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .kpi { flex-direction: column; align-items: flex-start; gap: 8px; padding: 14px; }
+  .kpi .ic { width: 38px; height: 38px; font-size: 19px; border-radius: 11px; }
+  .kpi .num { font-size: 20px; }
+  .kpi .rot { font-size: 12px; }
+  .kpi .delta { font-size: 11px; }
+
+  /* filtros que viram linha inteira */
+  .card-topo > .abas, .card-topo .linha > .abas { width: 100%; }
+  .abas a { flex: 1; text-align: center; }
+  .busca-mini { min-width: 0; width: 100%; }
+}
