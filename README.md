@@ -26,6 +26,16 @@ npm run preview    # serve o build → http://localhost:4173 (dá para instalar 
 5. No aluno, toque em **Tô no portão!** antes da van chegar: vale +10 pontos.
 6. 🧪 Teste → **Restaurar dados de exemplo** volta tudo ao início.
 
+## Publicar (GitHub Pages)
+
+O workflow `.github/workflows/deploy.yml` gera o build e publica a cada push na `main`.
+Acompanhe em **Actions**. Quando ficar verde:
+
+- Landing page: **https://logdrive023.github.io/VanAaki/**
+- App: **https://logdrive023.github.io/VanAaki/app.html** (no celular: "Adicionar à tela inicial")
+
+Cada pessoa que abre o link tem os próprios dados de exemplo, salvos só no navegador dela.
+
 ## Regras principais
 
 **Privacidade (combinado com o time):** a família não vê onde a van está enquanto o tio busca outras crianças

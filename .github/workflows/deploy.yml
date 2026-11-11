@@ -1,0 +1,50 @@
+# Publica o VanAaki no GitHub Pages a cada push na branch main (mesmo modelo do projeto dia-dia).
+# Configuração única no GitHub: Settings → Pages → Build and deployment → Source: "GitHub Actions".
+# Endereço: https://logdrive023.github.io/VanAaki/  (landing) e .../app.html (app PWA)
+name: Publicar no GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    # versão fixa do Ubuntu: a troca do "ubuntu-latest" não muda o ambiente sem aviso
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      # Confere se o Pages está ligado com "GitHub Actions" antes de gastar tempo no build.
+      - uses: actions/configure-pages@v6
+      - uses: actions/setup-node@v7
+        with:
+          # mesma versão usada no PC (Node 22)
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # "build" = checagem de tipos (tsc) + build do Vite com Service Worker
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
