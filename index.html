@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#14213D">
+  <meta name="description" content="Van escolar com rastreio seguro para os pais, gestão completa para o tio e gamificação para os alunos.">
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
+  <title>VanAaki — A van escolar do seu filho, ao vivo</title>
+  <link rel="stylesheet" href="/src/styles/base.css">
+  <link rel="stylesheet" href="/src/styles/landing.css">
+</head>
+<body>
+
+  <header class="topo-site">
+    <div class="container">
+      <a href="./index.html" class="logo"><div class="logo-icone">🚐</div><span>Van<b>Aaki</b></span></a>
+      <nav class="menu-site">
+        <a href="#vans">Encontrar van</a>
+        <a href="#seguranca">Segurança</a>
+        <a href="#gamificacao">Gamificação</a>
+        <a href="#planos">Planos</a>
+      </nav>
+      <div class="topo-acoes">
+        <a href="#entrar" class="btn btn-contorno btn-sm">Entrar</a>
+        <a href="./app.html#/motorista" class="btn btn-primario btn-sm">Sou motorista</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container">
+      <div>
+        <span class="tag tag-amarelo">🚐 Van escolar, do jeito certo</span>
+        <h1 style="margin-top:16px">A van do seu filho <em>chegando ao vivo</em>, sem expor ninguém.</h1>
+        <p class="lead">O tio gerencia alunos, pagamentos e a rota do dia. Você recebe aviso quando seu filho é o próximo. E as crianças ganham pontos por chegar no horário e se comportar.</p>
+
+        <form class="busca" id="form-busca">
+          <div class="campo">
+            <label for="b-escola">Escola</label>
+            <select id="b-escola">
+              <option value="">Todas as escolas</option>
+              <option value="santa-maria" selected>Colégio Santa Maria</option>
+              <option value="horizonte">Colégio Horizonte</option>
+              <option value="roberto">EE Prof. Roberto Lima</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label for="b-bairro">Seu bairro</label>
+            <input id="b-bairro" type="text" value="Vila Mariana" placeholder="Bairro ou CEP">
+          </div>
+          <button class="btn btn-primario" type="submit">🔍 Buscar vans</button>
+        </form>
+
+        <div class="hero-selos">
+          <span>✅ Motoristas credenciados pela escola</span>
+          <span>🔒 Localização só na sua vez</span>
+          <span>⭐ Gamificação de comportamento</span>
+        </div>
+      </div>
+
+      <div class="portais-hero" id="entrar">
+        <p class="portais-titulo">Entrar no app (teste)</p>
+        <a class="portal" href="./app.html#/motorista"><span class="ic">🧑‍✈️</span><span><strong>Sou motorista</strong><small>Alunos, rota, pagamentos, conduta</small></span><b>→</b></a>
+        <a class="portal" href="./app.html#/pais"><span class="ic">👨‍👩‍👦</span><span><strong>Sou pai / mãe</strong><small>Rastreio, avisos, mensalidade</small></span><b>→</b></a>
+        <a class="portal" href="./app.html#/aluno"><span class="ic">🎒</span><span><strong>Sou aluno</strong><small>Missões, ranking e prêmios</small></span><b>→</b></a>
+        <a class="portal" href="./app.html#/escola"><span class="ic">🏫</span><span><strong>Sou da escola</strong><small>Portaria e vans credenciadas</small></span><b>→</b></a>
+        <p class="portais-dica">Dica: abra cada perfil numa aba diferente e inicie a rota no motorista. As outras abas se atualizam sozinhas.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULTADOS -->
+  <section class="resultados" id="vans">
+    <div class="container">
+      <div class="resultados-topo">
+        <h2 id="titulo-busca">Vans que atendem o Colégio Santa Maria</h2>
+        <div class="filtros" id="filtros">
+          <button type="button" class="chip ativo" data-f="todas">Todas</button>
+          <button type="button" class="chip" data-f="vagas">Com vagas</button>
+          <button type="button" class="chip" data-f="rastreio">Rastreio ao vivo</button>
+        </div>
+      </div>
+
+      <div class="grade-vans" id="lista-vans">
+        <article class="van-card" data-escolas="santa-maria horizonte" data-vagas="3" data-rastreio="1">
+          <div class="van-foto f1">🚐
+            <span class="tag tag-verde ao-vivo"><span class="ponto"></span> Rastreio ao vivo</span>
+            <span class="tag tag-azul vagas">3 vagas</span>
+          </div>
+          <div class="van-corpo">
+            <div class="van-motorista">
+              <div class="avatar av-1">TC</div>
+              <div><strong>Tio Carlos Transportes</strong><span class="estrelas">★ 4,9</span> <span class="muted small">· 214 avaliações · 12 anos</span></div>
+            </div>
+            <div class="escolas"><span class="tag tag-cinza">Santa Maria</span><span class="tag tag-cinza">Horizonte</span></div>
+            <div class="muted small">❄️ Ar-condicionado · 🧒 Monitora · ⭐ Gamificação ativa</div>
+            <div class="van-rodape">
+              <div class="preco">R$ 420 <small>/mês</small></div>
+              <a href="./app.html#/pais" class="btn btn-escuro btn-sm">Quero esta</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="van-card" data-escolas="santa-maria roberto" data-vagas="1" data-rastreio="1">
+          <div class="van-foto f2">🚌
+            <span class="tag tag-verde ao-vivo"><span class="ponto"></span> Rastreio ao vivo</span>
+            <span class="tag tag-laranja vagas">Última vaga</span>
+          </div>
+          <div class="van-corpo">
+            <div class="van-motorista">
+              <div class="avatar av-5">TS</div>
+              <div><strong>Tia Sandra Escolar</strong><span class="estrelas">★ 5,0</span> <span class="muted small">· 98 avaliações · 7 anos</span></div>
+            </div>
+            <div class="escolas"><span class="tag tag-cinza">Santa Maria</span><span class="tag tag-cinza">Roberto Lima</span></div>
+            <div class="muted small">❄️ Ar-condicionado · 🎥 Câmera interna</div>
+            <div class="van-rodape">
+              <div class="preco">R$ 480 <small>/mês</small></div>
+              <a href="./app.html#/pais" class="btn btn-escuro btn-sm">Quero esta</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="van-card" data-escolas="horizonte roberto" data-vagas="8" data-rastreio="0">
+          <div class="van-foto f3">🚐
+            <span class="tag tag-azul">🏢 Cooperativa</span>
+            <span class="tag tag-azul vagas">8 vagas</span>
+          </div>
+          <div class="van-corpo">
+            <div class="van-motorista">
+              <div class="avatar av-2">CV</div>
+              <div><strong>Coopervan Zona Sul</strong><span class="estrelas">★ 4,7</span> <span class="muted small">· 530 avaliações · 14 vans</span></div>
+            </div>
+            <div class="escolas"><span class="tag tag-cinza">Horizonte</span><span class="tag tag-cinza">Roberto Lima</span></div>
+            <div class="muted small">🧒 Monitora · 🔁 Ida e volta</div>
+            <div class="van-rodape">
+              <div class="preco">R$ 390 <small>/mês</small></div>
+              <a href="./app.html#/pais" class="btn btn-escuro btn-sm">Quero esta</a>
+            </div>
+          </div>
+        </article>
+      </div>
+      <p class="sem-resultado" id="sem-resultado" hidden>Nenhuma van com esse filtro. Tente outra escola.</p>
+    </div>
+  </section>
+
+  <!-- COMO FUNCIONA -->
+  <section class="secao">
+    <div class="container">
+      <div class="secao-titulo">
+        <span class="sobre">Como funciona</span>
+        <h2>Do cadastro ao embarque em 3 passos</h2>
+        <p>Simples para os pais, organizado para o tio da van.</p>
+      </div>
+      <div class="passos">
+        <div class="passo"><div class="ic">🔍</div><h3>Encontre a van</h3><p>Busque pela escola. Só aparecem vans credenciadas por ela, com preço, vagas e avaliações.</p></div>
+        <div class="passo"><div class="ic">🤝</div><h3>Feche com o tio</h3><p>Converse pelo app e pague a mensalidade por Pix. O tio vê na hora quem pagou e quem não pagou.</p></div>
+        <div class="passo"><div class="ic">📍</div><h3>Acompanhe todo dia</h3><p>Avise se seu filho não vai (a rota se ajusta sozinha) e receba aviso quando for a vez dele.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SEGURANÇA -->
+  <section class="secao diferencial" id="seguranca">
+    <div class="container">
+      <div class="secao-titulo">
+        <span class="sobre">Rastreio com segurança</span>
+        <h2>Igual rastrear encomenda.<br>Só que é seu filho.</h2>
+        <p>E com uma regra de ouro: ninguém sabe onde moram as outras crianças.</p>
+      </div>
+      <div class="grid2">
+        <div class="lista-dif">
+          <div class="item-dif"><div class="ic">🔒</div><div><h4>Você só vê a van na sua vez</h4><p>Enquanto o tio busca outros alunos, você vê apenas quantas paradas faltam e a previsão. O mapa abre quando seu filho é o próximo.</p></div></div>
+          <div class="item-dif"><div class="ic">🔔</div><div><h4>"Seu filho é o próximo"</h4><p>Aviso no celular quando chega a vez dele. Nada de esperar no portão.</p></div></div>
+          <div class="item-dif"><div class="ic">✅</div><div><h4>Embarcou, chegou, entrou</h4><p>Confirmação do embarque, da chegada e da entrada na escola, feita pela portaria.</p></div></div>
+          <div class="item-dif"><div class="ic">🙋</div><div><h4>"Hoje ele não vai"</h4><p>Um toque e a rota do tio é reotimizada na hora.</p></div></div>
+        </div>
+        <div class="tela-privacidade">
+          <div class="cel-mini">
+            <div class="cel-status escuro"><span>🔒</span><strong>O tio está buscando outros alunos</strong><small>Faltam 2 paradas antes da sua casa · previsão 06:55</small></div>
+            <div class="seta">↓ quando for a sua vez</div>
+            <div class="cel-status destaque"><span>🔔</span><strong>Lucas é o próximo!</strong><small>A van chega em ~4 min · mapa liberado</small></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GAMIFICAÇÃO -->
+  <section class="secao" id="gamificacao">
+    <div class="container">
+      <div class="secao-titulo">
+        <span class="sobre">Gamificação</span>
+        <h2>Criança pontual e comportada ganha ponto. E prêmio.</h2>
+        <p>O tio registra elogios e ocorrências em um toque. Os pais ficam sabendo na hora.</p>
+      </div>
+      <div class="grade-game">
+        <div class="game-card"><span class="ic">⏰</span><h3>Pronto no portão</h3><p>O aluno toca "Tô no portão!" antes da van chegar e ganha <b>+10</b>. O tio não perde tempo esperando.</p></div>
+        <div class="game-card"><span class="ic">🏆</span><h3>Ranking da van</h3><p>Ranking da semana e do mês só com apelidos, sem nomes completos nem endereços.</p></div>
+        <div class="game-card"><span class="ic">🎯</span><h3>Missões e conquistas</h3><p>Missões semanais, sequência 🔥 de dias, níveis de Passageiro até Lenda da Van.</p></div>
+        <div class="game-card"><span class="ic">🎁</span><h3>Loja de prêmios</h3><p>Pontos viram prêmios que o tio define: escolher a música, sentar na janela, ser ajudante do dia.</p></div>
+        <div class="game-card neg"><span class="ic">⚠️</span><h3>Ocorrências</h3><p>Bagunça, tirar o cinto, desrespeito: tira pontos e <b>avisa os pais na hora</b>, com a observação do tio.</p></div>
+        <div class="game-card"><span class="ic">🏫</span><h3>Escola junto</h3><p>A coordenação vê as ocorrências das vans e confirma a entrada de cada aluno na portaria.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLANOS -->
+  <section class="secao fundo-claro" id="planos">
+    <div class="container">
+      <div class="secao-titulo">
+        <span class="sobre">Para quem tem van</span>
+        <h2>Alunos, pagamentos e rota num lugar só</h2>
+        <p>Quem pagou, quem não pagou, quem embarcou, e a rota do dia otimizada sozinha.</p>
+      </div>
+      <div class="planos">
+        <div class="plano">
+          <div class="ic">🧑‍✈️</div><h3>Tio individual</h3><p class="muted">Pra quem tem 1 van e quer largar o caderno.</p>
+          <div class="valor">R$ 49 <small>/mês</small></div>
+          <ul><li>Até 30 alunos</li><li>Cobrança por Pix e lembrete no WhatsApp</li><li>Rota otimizada do dia</li><li>Rastreio seguro para os pais</li><li>Gamificação e loja de prêmios</li></ul>
+          <a href="./app.html#/motorista" class="btn btn-contorno btn-bloco">Testar o painel</a>
+        </div>
+        <div class="plano destaque">
+          <div class="ic">🚐🚐</div><h3>Cooperativa</h3><p class="muted">Várias vans e motoristas, uma gestão.</p>
+          <div class="valor">R$ 199 <small>/mês</small></div>
+          <ul><li>Até 15 vans</li><li>Painel por motorista</li><li>Relatórios financeiros</li><li>Destaque na busca dos pais</li></ul>
+          <a href="./app.html#/motorista" class="btn btn-primario btn-bloco">Testar o painel</a>
+        </div>
+        <div class="plano">
+          <div class="ic">🏫</div><h3>Escola</h3><p class="muted">Todas as vans que chegam na sua escola.</p>
+          <div class="valor">Sob consulta</div>
+          <ul><li>Portaria: chegadas ao vivo</li><li>Credenciamento de vans</li><li>Confirmação de entrada para os pais</li><li>Ocorrências das vans</li></ul>
+          <a href="./app.html#/escola" class="btn btn-contorno btn-bloco">Testar a portaria</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="rodape">
+    <div class="container">
+      <div class="logo"><div class="logo-icone">🚐</div><span>Van<b>Aaki</b></span></div>
+      <span>© 2026 VanAaki · Versão de validação: os dados ficam só neste navegador.</span>
+    </div>
+  </footer>
+
+  <script type="module" src="/src/landing.ts"></script>
+</body>
+</html>

@@ -6,6 +6,8 @@ import { resolve } from 'node:path';
 export default defineConfig({
   base: './',
   build: {
+    // o MapLibre (mapa 3D) sozinho tem ~800 kB; fica em arquivo próprio e em cache
+    chunkSizeWarningLimit: 900,
     rollupOptions: {
       // landing page independente (index.html) + app PWA (app.html)
       input: { landing: resolve(__dirname, 'index.html'), app: resolve(__dirname, 'app.html') },

@@ -1,7 +1,7 @@
 import { db } from '../db/db';
 import type { Aluno, TipoViagem, Viagem } from '../db/types';
-import { compCaminho, otimizarOrdem, seguirCaminho, VEL_MEDIA_KMH } from '../lib/geo';
-import { tracarRota } from '../lib/rotas';
+import { compCaminho, compReal, otimizarOrdem, seguirCaminho, VEL_MEDIA_KMH } from '../lib/geo';
+import { otimizarPelasRuas, tracarRota } from '../lib/rotas';
 import { agoraIso, hoje, hora, primeiroNome, uid } from '../lib/util';
 import { notificar, notificarFamilia } from './notificar';
 import { darPontos } from './pontos';
@@ -64,11 +64,19 @@ export async function iniciarViagem(vanId: string, tipo: TipoViagem, op: OpcoesV
   const inicio = tipo === 'ida' ? van.garagem : escola.local;
   const destino = tipo === 'ida' ? escola.local : van.garagem;
   const locais = vao.map((a) => a.local);
-  const ordem = op.otimizar ? otimizarOrdem(inicio, locais, destino) : vao.map((_, i) => i);
-  const kmCadastro = compCaminho([inicio, ...locais, destino]) / 1000;
-  const kmOtimo = compCaminho([inicio, ...ordem.map((i) => locais[i]), destino]) / 1000;
+  const naOrdemCadastro = vao.map((_, i) => i);
+  // 1º tenta otimizar pelas ruas de verdade (mão única etc.); sem internet, otimiza em linha reta
+  const pelasRuas = op.otimizar ? await otimizarPelasRuas(inicio, locais, destino) : null;
+  const ordem = pelasRuas?.ordem ?? (op.otimizar ? otimizarOrdem(inicio, locais, destino) : naOrdemCadastro);
   const ordenados = ordem.map((i) => vao[i]);
-  const rota = await tracarRota([inicio, ...ordenados.map((a) => a.local), destino]);
+  const rota = pelasRuas ? { trechos: pelasRuas.trechos, real: true } : await tracarRota([inicio, ...ordenados.map((a) => a.local), destino]);
+  let economiaKm = 0;
+  if (op.otimizar) {
+    const kmOtimo = rota.trechos.reduce((s, t) => s + (rota.real ? compReal(t) : compCaminho(t)), 0) / 1000;
+    const base = rota.real ? await tracarRota([inicio, ...locais, destino]) : null;
+    const kmCadastro = base?.real ? base.trechos.reduce((s, t) => s + compReal(t), 0) / 1000 : compCaminho([inicio, ...locais, destino]) / 1000;
+    economiaKm = Math.max(0, kmCadastro - kmOtimo);
+  }
   const trechos: Record<string, Viagem['caminho']> = {};
   ordenados.forEach((a, i) => { trechos[a.id] = rota.trechos[i]; });
   trechos[DESTINO] = rota.trechos[ordenados.length];
@@ -85,7 +93,7 @@ export async function iniciarViagem(vanId: string, tipo: TipoViagem, op: OpcoesV
       alvo: 0, pos: { ...inicio }, caminho: trechos[ordenados[0].id].slice(), trechos, rotaReal: rota.real,
       rastro: [{ ...inicio }], naParada: false,
       automatico: op.automatico, velocidade: op.velocidade, iniciadaEm: agoraIso(), avisados: [],
-      economiaKm: op.otimizar ? Math.max(0, kmCadastro - kmOtimo) : 0, atualizadoEm: agoraIso(),
+      economiaKm, atualizadoEm: agoraIso(),
     };
     for (const a of vao) {
       await notificar({
@@ -158,9 +166,11 @@ export async function ajustarRotaPorAusencia(alunoId: string) {
   if (!v0 || !v0.paradas.some((x) => x.alunoId === alunoId && x.status === 'pendente')) return;
   const alunos = await mapaAlunos(v0.paradas.map((x) => x.alunoId));
   const pend = v0.paradas.filter((p) => p.status === 'pendente' && p.alunoId !== alunoId);
-  const ordem = otimizarOrdem(v0.pos, pend.map((p) => alunos.get(p.alunoId)!.local), v0.destino);
+  const locaisPend = pend.map((p) => alunos.get(p.alunoId)!.local);
+  const pelasRuas = await otimizarPelasRuas(v0.pos, locaisPend, v0.destino);
+  const ordem = pelasRuas?.ordem ?? otimizarOrdem(v0.pos, locaisPend, v0.destino);
   const novas = ordem.map((i) => pend[i]);
-  const rota = await tracarRota([v0.pos, ...novas.map((p) => alunos.get(p.alunoId)!.local), v0.destino]);
+  const rota = pelasRuas ? { trechos: pelasRuas.trechos } : await tracarRota([v0.pos, ...novas.map((p) => alunos.get(p.alunoId)!.local), v0.destino]);
 
   await db.transaction('rw', db.todas, async () => {
     const v = await db.viagens.get(v0.id);

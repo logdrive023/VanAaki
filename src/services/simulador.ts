@@ -16,8 +16,8 @@ export function iniciarSimulador() {
     for (;;) {
       await new Promise((r) => setTimeout(r, INTERVALO_MS));
       const agora = performance.now();
-      try { await passoSimulacao(Math.min(agora - ultimo, 2000)); } catch (e) { console.warn('simulação', e); }
-      ultimo = agora;
+      try { await passoSimulacao(Math.min(agora - ultimo, 15000)); } catch (e) { console.warn('simulação', e); }
+      ultimo = agora; // usa o tempo real passado: aba em segundo plano (timer lento) não atrasa a van
     }
   };
   if (navigator.locks?.request) navigator.locks.request('vanaaki-simulador', () => loop());
