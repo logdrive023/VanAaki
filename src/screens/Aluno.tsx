@@ -6,7 +6,7 @@ import { db } from '../db/db';
 import { saldoDe, sequencia } from '../lib/gamificacao';
 import { haQuanto } from '../lib/util';
 import { resgatar } from '../services/pontos';
-import { marcarPronto } from '../services/viagem';
+import { idxAluno, marcarPronto } from '../services/viagem';
 import { MapaFamilia, SeletorAluno, textoStatus, useAlunoPerfil, useFamilia } from './familia';
 
 export default function Aluno({ aba = 'inicio' }: { aba?: string }) {
@@ -41,8 +41,8 @@ function Inicio({ f }: { f: F }) {
   const a = f.aluno!, v = f.visao!;
   const ev = usePontosAluno(a.id);
   const resgates = useLiveQuery(() => db.resgates.where('alunoId').equals(a.id).toArray(), [a.id]) ?? [];
-  const s = textoStatus(v, a, f.viagem, f.viagem?.destinoNome ?? 'escola', true);
-  const parada = f.viagem?.paradas.find((p) => p.alunoId === a.id);
+  const s = textoStatus(v, a, f.viagem, f.escola?.nome ?? 'escola', f.plano, true);
+  const parada = f.viagem?.paradas[idxAluno(f.viagem, a.id)];
   const podePronto = f.viagem?.status === 'em_andamento' && f.viagem.tipo === 'ida' && parada?.status === 'pendente';
   return (
     <>
@@ -65,7 +65,7 @@ function Inicio({ f }: { f: F }) {
           )}
         </div>
       )}
-      {v.mostrarMapa && f.viagem && <div className="m-card" style={{ padding: 8 }}><MapaFamilia v={v} aluno={a} viagem={f.viagem} altura={260} /></div>}
+      {v.mostrarMapa && f.viagem && <div className="m-card" style={{ padding: 8 }}><MapaFamilia v={v} aluno={a} escola={f.escola} viagem={f.viagem} altura={260} /></div>}
       <NivelCard ev={ev} saldo={saldoDe(ev, resgates)} sequencia={sequencia(ev)} />
       <div className="carteirinha">
         <div className="qr" />

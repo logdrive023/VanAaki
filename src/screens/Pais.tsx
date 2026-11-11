@@ -9,6 +9,8 @@ import { saldoDe, sequencia, tipoEvento } from '../lib/gamificacao';
 import { haQuanto, nomeMes, primeiroNome, reais } from '../lib/util';
 import { atrasado, definirPresenca, pagar } from '../services/acoes';
 import { Chat } from './motorista/Gestao';
+import { EscolhaPlano } from '../components/presenca';
+import { ICONE_TURNO, NOME_TURNO } from '../lib/turnos';
 import { LinhaTempo, MapaFamilia, SeletorAluno, textoStatus, useAlunoPerfil, useFamilia } from './familia';
 
 export default function Pais({ aba = 'inicio' }: { aba?: string }) {
@@ -48,10 +50,10 @@ type F = ReturnType<typeof useFamilia>;
 
 function StatusCard({ f, compacto }: { f: F; compacto?: boolean }) {
   const v = f.visao!, a = f.aluno!;
-  const s = textoStatus(v, a, f.viagem, f.viagem?.destinoNome ?? f.escola?.nome ?? 'escola');
-  const destaque = ['proximo', 'na_porta', 'a_bordo_final'].includes(v.fase);
+  const s = textoStatus(v, a, f.viagem, f.escola?.nome ?? 'escola', f.plano);
+  const destaque = ['proximo', 'na_porta', 'a_bordo_final', 'volta_indo_escola', 'volta_na_escola'].includes(v.fase);
   return (
-    <div className={`status-card ${destaque ? 'destaque' : v.fase === 'aguardando' || v.fase === 'a_bordo' ? 'escuro' : ''}`}>
+    <div className={`status-card ${destaque ? 'destaque' : ['aguardando', 'a_bordo', 'volta_outra_escola'].includes(v.fase) ? 'escuro' : ''}`}>
       <div className="entre"><span style={{ fontSize: 28 }}>{s.ic}</span>{f.viagem?.status === 'em_andamento' && <span className="tag tag-verde ao-vivo"><span className="ponto" /> Ao vivo</span>}</div>
       <div style={{ fontSize: 20, fontWeight: 900, marginTop: 6 }}>{s.titulo}</div>
       <div className={destaque ? '' : 'muted'} style={{ fontWeight: 700 }}>{s.sub}</div>
@@ -65,22 +67,17 @@ function Inicio({ f }: { f: F }) {
   const a = f.aluno!;
   const notifs = useNotificacoes({ para: 'pais', alunoId: a.id });
   const [motivo, setMotivo] = useState('');
-  const vai = f.presenca ? f.presenca.vai : true;
-  const jaPassou = f.viagem?.paradas.find((p) => p.alunoId === a.id && p.status !== 'pendente');
   return (
     <>
       <StatusCard f={f} />
-      {f.visao!.fase === 'aguardando' && (
+      {(f.visao!.fase === 'aguardando' || f.visao!.fase === 'volta_outra_escola') && (
         <div className="privacidade"><span className="ic">🔒</span><span><b>Por segurança</b>, a posição da van aparece só quando {primeiroNome(a.nome)} for o próximo. Ninguém vê o endereço de outras crianças.</span></div>
       )}
       <div className="m-card">
-        <h4>{primeiroNome(a.nome)} vai hoje? <span className="tag tag-cinza">{f.escola?.nome}</span></h4>
-        <div className="vai-hoje">
-          <button className={`opcao sim ${vai ? 'ativo' : ''}`} disabled={!!jaPassou} onClick={() => void definirPresenca(a.id, true)}>✅ Vai</button>
-          <button className={`opcao nao ${!vai ? 'ativo' : ''}`} disabled={!!jaPassou} onClick={() => void definirPresenca(a.id, false, motivo.trim() || undefined)}>🚫 Não vai</button>
-        </div>
-        {vai && !jaPassou && <input className="inp" style={{ marginTop: 8 }} placeholder="Motivo (opcional): consulta, viagem…" value={motivo} onChange={(e) => setMotivo(e.target.value)} />}
-        <p className="muted small" style={{ marginTop: 8 }}>{!vai ? `Avisado${f.presenca?.motivo ? ` · ${f.presenca.motivo}` : ''}. A rota do tio já foi ajustada (e ninguém perde ponto).` : 'Avise antes da rota: o tio não perde tempo e a criança não perde ponto.'}</p>
+        <h4>Van hoje para {primeiroNome(a.nome)} <span className="tag tag-cinza">{ICONE_TURNO[a.turno]} {NOME_TURNO[a.turno]}</span></h4>
+        <EscolhaPlano valor={f.plano} onChange={(p) => void definirPresenca(a.id, p, motivo.trim() || undefined)} />
+        <input className="inp" style={{ marginTop: 10 }} placeholder="Motivo (opcional): consulta, futebol, viagem…" value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+        <p className="muted small" style={{ marginTop: 8 }}>{f.plano !== 'ambos' ? `Combinado com o tio${f.presenca?.motivo ? ` · ${f.presenca.motivo}` : ''}. A rota já foi ajustada e ninguém perde ponto.` : `${f.escola?.nome} · avise antes da rota: o tio não perde tempo e a criança não perde ponto.`}</p>
       </div>
       <div className="m-card">
         <h4>Motorista</h4>
@@ -105,15 +102,15 @@ function Rastreio({ f }: { f: F }) {
     <>
       <StatusCard f={f} compacto />
       {v.mostrarMapa && f.viagem
-        ? <div className="m-card" style={{ padding: 8 }}><MapaFamilia v={v} aluno={a} viagem={f.viagem} altura="48vh" /></div>
-        : (v.fase === 'aguardando' || v.fase === 'a_bordo' || v.fase === 'sem_viagem') && (
+        ? <div className="m-card" style={{ padding: 8 }}><MapaFamilia v={v} aluno={a} escola={f.escola} viagem={f.viagem} altura="48vh" /></div>
+        : (['aguardando', 'a_bordo', 'volta_outra_escola'].includes(v.fase) || (v.fase === 'sem_viagem' && f.plano === 'ambos')) && (
           <div className="m-card" style={{ textAlign: 'center', padding: 26 }}>
             <div style={{ fontSize: 46 }}>🔒</div>
             <strong style={{ fontSize: 17 }}>O mapa aparece quando for a sua vez</strong>
-            <p className="muted small" style={{ marginTop: 6 }}>Para a segurança de todas as crianças, a localização da van só é mostrada quando {primeiroNome(a.nome)} for o próximo{f.viagem?.tipo === 'volta' ? ' a ser entregue' : ''}, ou no trecho final até a escola.{v.paradasAntes > 0 ? ` Agora faltam ${v.paradasAntes} parada(s) antes.` : ''}</p>
+            <p className="muted small" style={{ marginTop: 6 }}>Para a segurança de todas as crianças, a localização da van só é mostrada quando o próximo destino dela for a sua casa ou a escola de {primeiroNome(a.nome)}.{v.paradasAntes > 0 ? ` Agora faltam ${v.paradasAntes} parada(s) antes.` : ''}</p>
           </div>
         )}
-      <div className="m-card"><h4>Hoje</h4>{f.viagem ? <LinhaTempo viagem={f.viagem} alunoId={a.id} v={v} /> : <Vazio ic="🅿️">A van ainda não saiu hoje</Vazio>}</div>
+      <div className="m-card"><h4>Hoje</h4>{f.viagem ? <LinhaTempo viagem={f.viagem} aluno={a} escola={f.escola} v={v} /> : <Vazio ic="🅿️">A van ainda não saiu hoje</Vazio>}</div>
     </>
   );
 }

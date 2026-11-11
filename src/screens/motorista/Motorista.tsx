@@ -2,17 +2,19 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useState } from 'react';
 import Mapa3D from '../../components/Mapa3D';
 import { ShellPainel, type ItemMenu } from '../../components/Shell';
+import { SeletorPlano } from '../../components/presenca';
 import { Avatar, ir, Modal, Toggle, useNotificacoes, Vazio } from '../../components/ui';
 import { db } from '../../db/db';
 import { VAN_PRINCIPAL } from '../../db/seed';
-import type { Aluno, Turno } from '../../db/types';
+import { TURNOS, type Aluno, type Turno, type TurnoVan } from '../../db/types';
+import { horarioAlvo, ICONE_TURNO, NOME_TURNO, nomePlano, planoDe } from '../../lib/turnos';
 import { arquivarAluno, atrasado, definirPresenca, salvarAluno } from '../../services/acoes';
-import { centavos, CORES, dataLonga, haQuanto, nomeMes, mesAtual, reais, uid, agoraIso } from '../../lib/util';
+import { centavos, CORES, dataLonga, haQuanto, hora, nomeMes, mesAtual, reais, uid, agoraIso } from '../../lib/util';
 import { useDadosVan, type DadosVan } from './dados';
 import { Conduta, Financeiro, Mensagens, Premios } from './Gestao';
 import { Rota } from './Rota';
 
-export default function Motorista({ aba = 'painel' }: { aba?: string }) {
+export default function Motorista({ aba = 'painel', extra }: { aba?: string; extra?: string }) {
   const d = useDadosVan(VAN_PRINCIPAL);
   const pedidos = useLiveQuery(() => db.resgates.where('status').equals('pendente').count()) ?? 0;
   const msgs = useLiveQuery(() => db.mensagens.filter((m) => m.de === 'pais' && !m.lida).count()) ?? 0;
@@ -43,7 +45,7 @@ export default function Motorista({ aba = 'painel' }: { aba?: string }) {
       titulo={titulos[aba] ?? 'Painel'} sub={dataLonga()}
       acoes={aba !== 'rota' && <button className="btn btn-primario" onClick={() => ir('motorista/rota')}>{d.ativa ? '📍' : '▶'} <span className="esconde-celular">{d.ativa ? 'Ver rota ao vivo' : 'Iniciar rota'}</span><span className="so-celular">Rota</span></button>}>
       {aba === 'painel' && <Painel d={d} pedidos={pedidos} />}
-      {aba === 'rota' && <Rota d={d} />}
+      {aba === 'rota' && <Rota d={d} turnoInicial={extra as Turno | undefined} />}
       {aba === 'alunos' && <Alunos d={d} />}
       {aba === 'financeiro' && <Financeiro d={d} />}
       {aba === 'conduta' && <Conduta d={d} />}
@@ -59,37 +61,34 @@ function Painel({ d, pedidos }: { d: DadosVan; pedidos: number }) {
   const notifs = useNotificacoes({ para: 'motorista', vanId: VAN_PRINCIPAL });
   const pagos = d.pagamentosMes.filter((p) => p.status === 'pago');
   const pend = d.pagamentosMes.filter((p) => p.status === 'pendente');
-  const vaoHoje = d.ativos.length - d.naoVao.size;
-  const v = d.ativa;
+  const [editarTurnos, setEditarTurnos] = useState(false);
   return (
     <>
       <section className="kpis">
         <div className="kpi"><div className="ic" style={{ background: 'var(--azul-claro)' }}>👦</div><div><div className="num">{d.ativos.length}</div><div className="rot">Alunos ativos</div></div></div>
         <div className="kpi"><div className="ic" style={{ background: 'var(--verde-claro)' }}>💰</div><div><div className="num">{pagos.length}<span className="muted" style={{ fontSize: 16 }}>/{d.pagamentosMes.length}</span></div><div className="rot">Pagaram {nomeMes(mesAtual()).toLowerCase()}</div><div className="delta verde">{reais(pagos.reduce((s, p) => s + p.valor, 0))}</div></div></div>
         <div className="kpi" style={{ cursor: 'pointer' }} onClick={() => ir('motorista/financeiro')}><div className="ic" style={{ background: 'var(--vermelho-claro)' }}>⏰</div><div><div className="num">{pend.length}</div><div className="rot">Pendentes</div><div className="delta vermelho">{reais(pend.reduce((s, p) => s + p.valor, 0))} · {pend.filter(atrasado).length} atrasado(s)</div></div></div>
-        <div className="kpi"><div className="ic" style={{ background: 'var(--amarelo-claro)' }}>🚐</div><div><div className="num">{vaoHoje}</div><div className="rot">Vão hoje</div><div className="delta laranja">{d.naoVao.size} avisaram que não vão</div></div></div>
+        <div className="kpi"><div className="ic" style={{ background: 'var(--amarelo-claro)' }}>🗓️</div><div><div className="num">{d.van!.turnos.filter((t) => t.ativo).length}</div><div className="rot">Turnos de trabalho</div><div className="delta laranja">{d.avisos.length} combinado(s) hoje</div></div></div>
       </section>
       <div className="grade-painel">
         <section className="card">
-          <div className="card-topo"><h3>Rota de hoje</h3>{v ? <span className="tag tag-verde ao-vivo"><span className="ponto" /> Em andamento</span> : d.ultima ? <span className="tag tag-azul">Última concluída</span> : <span className="tag tag-cinza">Não iniciada</span>}</div>
-          {v ? (
-            <>
-              <p><b>{v.paradas.filter((p) => p.status === 'feito').length}</b> de {v.paradas.length} alunos {v.tipo === 'ida' ? 'embarcados' : 'entregues'} · destino {v.destinoNome}</p>
-              <div className="prog" style={{ margin: '12px 0' }}><i style={{ width: `${(v.paradas.filter((p) => p.status !== 'pendente').length / Math.max(1, v.paradas.length)) * 100}%` }} /></div>
-              <button className="btn btn-escuro" onClick={() => ir('motorista/rota')}>📍 Abrir a rota ao vivo</button>
-            </>
-          ) : (
-            <>
-              <p className="muted">{vaoHoje} alunos confirmados. A ordem das paradas é otimizada na hora de sair.</p>
-              <div className="linha" style={{ marginTop: 12 }}><button className="btn btn-primario" onClick={() => ir('motorista/rota')}>▶ Preparar rota</button></div>
-            </>
-          )}
+          <div className="card-topo"><h3>Turnos de hoje</h3><button className="btn btn-claro btn-sm" onClick={() => setEditarTurnos(true)}>⚙️ Turnos e escolas</button></div>
+          <div className="pilha">
+            {d.van!.turnos.filter((t) => t.ativo).map((t) => <CartaoTurno key={t.turno} d={d} t={t} />)}
+            {!d.van!.turnos.some((t) => t.ativo) && <Vazio ic="🗓️">Nenhum turno ativo</Vazio>}
+          </div>
           <hr className="sep" style={{ margin: '16px 0' }} />
-          <h3 style={{ marginBottom: 8 }}>Quem não vai hoje</h3>
-          {d.naoVao.size === 0 && <span className="muted">Todos vão 🎉</span>}
-          {d.presencas.filter((p) => !p.vai && d.mapaAlunos.has(p.alunoId)).map((p) => {
+          <h3 style={{ marginBottom: 8 }}>Combinados de hoje</h3>
+          {d.avisos.length === 0 && <span className="muted">Todo mundo vai e volta de van 🎉</span>}
+          {d.avisos.map((p) => {
             const a = d.mapaAlunos.get(p.alunoId)!;
-            return <div key={p.id} className="linha-item"><div className="aluno-cel"><Avatar aluno={a} tam={34} /><div><strong>{a.nome}</strong><span className="muted small">{p.motivo ?? 'Aviso da família'} · {haQuanto(p.avisadoEm)}</span></div></div><button className="btn btn-claro btn-sm" onClick={() => void definirPresenca(a.id, true)}>Vai sim</button></div>;
+            const pl = nomePlano(planoDe(p));
+            return (
+              <div key={p.id} className="linha-item">
+                <div className="aluno-cel"><Avatar aluno={a} tam={34} /><div><strong>{a.nome}</strong><span className="muted small">{pl.icone} {pl.desc}{p.motivo ? ` · ${p.motivo}` : ''} · {haQuanto(p.avisadoEm)}</span></div></div>
+                <SeletorPlano valor={planoDe(p)} onChange={(x) => void definirPresenca(a.id, x, undefined, 'motorista')} />
+              </div>
+            );
           })}
         </section>
         <section className="card">
@@ -100,7 +99,70 @@ function Painel({ d, pedidos }: { d: DadosVan; pedidos: number }) {
           ))}
         </section>
       </div>
+      {editarTurnos && <EditarTurnos d={d} onFechar={() => setEditarTurnos(false)} />}
     </>
+  );
+}
+
+/** Um turno: escolas com horário, quantos alunos e como estão a ida e a volta hoje. */
+function CartaoTurno({ d, t }: { d: DadosVan; t: TurnoVan }) {
+  const alunos = d.ativos.filter((a) => a.turno === t.turno && t.escolaIds.includes(a.escolaId));
+  const nIda = alunos.filter((a) => d.presencaPorAluno.get(a.id)?.ida ?? true).length;
+  const nVolta = alunos.filter((a) => d.presencaPorAluno.get(a.id)?.volta ?? true).length;
+  const trecho = (tipo: 'ida' | 'volta', n: number) => {
+    const vs = d.viagensHoje.filter((v) => v.turno === t.turno && v.tipo === tipo && v.status !== 'cancelada');
+    const v = vs.find((x) => x.status === 'em_andamento') ?? vs[vs.length - 1];
+    const st = !v ? <span className="muted">não iniciada</span>
+      : v.status === 'em_andamento' ? <span className="tag tag-verde ao-vivo"><span className="ponto" /> agora</span>
+      : <span className="tag tag-azul">✓ {hora(v.concluidaEm)}</span>;
+    return <div className="trecho-status"><span>{tipo === 'ida' ? '☀️ Ida' : '🏠 Volta'} · {n} aluno{n === 1 ? '' : 's'}</span>{st}</div>;
+  };
+  return (
+    <div className="turno-card">
+      <div className="entre"><strong>{ICONE_TURNO[t.turno]} {NOME_TURNO[t.turno]}</strong><button className="btn btn-primario btn-sm" onClick={() => ir(`motorista/rota/${t.turno}`)}>{d.ativa?.turno === t.turno ? '📍 Ao vivo' : '▶ Rota'}</button></div>
+      <div className="escolas-turno">
+        {t.escolaIds.map((id) => { const e = d.mapaEscolas.get(id); const h = e?.horarios[t.turno]; return <span key={id} className="tag tag-cinza">🏫 {e?.nome}{h ? ` · ${h.entrada}–${h.saida}` : ''}</span>; })}
+      </div>
+      {trecho('ida', nIda)}
+      {trecho('volta', nVolta)}
+    </div>
+  );
+}
+
+/** O motorista escolhe em quais turnos trabalha e quais escolas atende em cada um. */
+function EditarTurnos({ d, onFechar }: { d: DadosVan; onFechar: () => void }) {
+  const [turnos, setTurnos] = useState<TurnoVan[]>(TURNOS.map((t) => d.van!.turnos.find((x) => x.turno === t) ?? { turno: t, ativo: false, escolaIds: [] }));
+  const alterar = (t: Turno, mud: Partial<TurnoVan>) => setTurnos((l) => l.map((x) => (x.turno === t ? { ...x, ...mud } : x)));
+  const salvar = async () => {
+    const van = d.van!;
+    const todas = [...new Set(turnos.flatMap((t) => t.escolaIds))];
+    const cred = { ...van.credenciamento };
+    for (const id of todas) if (!cred[id]) cred[id] = 'pendente'; // escola nova: pede credenciamento
+    await db.vans.update(van.id, { turnos, escolaIds: todas, credenciamento: cred });
+    onFechar();
+  };
+  return (
+    <Modal titulo="Turnos e escolas" onFechar={onFechar}>
+      <div className="pilha">
+        <p className="muted small">Marque os turnos em que você trabalha e as escolas de cada um. Na ida a van passa nas escolas pela ordem da entrada; na volta, pela ordem da saída.</p>
+        {turnos.map((t) => (
+          <div key={t.turno} className={`turno-card ${t.ativo ? '' : 'off'}`}>
+            <div className="entre"><strong>{ICONE_TURNO[t.turno]} {NOME_TURNO[t.turno]}</strong><Toggle on={t.ativo} onChange={(v) => alterar(t.turno, { ativo: v })} /></div>
+            {d.escolas.map((e) => {
+              const h = e.horarios[t.turno];
+              return (
+                <label key={e.id} className="check" style={{ opacity: h ? 1 : 0.5 }}>
+                  <input type="checkbox" disabled={!h || !t.ativo} checked={t.escolaIds.includes(e.id)}
+                    onChange={(ev) => alterar(t.turno, { escolaIds: ev.target.checked ? [...t.escolaIds, e.id] : t.escolaIds.filter((x) => x !== e.id) })} />
+                  <span>{e.nome} <span className="muted small">{h ? `entra ${h.entrada} · sai ${h.saida}` : 'sem aula neste turno'}{d.van!.credenciamento[e.id] === 'pendente' ? ' · credenciamento pendente' : ''}</span></span>
+                </label>
+              );
+            })}
+          </div>
+        ))}
+        <button className="btn btn-primario btn-bloco" onClick={() => void salvar()}>Salvar</button>
+      </div>
+    </Modal>
   );
 }
 
@@ -110,8 +172,9 @@ function Alunos({ d }: { d: DadosVan }) {
   const [busca, setBusca] = useState('');
   const [editando, setEditando] = useState<Aluno | null>(null);
   const [verArquivados, setVerArquivados] = useState(false);
+  const [turno, setTurno] = useState<Turno | 'todos'>('todos');
   const pagMap = new Map(d.pagamentosMes.map((p) => [p.alunoId, p]));
-  const lista = d.alunos.filter((a) => a.ativo !== verArquivados && `${a.nome} ${a.responsavel} ${a.endereco}`.toLowerCase().includes(busca.toLowerCase()));
+  const lista = d.alunos.filter((a) => a.ativo !== verArquivados && (turno === 'todos' || a.turno === turno) && `${a.nome} ${a.responsavel} ${a.endereco}`.toLowerCase().includes(busca.toLowerCase()));
   const novo = (): Aluno => ({
     id: uid(), vanId: VAN_PRINCIPAL, escolaId: d.van!.escolaIds[0], nome: '', apelido: '', cor: CORES[d.alunos.length % CORES.length],
     serie: '', turno: 'manha', responsavel: '', telefoneResp: '', endereco: '', local: { lat: -23.5925, lng: -46.6300 },
@@ -126,19 +189,26 @@ function Alunos({ d }: { d: DadosVan }) {
           <button className="btn btn-primario btn-sm" onClick={() => setEditando(novo())}>＋ Novo aluno</button>
         </div>
       </div>
+      <div className="chips-turno" style={{ marginBottom: 12 }}>
+        {(['todos', ...TURNOS] as const).map((t) => (
+          <button key={t} className={`chip-turno ${turno === t ? 'ativo' : ''}`} onClick={() => setTurno(t)}>
+            {t === 'todos' ? 'Todos' : `${ICONE_TURNO[t]} ${NOME_TURNO[t]}`}<small>{d.alunos.filter((a) => a.ativo !== verArquivados && (t === 'todos' || a.turno === t)).length}</small>
+          </button>
+        ))}
+      </div>
       <div className="tabela-wrap">
         <table className="tabela">
-          <thead><tr><th>Aluno</th><th>Escola / Turno</th><th>Endereço</th><th>Mensalidade</th><th>Vai hoje?</th><th /></tr></thead>
+          <thead><tr><th>Aluno</th><th>Escola / Turno</th><th>Endereço</th><th>Mensalidade</th><th>Van hoje</th><th /></tr></thead>
           <tbody>
             {lista.map((a) => {
               const p = pagMap.get(a.id);
               return (
                 <tr key={a.id}>
                   <td><div className="aluno-cel"><Avatar aluno={a} /><div><strong>{a.nome}</strong><span className="muted small">{a.responsavel} · {a.telefoneResp}</span></div></div></td>
-                  <td data-rot="Escola / turno">{d.escolas.find((e) => e.id === a.escolaId)?.nome}<br /><span className="muted small">{a.turno === 'manha' ? 'Manhã' : 'Tarde'} · {a.serie}</span></td>
+                  <td data-rot="Escola / turno">{d.escolas.find((e) => e.id === a.escolaId)?.nome}<br /><span className="muted small">{ICONE_TURNO[a.turno]} {NOME_TURNO[a.turno]} · {a.serie} · entra {horarioAlvo(d.mapaEscolas.get(a.escolaId), a.turno, 'ida') ?? '—'}</span></td>
                   <td className="small td-largo" data-rot="Endereço">{a.endereco}</td>
                   <td data-rot="Mensalidade">{reais(a.mensalidade)}<br />{p && <span className={`tag ${p.status === 'pago' ? 'tag-verde' : atrasado(p) ? 'tag-vermelho' : 'tag-laranja'}`}>{p.status === 'pago' ? '✓ Pago' : atrasado(p) ? 'Atrasado' : 'Pendente'}</span>}</td>
-                  <td data-rot="Vai hoje?">{a.ativo && <Toggle on={!d.naoVao.has(a.id)} onChange={(v) => void definirPresenca(a.id, v, v ? undefined : 'Marcado pelo tio')} />}</td>
+                  <td data-rot="Van hoje">{a.ativo && <SeletorPlano valor={d.plano(a.id)} onChange={(x) => void definirPresenca(a.id, x, undefined, 'motorista')} />}</td>
                   <td className="td-acoes"><button className="btn btn-claro btn-sm" onClick={() => setEditando(a)}>Editar</button></td>
                 </tr>
               );
@@ -176,7 +246,7 @@ function FormAluno({ inicial, d, onFechar }: { inicial: Aluno; d: DadosVan; onFe
           <label className="fld"><span>Escola</span><select value={a.escolaId} onChange={(e) => set('escolaId', e.target.value)}>{d.escolas.filter((e) => d.van!.escolaIds.includes(e.id)).map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}</select></label>
           <div className="dupla">
             <label className="fld"><span>Série</span><input value={a.serie} onChange={(e) => set('serie', e.target.value)} /></label>
-            <label className="fld"><span>Turno</span><select value={a.turno} onChange={(e) => set('turno', e.target.value as Turno)}><option value="manha">Manhã</option><option value="tarde">Tarde</option></select></label>
+            <label className="fld"><span>Turno</span><select value={a.turno} onChange={(e) => set('turno', e.target.value as Turno)}>{TURNOS.map((t) => <option key={t} value={t}>{NOME_TURNO[t]}</option>)}</select></label>
           </div>
         </div>
         <div className="dupla">

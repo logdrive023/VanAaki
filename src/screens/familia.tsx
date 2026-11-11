@@ -3,9 +3,11 @@ import { useState } from 'react';
 import Mapa3D, { type Marcador } from '../components/Mapa3D';
 import { db } from '../db/db';
 import { ALUNO_PADRAO } from '../db/seed';
-import type { Aluno, Viagem } from '../db/types';
+import type { Aluno, Escola, Viagem } from '../db/types';
 import { visaoFamilia, type VisaoFamilia } from '../lib/privacidade';
+import { NOME_TURNO, planoDe, type Plano } from '../lib/turnos';
 import { hoje, hora, horaMais, primeiroNome } from '../lib/util';
+import { idxAluno, idxEscola } from '../services/viagem';
 
 /** Perfil escolhido nesta aba (pais/aluno). Fica salvo no navegador para o teste. */
 export function useAlunoPerfil(): [string, (id: string) => void] {
@@ -21,49 +23,62 @@ export function useFamilia(alunoId: string) {
   const escola = useLiveQuery(() => (aluno ? db.escolas.get(aluno.escolaId) : undefined), [aluno?.escolaId]);
   const viagem = useLiveQuery(async () => {
     if (!aluno) return undefined;
-    const l = await db.viagens.where('data').equals(hoje()).filter((v) => v.vanId === aluno.vanId && v.status !== 'cancelada' && v.paradas.some((p) => p.alunoId === alunoId)).toArray();
+    const l = await db.viagens.where('data').equals(hoje()).filter((v) => v.vanId === aluno.vanId && v.status !== 'cancelada' && idxAluno(v, alunoId) >= 0).toArray();
     return l.find((v) => v.status === 'em_andamento') ?? l.sort((a, b) => b.iniciadaEm.localeCompare(a.iniciadaEm))[0];
   }, [aluno?.vanId, alunoId]);
   const presenca = useLiveQuery(() => db.presencas.get(`${alunoId}|${hoje()}`), [alunoId]);
   const irmaos = useLiveQuery(() => db.alunos.filter((a) => a.ativo).toArray()) ?? [];
-  const visao = aluno ? visaoFamilia(viagem, alunoId, aluno.local) : undefined;
-  return { aluno, van, escola, viagem, presenca, visao, perfis: irmaos, carregando: aluno === undefined };
+  const visao = aluno ? visaoFamilia(viagem, aluno, escola) : undefined;
+  return { aluno, van, escola, viagem, presenca, plano: planoDe(presenca), visao, perfis: irmaos, carregando: aluno === undefined };
 }
 
 export function SeletorAluno({ id, onChange, perfis }: { id: string; onChange: (id: string) => void; perfis: Aluno[] }) {
   return (
     <select className="seletor-perfil" value={id} onChange={(e) => onChange(e.target.value)} title="Trocar perfil (teste)">
-      {perfis.map((a) => <option key={a.id} value={a.id}>{a.nome}</option>)}
+      {perfis.map((a) => <option key={a.id} value={a.id}>{a.nome} · {NOME_TURNO[a.turno]}</option>)}
     </select>
   );
 }
 
+const paradas = (n: number) => `${n} parada${n > 1 ? 's' : ''}`;
+/** 'Falta 1 parada' / 'Faltam 3 paradas' */
+const faltam = (n: number, minuscula = false) => { const t = `${n > 1 ? 'Faltam' : 'Falta'} ${paradas(n)}`; return minuscula ? t[0].toLowerCase() + t.slice(1) : t; };
+
 /** Texto do status, igual para pais e aluno (respeitando a privacidade). */
-export function textoStatus(v: VisaoFamilia, a: Aluno, viagem: Viagem | undefined, destino: string, jeitoAluno = false) {
+export function textoStatus(v: VisaoFamilia, a: Aluno, viagem: Viagem | undefined, escola: string, plano: Plano, jeitoAluno = false) {
   const n = jeitoAluno ? 'você' : primeiroNome(a.nome);
-  const ida = viagem?.tipo !== 'volta';
+  const N = jeitoAluno ? 'Você' : primeiroNome(a.nome);
+  const prev = `previsão ~${horaMais(v.eta ?? 0)}`;
   switch (v.fase) {
-    case 'sem_viagem': return { ic: '🅿️', titulo: 'A van ainda não saiu', sub: 'Você recebe um aviso quando o tio iniciar a rota.' };
-    case 'nao_vai': return { ic: '🏠', titulo: jeitoAluno ? 'Hoje você não vai de van' : `${n} não vai hoje`, sub: 'A rota do tio já foi ajustada.' };
-    case 'ausente': return { ic: '🚫', titulo: 'O tio passou e não encontrou', sub: `Às ${hora(viagem?.paradas.find((p) => p.alunoId === a.id)?.hora)}` };
-    case 'aguardando': return {
-      ic: '🔒', titulo: ida ? 'O tio está buscando outros alunos' : (jeitoAluno ? 'Você está na van' : `${n} está na van`),
-      sub: `${v.paradasAntes === 0 ? 'Você é o próximo' : `Faltam ${v.paradasAntes} parada${v.paradasAntes > 1 ? 's' : ''} antes ${jeitoAluno ? 'de você' : 'da sua casa'}`} · previsão ~${horaMais(v.eta ?? 0)}`,
-    };
-    case 'proximo': return { ic: '🔔', titulo: jeitoAluno ? 'Você é o próximo!' : `${n} é o próximo!`, sub: `A van chega em ~${v.eta} min` };
-    case 'na_porta': return { ic: '📍', titulo: ida ? 'O tio chegou no portão!' : 'A van chegou na sua casa!', sub: ida ? 'Pode embarcar 🚐' : 'Hora de descer' };
-    case 'a_bordo': return { ic: '🚐', titulo: jeitoAluno ? 'Você está a bordo' : `${n} está a bordo`, sub: `Buscando mais ${v.paradasAntes} colega${v.paradasAntes > 1 ? 's' : ''} · chega em ${destino} ~${horaMais(v.eta ?? 0)}` };
-    case 'a_bordo_final': return { ic: '🏫', titulo: `A caminho de ${destino}`, sub: `Chega em ~${v.eta} min` };
-    case 'chegou_destino': return { ic: '🏫', titulo: jeitoAluno ? `Você chegou em ${destino}` : `${n} chegou em ${destino}`, sub: `Às ${hora(viagem?.concluidaEm)}` };
-    case 'entregue': return { ic: '🏠', titulo: jeitoAluno ? 'Você chegou em casa' : `${n} chegou em casa`, sub: `Às ${hora(viagem?.paradas.find((p) => p.alunoId === a.id)?.hora)}` };
+    case 'sem_viagem':
+      if (plano === 'so_volta') return { ic: '🏫', titulo: jeitoAluno ? 'Hoje seus pais te levam' : `Hoje você leva ${n}`, sub: 'O tio traz na volta. Avisamos quando ele sair da escola.' };
+      if (plano === 'so_ida') return { ic: '🚐', titulo: 'Hoje só a ida de van', sub: jeitoAluno ? 'Seus pais te buscam na escola.' : `Você busca ${n} na escola.` };
+      if (plano === 'nao_vai') return { ic: '🏠', titulo: jeitoAluno ? 'Hoje você não vai de van' : `${N} não vai de van hoje`, sub: 'O tio já sabe e a rota foi ajustada.' };
+      return { ic: '🅿️', titulo: 'A van ainda não saiu', sub: `Turno da ${NOME_TURNO[a.turno].toLowerCase()} · você recebe um aviso quando o tio iniciar a rota.` };
+    case 'nao_vai': return { ic: '🏠', titulo: viagem?.tipo === 'volta' ? (jeitoAluno ? 'Hoje seus pais te buscam' : `Você busca ${n} hoje`) : (jeitoAluno ? 'Hoje seus pais te levam' : `Você leva ${n} hoje`), sub: 'Combinado com o tio: a rota já foi ajustada.' };
+    case 'ausente': return { ic: '🚫', titulo: 'O tio passou e não encontrou', sub: `Às ${hora(v.horaFase)}` };
+    case 'aguardando': return viagem?.tipo === 'volta'
+      ? { ic: '🔒', titulo: `${N} está na van`, sub: `${v.paradasAntes ? `${faltam(v.paradasAntes)} antes ${jeitoAluno ? 'da sua casa' : 'da sua casa'}` : 'Você é o próximo'} · ${prev}` }
+      : { ic: '🔒', titulo: 'O tio está buscando outros alunos', sub: `${v.paradasAntes ? `${faltam(v.paradasAntes)} antes ${jeitoAluno ? 'de você' : 'da sua casa'}` : 'Você é o próximo'} · ${prev}` };
+    case 'proximo': return { ic: '🔔', titulo: jeitoAluno ? 'Você é o próximo!' : `${N} é o próximo!`, sub: `A van chega ${viagem?.tipo === 'volta' ? 'na sua casa' : 'no portão'} em ~${v.eta} min` };
+    case 'na_porta': return viagem?.tipo === 'volta'
+      ? { ic: '📍', titulo: 'A van chegou na sua casa!', sub: 'Hora de descer' }
+      : { ic: '📍', titulo: 'O tio chegou no portão!', sub: 'Pode embarcar 🚐' };
+    case 'a_bordo': return { ic: '🚐', titulo: jeitoAluno ? 'Você está a bordo' : `${N} está a bordo`, sub: `${faltam(v.paradasAntes)} até ${escola} · ${prev}` };
+    case 'a_bordo_final': return { ic: '🏫', titulo: `A caminho de ${escola}`, sub: `Chega em ~${v.eta} min` };
+    case 'chegou_escola': return { ic: '🏫', titulo: jeitoAluno ? `Você chegou em ${escola}` : `${N} chegou em ${escola}`, sub: `Às ${hora(v.horaFase)}` };
+    case 'volta_outra_escola': return { ic: '🔒', titulo: 'O tio está buscando em outra escola', sub: `Depois vem para ${escola} · ${faltam(v.paradasAntes, true)} · ${prev}` };
+    case 'volta_indo_escola': return { ic: '🏫', titulo: `O tio está indo para ${escola}`, sub: `Chega em ~${v.eta} min para buscar ${n}` };
+    case 'volta_na_escola': return { ic: '📍', titulo: `O tio chegou em ${escola}`, sub: jeitoAluno ? 'Pode ir para a van 🚐' : `${N} já pode embarcar` };
+    case 'entregue': return { ic: '🏠', titulo: jeitoAluno ? 'Você chegou em casa' : `${N} chegou em casa`, sub: `Às ${hora(v.horaFase)}` };
   }
 }
 
-/** Mapa da família: só a van, a casa (ou o destino) e o trecho permitido. */
-export function MapaFamilia({ v, aluno, viagem, altura = 320 }: { v: VisaoFamilia; aluno: Aluno; viagem: Viagem; altura?: number | string }) {
+/** Mapa da família: só a van, a casa (ou a escola do filho) e o trecho permitido. */
+export function MapaFamilia({ v, aluno, escola, viagem, altura = 320 }: { v: VisaoFamilia; aluno: Aluno; escola?: Escola; viagem: Viagem; altura?: number | string }) {
   const mk: Marcador[] = [
-    v.fase === 'a_bordo_final'
-      ? { id: 'destino', pos: viagem.destino, tipo: viagem.tipo === 'ida' ? 'escola' : 'garagem', rotulo: viagem.destinoNome }
+    v.alvoTipo === 'escola' && escola
+      ? { id: 'escola', pos: escola.local, tipo: 'escola', rotulo: escola.nome }
       : { id: 'casa', pos: aluno.local, tipo: 'casa', rotulo: 'Sua casa' },
     { id: 'van', pos: viagem.pos, tipo: 'van' },
   ];
@@ -71,19 +86,23 @@ export function MapaFamilia({ v, aluno, viagem, altura = 320 }: { v: VisaoFamili
 }
 
 /** Linha do tempo só do próprio aluno (estilo rastreio de encomenda). */
-export function LinhaTempo({ viagem, alunoId, v }: { viagem?: Viagem; alunoId: string; v: VisaoFamilia }) {
+export function LinhaTempo({ viagem, aluno, escola, v }: { viagem?: Viagem; aluno: Aluno; escola?: Escola; v: VisaoFamilia }) {
   if (!viagem) return null;
-  const p = viagem.paradas.find((x) => x.alunoId === alunoId);
-  const ida = viagem.tipo === 'ida';
-  const passos = ida ? [
-    { ok: true, t: 'Van saiu para a rota', h: hora(viagem.iniciadaEm) },
-    { ok: viagem.avisados.includes(alunoId), agora: v.fase === 'aguardando', t: 'Você é o próximo', h: '' },
+  const p = viagem.paradas[idxAluno(viagem, aluno.id)];
+  const ps = viagem.paradas[idxEscola(viagem, aluno.escolaId)];
+  const nomeEsc = escola?.nome ?? 'escola';
+  const naEscola = ps?.status === 'feito';
+  const passos = viagem.tipo === 'ida' ? [
+    { ok: true, t: `Van saiu (${NOME_TURNO[viagem.turno].toLowerCase()})`, h: hora(viagem.iniciadaEm) },
+    { ok: viagem.avisados.includes(aluno.id), agora: v.fase === 'aguardando', t: 'É o próximo a ser buscado', h: '' },
     { ok: p?.status === 'feito', agora: v.fase === 'proximo' || v.fase === 'na_porta', t: p?.status === 'ausente' ? 'Não embarcou' : 'Embarcou', h: p?.hora ? hora(p.hora) : '' },
-    { ok: viagem.status === 'concluida' && p?.status === 'feito', agora: v.fase === 'a_bordo' || v.fase === 'a_bordo_final', t: `Chegou em ${viagem.destinoNome}`, h: viagem.concluidaEm ? hora(viagem.concluidaEm) : '' },
+    { ok: naEscola && p?.status === 'feito', agora: v.fase === 'a_bordo' || v.fase === 'a_bordo_final', t: `Chegou em ${nomeEsc}`, h: naEscola ? hora(ps.hora) : '' },
     { ok: !!p?.recebidoEscolaEm, t: 'Entrada confirmada pela escola', h: p?.recebidoEscolaEm ? hora(p.recebidoEscolaEm) : '' },
   ] : [
-    { ok: true, t: 'Saiu da escola', h: hora(viagem.iniciadaEm) },
-    { ok: viagem.avisados.includes(alunoId), agora: v.fase === 'aguardando', t: 'Próximo a ser entregue', h: '' },
+    { ok: true, t: `Tio saiu para buscar (${NOME_TURNO[viagem.turno].toLowerCase()})`, h: hora(viagem.iniciadaEm) },
+    { ok: naEscola || v.fase === 'volta_na_escola', agora: v.fase === 'volta_outra_escola' || v.fase === 'volta_indo_escola', t: `Tio chegou em ${nomeEsc}`, h: '' },
+    { ok: naEscola, agora: v.fase === 'volta_na_escola', t: 'Saiu da escola com o tio', h: naEscola ? hora(ps.hora) : '' },
+    { ok: viagem.avisados.includes(aluno.id), agora: v.fase === 'aguardando', t: 'É o próximo a ser entregue', h: '' },
     { ok: p?.status === 'feito', agora: v.fase === 'proximo' || v.fase === 'na_porta', t: 'Chegou em casa', h: p?.hora ? hora(p.hora) : '' },
   ];
   return (

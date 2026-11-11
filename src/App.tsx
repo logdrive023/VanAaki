@@ -24,13 +24,13 @@ class Protecao extends Component<{ children: ReactNode }, { erro?: Error }> {
 
 /** Roteia pelo hash: #/motorista, #/pais, #/aluno, #/escola (+ /aba). Sem perfil → landing page. */
 export default function App() {
-  const [perfil, aba] = useHash();
+  const [perfil, aba, extra] = useHash();
   useEffect(() => {
     if (!perfil) window.location.replace('./index.html');
     const nomes: Record<string, string> = { motorista: 'Motorista', pais: 'Pais', aluno: 'Aluno', escola: 'Escola' };
     document.title = `VanAaki · ${nomes[perfil] ?? ''}`;
   }, [perfil]);
-  const tela = perfil === 'motorista' ? <Motorista aba={aba} />
+  const tela = perfil === 'motorista' ? <Motorista aba={aba} extra={extra} />
     : perfil === 'pais' ? <Pais aba={aba} />
     : perfil === 'aluno' ? <Aluno aba={aba} />
     : perfil === 'escola' ? <Escola aba={aba} />

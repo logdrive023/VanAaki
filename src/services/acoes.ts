@@ -3,22 +3,32 @@ import type { Aluno, Pagamento } from '../db/types';
 import { agoraIso, hoje, mesAtual, nomeMes, primeiroNome, reais, uid } from '../lib/util';
 import { notificar } from './notificar';
 import { darPontos } from './pontos';
-import { ajustarRotaPorAusencia } from './viagem';
+import { nomePlano, planoDe, trechosDoPlano, type Plano } from '../lib/turnos';
+import { ajustarRotaPorPresenca } from './viagem';
 
-// ---------------- presença ----------------
+// ---------------- presença (por trecho) ----------------
 
-export async function definirPresenca(alunoId: string, vai: boolean, motivo?: string) {
+/**
+ * O combinado do dia: van na ida e na volta, só em um trecho ("eu levo, o tio traz") ou não vai.
+ * Quem pode mudar: a família e o tio. Se a rota já está andando, ela é reotimizada na hora.
+ */
+export async function definirPresenca(alunoId: string, plano: Plano, motivo?: string, porQuem: 'pais' | 'motorista' = 'pais') {
   const a = await db.alunos.get(alunoId);
   if (!a) return;
   const data = hoje();
-  await db.presencas.put({ id: `${alunoId}|${data}`, alunoId, data, vai, motivo, avisadoEm: agoraIso() });
-  if (!vai) {
-    await notificar({ para: 'motorista', vanId: a.vanId, icone: '🙋', titulo: `${primeiroNome(a.nome)} não vai hoje`, texto: motivo ? `Motivo: ${motivo}` : 'Aviso da família' });
-    await darPontos(a, 'aviso_ausencia', 'sistema', undefined, `aviso|${alunoId}|${data}`);
-    await ajustarRotaPorAusencia(alunoId);
+  const antes = planoDe(await db.presencas.get(`${alunoId}|${data}`));
+  if (antes === plano) return;
+  const { ida, volta } = trechosDoPlano(plano);
+  await db.presencas.put({ id: `${alunoId}|${data}`, alunoId, data, ida, volta, motivo, avisadoEm: agoraIso() });
+  const pl = nomePlano(plano);
+  const nome = primeiroNome(a.nome);
+  if (porQuem === 'pais') {
+    await notificar({ para: 'motorista', vanId: a.vanId, icone: pl.icone, titulo: `${nome}: ${pl.nome.toLowerCase()} hoje`, texto: `${pl.desc}${motivo ? ` · ${motivo}` : ''}` });
   } else {
-    await notificar({ para: 'motorista', vanId: a.vanId, icone: '👍', titulo: `${primeiroNome(a.nome)} vai hoje`, texto: 'A família desfez o aviso de ausência.' });
+    await notificar({ para: 'pais', alunoId, icone: pl.icone, titulo: `O tio marcou: ${pl.nome.toLowerCase()} hoje`, texto: pl.desc });
   }
+  if (plano !== 'ambos') await darPontos(a, 'aviso_ausencia', 'sistema', undefined, `aviso|${alunoId}|${data}`);
+  await ajustarRotaPorPresenca(alunoId);
 }
 
 // ---------------- pagamentos ----------------

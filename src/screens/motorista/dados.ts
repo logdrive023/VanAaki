@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
+import { planoDe, type Plano } from '../../lib/turnos';
 import { hoje, mesAtual } from '../../lib/util';
 
 /**
@@ -20,10 +21,15 @@ export function useDadosVan(vanId: string) {
   const ativos = alunos.filter((a) => a.ativo);
   const idsAtivos = new Set(ativos.map((a) => a.id));
   const ativa = viagensHoje.find((v) => v.status === 'em_andamento');
+  const concluidas = viagensHoje.filter((v) => v.status === 'concluida');
   const ultima = [...viagensHoje].filter((v) => v.status === 'concluida').sort((a, b) => (b.concluidaEm ?? '').localeCompare(a.concluidaEm ?? ''))[0];
-  const naoVao = new Set(presencas.filter((p) => !p.vai && idsAtivos.has(p.alunoId)).map((p) => p.alunoId));
+  /** combinado do dia de cada aluno (sem aviso = ida e volta) */
+  const presencaPorAluno = new Map(presencas.map((p) => [p.alunoId, p]));
+  const plano = (alunoId: string): Plano => planoDe(presencaPorAluno.get(alunoId));
+  const avisos = presencas.filter((p) => idsAtivos.has(p.alunoId) && planoDe(p) !== 'ambos');
   return {
-    van, alunos, ativos, ativa, ultima, presencas, naoVao, escolas, carregando,
+    van, alunos, ativos, ativa, ultima, concluidas, viagensHoje, presencas, presencaPorAluno, plano, avisos, escolas, carregando,
+    mapaEscolas: new Map(escolas.map((e) => [e.id, e])),
     mapaAlunos: new Map(alunos.map((a) => [a.id, a])),
     pagamentosMes: (pagamentosR ?? []).filter((p) => idsAtivos.has(p.alunoId)),
   };

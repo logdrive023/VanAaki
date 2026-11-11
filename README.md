@@ -38,9 +38,18 @@ Cada pessoa que abre o link tem os próprios dados de exemplo, salvos só no nav
 
 ## Regras principais
 
+**Turnos e várias escolas:** o motorista escolhe os turnos em que trabalha (manhã, tarde, noite) e as escolas de cada um.
+Cada escola tem horário de entrada e saída por turno. Na **ida** a van busca as casas (ordem otimizada) e deixa nas escolas
+pela ordem da entrada; na **volta** busca nas escolas pela ordem da saída e entrega as casas. A escola vê o seu turno:
+chegadas, saídas, quem confirmou entrada e a **previsão de atraso** (previsão de chegada × horário da escola).
+
+**Ida e volta separadas:** o combinado do dia pode ser *ida e volta*, *só a volta* ("eu levo, o tio traz"),
+*só a ida* ("o tio leva, eu busco") ou *não vai*. A família e o tio podem mudar; se a rota já está andando, ela é reotimizada.
+
+
 **Privacidade (combinado com o time):** a família não vê onde a van está enquanto o tio busca outras crianças
 e não sabe quem são nem onde moram. Vê só o próprio filho, quantas paradas faltam, a previsão e o destino final.
-O mapa abre quando a próxima parada é a casa dela, ou quando o filho já está a bordo no trecho final até a escola.
+O mapa abre quando o próximo destino da van é a casa dela ou a escola do filho.
 O ranking usa apelidos. Regras em `src/lib/privacidade.ts`.
 
 **Gamificação:** pontos automáticos (pronto no portão +10, embarque +3, avisar ausência +2, faltar sem avisar −5),

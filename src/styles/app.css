@@ -305,3 +305,27 @@ hr.sep { border: 0; border-top: 1px solid var(--borda); margin: 6px 0; }
   .abas a { flex: 1; text-align: center; }
   .busca-mini { min-width: 0; width: 100%; }
 }
+
+/* ---------- combinado do dia (ida / volta) ---------- */
+.planos-dia { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.plano-dia { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 12px; border-radius: 14px; border: 2px solid var(--borda); background: #fff; text-align: left; color: var(--texto); min-height: 84px; }
+.plano-dia .ic { font-size: 20px; }
+.plano-dia strong { font-size: 14px; }
+.plano-dia small { color: var(--texto-2); font-size: 12px; font-weight: 700; line-height: 1.25; }
+.plano-dia.ativo { border-color: var(--verde); background: var(--verde-claro); }
+.plano-dia.nao.ativo { border-color: var(--vermelho); background: var(--vermelho-claro); }
+.seletor-plano { border: 2px solid var(--borda); border-radius: 10px; padding: 6px 8px; font-weight: 800; font-size: 13px; background: #fff; max-width: 150px; }
+.seletor-plano.mudou { border-color: var(--laranja); background: var(--laranja-claro); }
+
+/* ---------- turnos ---------- */
+.chips-turno { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip-turno { padding: 8px 14px; border-radius: 999px; border: 2px solid var(--borda); background: #fff; font-weight: 800; font-size: 14px; color: var(--texto); }
+.chip-turno.ativo { background: var(--azul); border-color: var(--azul); color: var(--amarelo); }
+.chip-turno small { font-weight: 700; opacity: .75; margin-left: 4px; }
+.turno-card { border: 2px solid var(--borda); border-radius: 16px; padding: 14px; display: grid; gap: 8px; }
+.turno-card.off { opacity: .55; }
+.turno-card .escolas-turno { display: flex; flex-wrap: wrap; gap: 6px; }
+.trecho-status { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; padding: 8px 10px; border-radius: 10px; background: var(--fundo); }
+.mk-escola.mk-feito-esc { background: #9AA7BD; }
+.atraso { color: #B4252A; background: var(--vermelho-claro); }
+.no-horario { color: #0E7A45; background: var(--verde-claro); }

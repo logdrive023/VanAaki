@@ -1,5 +1,5 @@
 import { db } from './db';
-import type { Aluno, EventoPontos, Recompensa, Van } from './types';
+import type { Aluno, EventoPontos, Recompensa, Turno, Van } from './types';
 import { tipoEvento } from '../lib/gamificacao';
 import { addDias, agoraIso, CORES, hoje, mesAtual, uid } from '../lib/util';
 import { novaCobranca } from '../services/acoes';
@@ -8,23 +8,33 @@ import { novaCobranca } from '../services/acoes';
 export const VAN_PRINCIPAL = 'van-carlos';
 export const ESCOLA_PRINCIPAL = 'esc-santa-maria';
 export const ALUNO_PADRAO = 'al-lucas';
-const VERSAO_SEED = 3;
+const VERSAO_SEED = 4;
 
 /** Gerador pseudoaleatório com semente (o histórico de exemplo sai sempre igual). */
 function rng(seed: number) {
   return () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 }
 
-const ALUNOS: [string, string, string, string, string, string, number, number, number][] = [
-  // id, nome, apelido, série, responsável, endereço, lat, lng, mensalidade
-  ['al-ana', 'Ana Souza', 'Aninha', '3º ano', 'Juliana Souza', 'Rua Joaquim Távora, 410', -23.5958, -46.6318, 42000],
-  ['al-pedro', 'Pedro Lima', 'Pedrão', '5º ano', 'Rodrigo Lima', 'Rua Sena Madureira, 455', -23.5946, -46.6243, 42000],
-  [ALUNO_PADRAO, 'Lucas Andrade', 'Luquinhas', '4º ano', 'Rafael Andrade', 'Rua Áurea, 88', -23.5922, -46.6289, 42000],
-  ['al-bia', 'Beatriz Faria', 'Bia', '1º EM', 'Carla Faria', 'Rua Machado de Assis, 230', -23.5903, -46.6232, 45000],
-  ['al-gabriel', 'Gabriel Rocha', 'Gabi', '2º ano', 'Patrícia Rocha', 'Rua Coronel Lisboa, 150', -23.5979, -46.6352, 42000],
-  ['al-maria', 'Maria Clara Nunes', 'Clarinha', '6º ano', 'André Nunes', 'Rua Humberto I, 702', -23.5895, -46.6304, 42000],
-  ['al-enzo', 'Enzo Martins', 'Enzão', '5º ano', 'Fernanda Martins', 'Rua Pelotas, 95', -23.5934, -46.6374, 42000],
-  ['al-sofia', 'Sofia Ribeiro', 'Sofi', '4º ano', 'Marcos Ribeiro', 'Rua Rio Grande, 310', -23.5880, -46.6262, 42000],
+const SM = ESCOLA_PRINCIPAL, HZ = 'esc-horizonte', RL = 'esc-roberto';
+const ALUNOS: [string, string, string, string, string, string, number, number, number, string, Turno][] = [
+  // id, nome, apelido, série, responsável, endereço, lat, lng, mensalidade, escola, turno
+  // manhã: Santa Maria (entra 07:15) e Horizonte (entra 07:30) na MESMA rota
+  ['al-ana', 'Ana Souza', 'Aninha', '3º ano', 'Juliana Souza', 'Rua Joaquim Távora, 410', -23.5958, -46.6318, 42000, SM, 'manha'],
+  ['al-pedro', 'Pedro Lima', 'Pedrão', '5º ano', 'Rodrigo Lima', 'Rua Sena Madureira, 455', -23.5946, -46.6243, 42000, SM, 'manha'],
+  [ALUNO_PADRAO, 'Lucas Andrade', 'Luquinhas', '4º ano', 'Rafael Andrade', 'Rua Áurea, 88', -23.5922, -46.6289, 42000, SM, 'manha'],
+  ['al-bia', 'Beatriz Faria', 'Bia', '1º EM', 'Carla Faria', 'Rua Machado de Assis, 230', -23.5903, -46.6232, 45000, SM, 'manha'],
+  ['al-gabriel', 'Gabriel Rocha', 'Gabi', '2º ano', 'Patrícia Rocha', 'Rua Coronel Lisboa, 150', -23.5979, -46.6352, 42000, SM, 'manha'],
+  ['al-maria', 'Maria Clara Nunes', 'Clarinha', '6º ano', 'André Nunes', 'Rua Humberto I, 702', -23.5895, -46.6304, 42000, SM, 'manha'],
+  ['al-enzo', 'Enzo Martins', 'Enzão', '5º ano', 'Fernanda Martins', 'Rua Pelotas, 95', -23.5934, -46.6374, 42000, HZ, 'manha'],
+  ['al-sofia', 'Sofia Ribeiro', 'Sofi', '4º ano', 'Marcos Ribeiro', 'Rua Rio Grande, 310', -23.5880, -46.6262, 42000, HZ, 'manha'],
+  // tarde: Roberto Lima (sai 17:40) e Santa Maria (sai 18:00)
+  ['al-davi', 'Davi Costa', 'Davizão', '3º ano', 'Renata Costa', 'Rua Tangará, 120', -23.5913, -46.6214, 42000, SM, 'tarde'],
+  ['al-helena', 'Helena Prado', 'Lena', '2º ano', 'Bruno Prado', 'Rua Dona Inácia Uchoa, 300', -23.5970, -46.6271, 42000, SM, 'tarde'],
+  ['al-theo', 'Theo Almeida', 'Theozinho', '7º ano', 'Camila Almeida', 'Rua Morgado de Mateus, 410', -23.5941, -46.6409, 39000, RL, 'tarde'],
+  ['al-alice', 'Alice Moura', 'Lili', '8º ano', 'Diego Moura', 'Rua Embaú, 220', -23.5993, -46.6331, 39000, RL, 'tarde'],
+  // noite: ensino médio noturno no Horizonte (entra 19:00, sai 22:30)
+  ['al-joao', 'João Pedro Silva', 'JP', '2º EM noturno', 'Sandra Silva', 'Rua França Pinto, 510', -23.5900, -46.6381, 38000, HZ, 'noite'],
+  ['al-larissa', 'Larissa Reis', 'Lari', '3º EM noturno', 'Paulo Reis', 'Rua Afonso Celso, 640', -23.5956, -46.6236, 38000, HZ, 'noite'],
 ];
 
 export async function garantirDados() {
@@ -40,20 +50,27 @@ export async function restaurarExemplo() {
     const data = hoje(), mes = mesAtual();
 
     await db.escolas.bulkAdd([
-      { id: ESCOLA_PRINCIPAL, nome: 'Colégio Santa Maria', endereco: 'Rua Domingos de Morais, 1.200 · Vila Mariana', local: { lat: -23.5861, lng: -46.6338 } },
-      { id: 'esc-horizonte', nome: 'Colégio Horizonte', endereco: 'Rua Vergueiro, 3.100 · Vila Mariana', local: { lat: -23.5822, lng: -46.6403 } },
-      { id: 'esc-roberto', nome: 'EE Prof. Roberto Lima', endereco: 'Rua Loefgren, 800 · Vila Clementino', local: { lat: -23.5968, lng: -46.6431 } },
+      { id: SM, nome: 'Colégio Santa Maria', endereco: 'Rua Domingos de Morais, 1.200 · Vila Mariana', local: { lat: -23.5861, lng: -46.6338 },
+        horarios: { manha: { entrada: '07:15', saida: '12:20' }, tarde: { entrada: '13:15', saida: '18:00' } } },
+      { id: HZ, nome: 'Colégio Horizonte', endereco: 'Rua Vergueiro, 3.100 · Vila Mariana', local: { lat: -23.5822, lng: -46.6403 },
+        horarios: { manha: { entrada: '07:30', saida: '12:40' }, noite: { entrada: '19:00', saida: '22:30' } } },
+      { id: RL, nome: 'EE Prof. Roberto Lima', endereco: 'Rua Loefgren, 800 · Vila Clementino', local: { lat: -23.5968, lng: -46.6431 },
+        horarios: { manha: { entrada: '07:00', saida: '12:00' }, tarde: { entrada: '13:00', saida: '17:40' } } },
     ]);
 
     const vans: Van[] = [
-      { id: VAN_PRINCIPAL, nome: 'Tio Carlos Transportes', motorista: 'Tio Carlos', telefone: '11 90000-0001', placa: 'FXK-2B19', modelo: 'Sprinter branca', garagem: { lat: -23.6003, lng: -46.6263 }, escolaIds: [ESCOLA_PRINCIPAL, 'esc-horizonte'], credenciamento: { [ESCOLA_PRINCIPAL]: 'credenciada', 'esc-horizonte': 'credenciada' }, precoPadrao: 42000, vagas: 12, avaliacao: 4.9 },
-      { id: 'van-sandra', nome: 'Tia Sandra Escolar', motorista: 'Tia Sandra', telefone: '11 90000-0002', placa: 'GHT-4C21', modelo: 'Master prata', garagem: { lat: -23.5800, lng: -46.6300 }, escolaIds: [ESCOLA_PRINCIPAL, 'esc-roberto'], credenciamento: { [ESCOLA_PRINCIPAL]: 'credenciada', 'esc-roberto': 'credenciada' }, precoPadrao: 48000, vagas: 1, avaliacao: 5 },
-      { id: 'van-coop', nome: 'Coopervan Zona Sul', motorista: 'Cooperativa', telefone: '11 90000-0003', placa: 'BRA-7E55', modelo: '14 vans', garagem: { lat: -23.6100, lng: -46.6400 }, escolaIds: [ESCOLA_PRINCIPAL, 'esc-horizonte', 'esc-roberto'], credenciamento: { [ESCOLA_PRINCIPAL]: 'pendente', 'esc-horizonte': 'credenciada', 'esc-roberto': 'credenciada' }, precoPadrao: 39000, vagas: 8, avaliacao: 4.7 },
+      { id: VAN_PRINCIPAL, nome: 'Tio Carlos Transportes', motorista: 'Tio Carlos', telefone: '11 90000-0001', placa: 'FXK-2B19', modelo: 'Sprinter branca', garagem: { lat: -23.6003, lng: -46.6263 }, escolaIds: [SM, HZ, RL], credenciamento: { [SM]: 'credenciada', [HZ]: 'credenciada', [RL]: 'credenciada' },
+        turnos: [{ turno: 'manha', ativo: true, escolaIds: [SM, HZ] }, { turno: 'tarde', ativo: true, escolaIds: [SM, RL] }, { turno: 'noite', ativo: true, escolaIds: [HZ] }],
+        precoPadrao: 42000, vagas: 12, avaliacao: 4.9 },
+      { id: 'van-sandra', nome: 'Tia Sandra Escolar', motorista: 'Tia Sandra', telefone: '11 90000-0002', placa: 'GHT-4C21', modelo: 'Master prata', garagem: { lat: -23.5800, lng: -46.6300 }, escolaIds: [SM, RL], credenciamento: { [SM]: 'credenciada', [RL]: 'credenciada' },
+        turnos: [{ turno: 'manha', ativo: true, escolaIds: [SM, RL] }, { turno: 'tarde', ativo: true, escolaIds: [SM] }, { turno: 'noite', ativo: false, escolaIds: [] }], precoPadrao: 48000, vagas: 1, avaliacao: 5 },
+      { id: 'van-coop', nome: 'Coopervan Zona Sul', motorista: 'Cooperativa', telefone: '11 90000-0003', placa: 'BRA-7E55', modelo: '14 vans', garagem: { lat: -23.6100, lng: -46.6400 }, escolaIds: [SM, HZ, RL], credenciamento: { [SM]: 'pendente', [HZ]: 'credenciada', [RL]: 'credenciada' },
+        turnos: [{ turno: 'manha', ativo: true, escolaIds: [SM, HZ, RL] }, { turno: 'tarde', ativo: true, escolaIds: [SM, HZ, RL] }, { turno: 'noite', ativo: true, escolaIds: [HZ] }], precoPadrao: 39000, vagas: 8, avaliacao: 4.7 },
     ];
     await db.vans.bulkAdd(vans);
 
-    const alunos: Aluno[] = ALUNOS.map(([id, nome, apelido, serie, resp, end, lat, lng, mens], i) => ({
-      id, vanId: VAN_PRINCIPAL, escolaId: ESCOLA_PRINCIPAL, nome, apelido, cor: CORES[i % CORES.length], serie, turno: 'manha',
+    const alunos: Aluno[] = ALUNOS.map(([id, nome, apelido, serie, resp, end, lat, lng, mens, escolaId, turno], i) => ({
+      id, vanId: VAN_PRINCIPAL, escolaId, nome, apelido, cor: CORES[i % CORES.length], serie, turno,
       responsavel: resp, telefoneResp: `11 9${String(1000 + i * 37).padStart(4, '0')}-${String(2000 + i * 53).padStart(4, '0')}`,
       endereco: end, local: { lat, lng }, mensalidade: mens, diaVencimento: id === 'al-gabriel' ? 28 : 10, ativo: true, criadoEm: agoraIso(),
     }));
@@ -68,8 +85,12 @@ export async function restaurarExemplo() {
       await db.pagamentos.add({ ...novaCobranca(a, mes), ...(pend ? {} : { status: 'pago' as const, pagoEm: `${mes}-05T10:00:00.000Z`, metodo: 'pix' as const }) });
     }
 
-    // Gabriel não vai hoje
-    await db.presencas.add({ id: `al-gabriel|${data}`, alunoId: 'al-gabriel', data, vai: false, motivo: 'Está com febre', avisadoEm: agoraIso() });
+    // avisos do dia: Gabriel não vai; a mãe da Ana leva de manhã (o tio só traz); a mãe do Davi busca na escola
+    await db.presencas.bulkAdd([
+      { id: `al-gabriel|${data}`, alunoId: 'al-gabriel', data, ida: false, volta: false, motivo: 'Está com febre', avisadoEm: agoraIso() },
+      { id: `al-ana|${data}`, alunoId: 'al-ana', data, ida: false, volta: true, motivo: 'Consulta no dentista cedo', avisadoEm: agoraIso() },
+      { id: `al-davi|${data}`, alunoId: 'al-davi', data, ida: true, volta: false, motivo: 'Vou buscar para o futebol', avisadoEm: agoraIso() },
+    ]);
 
     // histórico de pontos (últimas 4 semanas úteis)
     const r = rng(42);
@@ -87,7 +108,7 @@ export async function restaurarExemplo() {
         const x = r();
         if (x < 0.04) add(a.id, d, 'ausente_sem_aviso');
         else if (x < 0.08) add(a.id, d, 'aviso_ausencia');
-        else add(a.id, d, r() < perfil[a.id] ? 'pronto_portao' : 'embarque');
+        else add(a.id, d, r() < (perfil[a.id] ?? 0.7) ? 'pronto_portao' : 'embarque');
         if (r() < 0.12) add(a.id, d, 'cinto');
         if (r() < 0.06) add(a.id, d, 'educado');
         if (r() < 0.03) add(a.id, d, 'ajudou');
