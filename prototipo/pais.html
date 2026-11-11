@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VanAaki — App dos pais</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <nav class="proto-bar">
+    <strong>Protótipo VanAaki</strong>
+    <a href="index.html">1 · Home</a>
+    <a href="dono.html">2 · Painel do tio</a>
+    <a href="pais.html" class="ativo">3 · App dos pais</a>
+    <a href="aluno.html">4 · App do aluno</a>
+    <a href="rastreio.html">5 · Rastreio</a>
+  </nav>
+
+  <section class="vitrine pais">
+    <div class="vitrine-texto">
+      <span class="tag tag-amarelo" style="background:#fff">App dos pais</span>
+      <h1 style="margin-top:14px">Tranquilidade do portão até a sala de aula.</h1>
+      <p>O pai vê onde a van está, sabe quando o filho é o próximo, avisa se ele não vai e paga a mensalidade, tudo numa tela.</p>
+      <ul>
+        <li><span>🔔</span> Aviso "seu filho é o próximo"</li>
+        <li><span>📍</span> Van no mapa em tempo real</li>
+        <li><span>🙋</span> "Hoje não vai" com um toque</li>
+        <li><span>💳</span> Mensalidade por Pix no app</li>
+      </ul>
+    </div>
+
+    <div class="celular">
+      <div class="tela">
+        <div class="status-bar"><span>6:51</span><span>📶 🔋</span></div>
+        <div class="tela-scroll">
+          <div class="app-cab">
+            <div><small>Bom dia,</small><h2>Matheus 👋</h2></div>
+            <div class="avatar av-6">M</div>
+          </div>
+
+          <div class="notif-topo">
+            <div class="ic">🔔</div>
+            <div><strong>Lucas é o próximo a ser buscado!</strong><small>Tio Carlos saiu da casa do Pedro agora</small></div>
+          </div>
+
+          <div class="filho-card">
+            <div class="linha">
+              <div class="avatar av-6">L</div>
+              <div><h3>Lucas</h3><span style="font-weight:700;font-size:13px">Colégio Santa Maria · 4º ano</span></div>
+              <span class="tag" style="margin-left:auto;background:var(--azul);color:#fff">Manhã</span>
+            </div>
+            <div class="eta">
+              <div><span style="font-weight:800;font-size:12px">VAN CHEGA EM</span><div class="min">4 <small>min</small></div></div>
+              <a href="rastreio.html" class="btn btn-escuro btn-sm">📍 Ver no mapa</a>
+            </div>
+            <div class="trilha"><i class="ok"></i><i class="ok"></i><i class="agora"></i><i></i><i></i></div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:800;margin-top:6px">
+              <span>Saiu</span><span>Você</span><span>Escola</span>
+            </div>
+          </div>
+
+          <div class="m-card">
+            <h4>O Lucas vai hoje? <span class="tag tag-cinza">Qua, 11/11</span></h4>
+            <div class="vai-hoje">
+              <a class="opcao sim ativo">✅ Vai</a>
+              <a class="opcao nao">🚫 Não vai</a>
+            </div>
+            <p class="muted small" style="margin-top:8px">Avise até 6h. A rota do tio é ajustada automaticamente.</p>
+          </div>
+
+          <div class="m-card">
+            <h4>Motorista</h4>
+            <div class="motorista-box">
+              <div class="avatar av-1">TC</div>
+              <div><strong>Tio Carlos</strong><br><span class="muted small">Sprinter branca · <span class="placa">FXK-2B19</span></span></div>
+              <div class="acoes">
+                <span class="icone-btn">💬</span>
+                <span class="icone-btn verde">📞</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="m-card">
+            <h4>Mensalidades <a href="#" class="small" style="color:var(--azul-2)">Ver tudo</a></h4>
+            <div class="linha-item">
+              <div><strong>Dezembro</strong><span class="muted small">Vence 10/12 · R$ 420,00</span></div>
+              <a href="#" class="btn btn-primario btn-sm">Pagar Pix</a>
+            </div>
+            <div class="linha-item">
+              <div><strong>Novembro</strong><span class="muted small">Pago em 05/11</span></div>
+              <span class="tag tag-verde">✓ Pago</span>
+            </div>
+          </div>
+
+          <div class="m-card">
+            <h4>Histórico da semana</h4>
+            <div class="linha-item"><div><strong>Ter, 10/11</strong><span class="muted small">Embarcou 06:54 · Chegou 07:13</span></div><span class="tag tag-verde">✓</span></div>
+            <div class="linha-item"><div><strong>Seg, 09/11</strong><span class="muted small">Embarcou 06:56 · Chegou 07:16</span></div><span class="tag tag-verde">✓</span></div>
+            <div class="linha-item"><div><strong>Sex, 06/11</strong><span class="muted small">Avisou que não ia</span></div><span class="tag tag-cinza">—</span></div>
+          </div>
+        </div>
+        <nav class="tab-bar">
+          <a class="ativo"><i>🏠</i>Início</a>
+          <a href="rastreio.html"><i>📍</i>Rastreio</a>
+          <a><i>💳</i>Pagamentos</a>
+          <a><i>💬</i>Chat</a>
+          <a><i>👤</i>Perfil</a>
+        </nav>
+      </div>
+    </div>
+  </section>
+
+</body>
+</html>

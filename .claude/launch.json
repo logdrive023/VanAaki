@@ -1,0 +1,8 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "vanaaki-dev", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev", "--", "--port", "5173", "--strictPort"], "port": 5173 },
+    { "name": "vanaaki-pwa", "runtimeExecutable": "npm", "runtimeArgs": ["run", "preview", "--", "--port", "4173", "--strictPort"], "port": 4173 },
+    { "name": "vanaaki-prototipo", "runtimeExecutable": "npx", "runtimeArgs": ["-y", "http-server@14.1.1", "prototipo", "-p", "5500", "-c-1"], "port": 5500 }
+  ]
+}

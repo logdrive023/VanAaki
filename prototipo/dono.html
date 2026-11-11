@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VanAaki — Painel do motorista</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <nav class="proto-bar">
+    <strong>Protótipo VanAaki</strong>
+    <a href="index.html">1 · Home</a>
+    <a href="dono.html" class="ativo">2 · Painel do tio</a>
+    <a href="pais.html">3 · App dos pais</a>
+    <a href="aluno.html">4 · App do aluno</a>
+    <a href="rastreio.html">5 · Rastreio</a>
+  </nav>
+
+  <div class="app">
+    <aside class="sidebar">
+      <a href="index.html" class="logo"><div class="logo-icone">🚐</div><span>Van<b>Aaki</b></span></a>
+      <nav class="side-menu">
+        <span class="side-rotulo">Operação</span>
+        <a href="#" class="ativo">📊 Painel</a>
+        <a href="#">👦 Alunos</a>
+        <a href="#">🗺️ Rotas do dia</a>
+        <a href="#">✅ Embarques</a>
+        <span class="side-rotulo" style="margin-top:12px">Gestão</span>
+        <a href="#">💰 Financeiro <span class="cont">6</span></a>
+        <a href="#">💬 Mensagens <span class="cont">3</span></a>
+        <a href="#">📄 Contratos</a>
+        <a href="#">⚙️ Configurações</a>
+      </nav>
+      <div class="side-upgrade">
+        <strong>🚀 Tem mais de uma van?</strong>
+        <p>Vire Cooperativa e gerencie todos os motoristas.</p>
+        <a href="index.html#planos" class="btn btn-primario btn-sm btn-bloco">Conhecer</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="main-topo">
+        <div>
+          <span class="muted small">Quarta, 11 de novembro</span>
+          <h1>Bom dia, Tio Carlos 👋</h1>
+        </div>
+        <div class="acoes">
+          <label class="busca-mini">🔍 <input type="text" placeholder="Buscar aluno, responsável..."></label>
+          <span class="sino">🔔</span>
+          <a href="rastreio.html" class="btn btn-primario">▶ Iniciar rota da manhã</a>
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <section class="kpis">
+        <div class="kpi">
+          <div class="ic" style="background:var(--azul-claro)">👦</div>
+          <div><div class="num">28</div><div class="rot">Alunos ativos</div><div class="delta" style="color:var(--verde)">+2 este mês</div></div>
+        </div>
+        <div class="kpi">
+          <div class="ic" style="background:var(--verde-claro)">💰</div>
+          <div><div class="num">22<span class="muted" style="font-size:16px">/28</span></div><div class="rot">Pagaram novembro</div><div class="delta" style="color:var(--verde)">R$ 9.240 recebidos</div></div>
+        </div>
+        <div class="kpi">
+          <div class="ic" style="background:var(--vermelho-claro)">⏰</div>
+          <div><div class="num">6</div><div class="rot">Pagamentos pendentes</div><div class="delta" style="color:var(--vermelho)">R$ 2.520 em aberto</div></div>
+        </div>
+        <div class="kpi">
+          <div class="ic" style="background:var(--amarelo-claro)">🚐</div>
+          <div><div class="num">25</div><div class="rot">Vão hoje (manhã)</div><div class="delta" style="color:var(--laranja)">3 avisaram que não vão</div></div>
+        </div>
+      </section>
+
+      <div class="grade-painel">
+        <!-- TABELA DE ALUNOS -->
+        <section class="card">
+          <div class="card-topo">
+            <h3>Alunos · Hoje</h3>
+            <div class="abas">
+              <a href="#" class="ativo">Todos</a>
+              <a href="#">Pendentes</a>
+              <a href="#">Não vão</a>
+            </div>
+          </div>
+          <div class="tabela-wrap">
+            <table class="tabela">
+              <thead>
+                <tr><th>Aluno</th><th>Escola / Turno</th><th>Novembro</th><th>Vai hoje?</th><th>Embarque</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><div class="aluno-cel"><div class="avatar av-1">AS</div><div><strong>Ana Souza</strong><span class="muted small">Mãe: Juliana</span></div></div></td>
+                  <td>Santa Maria<br><span class="muted small">Manhã · 3º ano</span></td>
+                  <td><span class="tag tag-verde">✓ Pago</span></td>
+                  <td><span class="toggle on"></span></td>
+                  <td><span class="tag tag-verde">Embarcou 06:42</span></td>
+                </tr>
+                <tr>
+                  <td><div class="aluno-cel"><div class="avatar av-2">PL</div><div><strong>Pedro Lima</strong><span class="muted small">Pai: Rodrigo</span></div></div></td>
+                  <td>Santa Maria<br><span class="muted small">Manhã · 5º ano</span></td>
+                  <td><span class="tag tag-verde">✓ Pago</span></td>
+                  <td><span class="toggle on"></span></td>
+                  <td><span class="tag tag-verde">Embarcou 06:49</span></td>
+                </tr>
+                <tr>
+                  <td><div class="aluno-cel"><div class="avatar av-6">LM</div><div><strong>Lucas Moraes</strong><span class="muted small">Pai: Matheus</span></div></div></td>
+                  <td>Santa Maria<br><span class="muted small">Manhã · 4º ano</span></td>
+                  <td><span class="tag tag-verde">✓ Pago</span></td>
+                  <td><span class="toggle on"></span></td>
+                  <td><span class="tag tag-amarelo">Próximo · 4 min</span></td>
+                </tr>
+                <tr>
+                  <td><div class="aluno-cel"><div class="avatar av-3">BF</div><div><strong>Beatriz Faria</strong><span class="muted small">Mãe: Carla</span></div></div></td>
+                  <td>Objetivo<br><span class="muted small">Manhã · 1º EM</span></td>
+                  <td><span class="tag tag-vermelho">Atrasado 6d</span></td>
+                  <td><span class="toggle on"></span></td>
+                  <td><span class="tag tag-cinza">Aguardando</span></td>
+                </tr>
+                <tr>
+                  <td><div class="aluno-cel"><div class="avatar av-4">GR</div><div><strong>Gabriel Rocha</strong><span class="muted small">Mãe: Patrícia</span></div></div></td>
+                  <td>Santa Maria<br><span class="muted small">Manhã · 2º ano</span></td>
+                  <td><span class="tag tag-laranja">Vence hoje</span></td>
+                  <td><span class="toggle"></span></td>
+                  <td><span class="tag tag-vermelho">Não vai · febre</span></td>
+                </tr>
+                <tr>
+                  <td><div class="aluno-cel"><div class="avatar av-5">MC</div><div><strong>Maria Clara</strong><span class="muted small">Pai: André</span></div></div></td>
+                  <td>EE Prof. Roberto<br><span class="muted small">Manhã · 6º ano</span></td>
+                  <td><span class="tag tag-verde">✓ Pago</span></td>
+                  <td><span class="toggle on"></span></td>
+                  <td><span class="tag tag-cinza">Aguardando</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:10px;flex-wrap:wrap">
+            <span class="muted small">Mostrando 6 de 28 alunos</span>
+            <a href="#" class="btn btn-contorno btn-sm">📩 Cobrar pendentes no WhatsApp</a>
+          </div>
+        </section>
+
+        <!-- ROTA DO DIA -->
+        <section class="card">
+          <div class="card-topo">
+            <h3>Rota da manhã</h3>
+            <span class="tag tag-verde ao-vivo"><span class="ponto"></span> Em andamento</span>
+          </div>
+
+          <div class="mapa-card">
+            <div class="mapa">
+              <svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice">
+                <rect class="quadra" x="0" y="0" width="800" height="500"/>
+                <rect class="parque" x="140" y="270" width="170" height="130" rx="10"/>
+                <rect class="agua" x="560" y="270" width="240" height="230"/>
+                <path class="rua" d="M0 80 H800 M0 250 H800 M0 420 H560 M120 0 V500 M330 0 V500 M540 0 V500 M720 0 V250"/>
+                <path class="rota-feita" d="M120 420 V250 H330"/>
+                <path class="rota" d="M330 250 H540 V80 H720"/>
+                <circle class="parada ok" cx="120" cy="420" r="12"/>
+                <circle class="parada ok" cx="120" cy="250" r="12"/>
+                <circle class="casa" cx="540" cy="250" r="14"/>
+                <circle class="parada" cx="540" cy="80" r="12"/>
+                <circle class="escola" cx="720" cy="80" r="16"/>
+                <g>
+                  <circle r="22" fill="#FFC21A" stroke="#fff" stroke-width="4"/>
+                  <text text-anchor="middle" dy="7" font-size="20">🚐</text>
+                  <animateMotion dur="9s" repeatCount="indefinite" path="M330 250 H520"/>
+                </g>
+              </svg>
+            </div>
+          </div>
+
+          <div class="alerta-otim">⚡ <span><b>Rota reotimizada:</b> Gabriel não vai hoje. Economia de 7 min e 3,2 km.</span></div>
+
+          <ol class="rota-lista">
+            <li class="feito"><span class="n">✓</span><div class="info"><strong>Ana Souza</strong><span class="muted small">R. Domingos de Morais, 120</span></div><span class="hora">06:42</span></li>
+            <li class="feito"><span class="n">✓</span><div class="info"><strong>Pedro Lima</strong><span class="muted small">R. Sena Madureira, 455</span></div><span class="hora">06:49</span></li>
+            <li class="agora"><span class="n">3</span><div class="info"><strong>Lucas Moraes</strong><span class="muted small">R. Áurea, 88 · pai notificado</span></div><span class="hora">~06:55</span></li>
+            <li class="pulado"><span class="n">–</span><div class="info"><strong>Gabriel Rocha</strong><span class="muted small">Não vai hoje</span></div><span class="hora">—</span></li>
+            <li><span class="n">4</span><div class="info"><strong>Beatriz Faria</strong><span class="muted small">Av. Lins de Vasconcelos, 1.020</span></div><span class="hora">07:01</span></li>
+            <li><span class="n">🏫</span><div class="info"><strong>Colégio Santa Maria</strong><span class="muted small">Chegada prevista</span></div><span class="hora">07:15</span></li>
+          </ol>
+        </section>
+      </div>
+
+      <div class="grade-painel">
+        <!-- FINANCEIRO -->
+        <section class="card">
+          <div class="card-topo">
+            <h3>Recebimentos · últimos 6 meses</h3>
+            <a href="#" class="btn btn-contorno btn-sm">Ver financeiro</a>
+          </div>
+          <div class="barras">
+            <div class="barra"><i style="height:62%"></i><span>Jun</span></div>
+            <div class="barra"><i style="height:70%"></i><span>Jul</span></div>
+            <div class="barra"><i style="height:68%"></i><span>Ago</span></div>
+            <div class="barra"><i style="height:82%"></i><span>Set</span></div>
+            <div class="barra"><i style="height:88%"></i><span>Out</span></div>
+            <div class="barra"><i class="atual" style="height:76%"></i><span>Nov</span></div>
+          </div>
+          <div style="margin-top:18px">
+            <div style="display:flex;justify-content:space-between;font-weight:800;font-size:14px;margin-bottom:6px">
+              <span>Novembro: R$ 9.240 de R$ 11.760</span><span style="color:var(--verde)">79%</span>
+            </div>
+            <div class="prog"><i style="width:79%"></i></div>
+          </div>
+        </section>
+
+        <!-- AVISOS -->
+        <section class="card">
+          <div class="card-topo"><h3>Avisos dos pais</h3><span class="tag tag-vermelho">3 novos</span></div>
+          <div class="linha-item">
+            <div class="aluno-cel"><div class="avatar av-4">GR</div><div><strong>Gabriel não vai hoje</strong><span class="muted small">Patrícia · "Está com febre" · 06:10</span></div></div>
+          </div>
+          <div class="linha-item">
+            <div class="aluno-cel"><div class="avatar av-5">MC</div><div><strong>Buscar na casa da avó</strong><span class="muted small">André · amanhã · R. Vergueiro, 2.000</span></div></div>
+            <span class="tag tag-amarelo">Novo endereço</span>
+          </div>
+          <div class="linha-item">
+            <div class="aluno-cel"><div class="avatar av-3">BF</div><div><strong>Comprovante enviado</strong><span class="muted small">Carla · Pix R$ 420</span></div></div>
+            <a href="#" class="btn btn-verde btn-sm">Confirmar</a>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

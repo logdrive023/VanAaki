@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VanAaki — Encontre a van escolar</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <nav class="proto-bar">
+    <strong>Protótipo VanAaki</strong>
+    <a href="index.html" class="ativo">1 · Home</a>
+    <a href="dono.html">2 · Painel do tio</a>
+    <a href="pais.html">3 · App dos pais</a>
+    <a href="aluno.html">4 · App do aluno</a>
+    <a href="rastreio.html">5 · Rastreio</a>
+  </nav>
+
+  <header class="topo-site">
+    <div class="container">
+      <a href="index.html" class="logo"><div class="logo-icone">🚐</div><span>Van<b>Aaki</b></span></a>
+      <nav class="menu-site">
+        <a href="#vans">Encontrar van</a>
+        <a href="#como">Como funciona</a>
+        <a href="#diferencial">Rastreio ao vivo</a>
+        <a href="#planos">Para motoristas</a>
+      </nav>
+      <div class="topo-acoes">
+        <a href="pais.html" class="btn btn-contorno btn-sm">Entrar</a>
+        <a href="dono.html" class="btn btn-primario btn-sm">Cadastrar minha van</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO + BUSCA -->
+  <section class="hero">
+    <div class="container">
+      <div>
+        <span class="tag tag-amarelo">🚐 +1.200 vans cadastradas</span>
+        <h1 style="margin-top:16px">Encontre a van escolar e <em>acompanhe seu filho ao vivo</em>.</h1>
+        <p class="lead">Busque vans que atendem a escola do seu filho, compare preços e avaliações, e receba aviso quando ele for o próximo a ser buscado.</p>
+
+        <form class="busca" action="#vans">
+          <div class="campo">
+            <label>Escola</label>
+            <input type="text" value="Colégio Santa Maria" placeholder="Nome da escola">
+          </div>
+          <div class="campo">
+            <label>Seu bairro</label>
+            <input type="text" value="Vila Mariana" placeholder="Bairro ou CEP">
+          </div>
+          <button class="btn btn-primario" type="button">🔍 Buscar vans</button>
+        </form>
+
+        <div class="hero-selos">
+          <span>✅ Motoristas verificados</span>
+          <span>📍 Rastreio em tempo real</span>
+          <span>💳 Pagamento pelo app</span>
+        </div>
+      </div>
+
+      <div class="hero-mock">
+        <div class="mini-fone">
+          <div class="tela">
+            <div class="mapa">
+              <svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice">
+                <rect class="quadra" x="0" y="0" width="800" height="500"/>
+                <rect class="parque" x="350" y="270" width="170" height="130" rx="10"/>
+                <path class="rua" d="M0 250 H800 M330 0 V500 M540 0 V500"/>
+                <path class="rota" d="M330 500 V250 H540 V0"/>
+                <circle class="casa" cx="540" cy="250" r="14"/>
+              </svg>
+            </div>
+            <div class="van-pin" style="left:46%;top:58%">🚐</div>
+          </div>
+        </div>
+        <div class="notif-flutuante">
+          <div class="ic">🔔</div>
+          <div>
+            <strong>Lucas é o próximo!</strong>
+            <small>Tio Carlos chega em ~4 min na sua casa</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULTADOS -->
+  <section class="resultados" id="vans">
+    <div class="container">
+      <div class="resultados-topo">
+        <h2>12 vans atendem o Colégio Santa Maria</h2>
+        <div class="filtros">
+          <span class="chip ativo">Manhã</span>
+          <span class="chip">Tarde</span>
+          <span class="chip">Com vagas</span>
+          <span class="chip">Ar-condicionado</span>
+          <span class="chip">Melhor avaliadas</span>
+        </div>
+      </div>
+
+      <div class="grade-vans">
+        <article class="van-card">
+          <div class="van-foto f1">🚐
+            <span class="tag tag-verde ao-vivo"><span class="ponto"></span> Rastreio ao vivo</span>
+            <span class="tag tag-azul vagas">3 vagas</span>
+          </div>
+          <div class="van-corpo">
+            <div class="van-motorista">
+              <div class="avatar av-1">TC</div>
+              <div>
+                <strong>Tio Carlos Transportes</strong>
+                <span class="estrelas">★ 4,9</span> <span class="muted small">· 214 avaliações · 12 anos</span>
+              </div>
+            </div>
+            <div class="escolas">
+              <span class="tag tag-cinza">Santa Maria</span>
+              <span class="tag tag-cinza">Objetivo</span>
+              <span class="tag tag-cinza">EE Prof. Roberto</span>
+            </div>
+            <div class="muted small">❄️ Ar-condicionado · 🧒 Monitora · 🪪 Vistoria 2026</div>
+            <div class="van-rodape">
+              <div class="preco">R$ 420 <small>/mês</small></div>
+              <a href="pais.html" class="btn btn-escuro btn-sm">Ver detalhes</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="van-card">
+          <div class="van-foto f2">🚌
+            <span class="tag tag-verde ao-vivo"><span class="ponto"></span> Rastreio ao vivo</span>
+            <span class="tag tag-laranja vagas">Última vaga</span>
+          </div>
+          <div class="van-corpo">
+            <div class="van-motorista">
+              <div class="avatar av-5">TS</div>
+              <div>
+                <strong>Tia Sandra Escolar</strong>
+                <span class="estrelas">★ 5,0</span> <span class="muted small">· 98 avaliações · 7 anos</span>
+              </div>
+            </div>
+            <div class="escolas">
+              <span class="tag tag-cinza">Santa Maria</span>
+              <span class="tag tag-cinza">Bandeirantes</span>
+            </div>
+            <div class="muted small">❄️ Ar-condicionado · 🎥 Câmera interna</div>
+            <div class="van-rodape">
+              <div class="preco">R$ 480 <small>/mês</small></div>
+              <a href="pais.html" class="btn btn-escuro btn-sm">Ver detalhes</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="van-card">
+          <div class="van-foto f3">🚐
+            <span class="tag tag-azul">🏢 Cooperativa</span>
+            <span class="tag tag-azul vagas">8 vagas</span>
+          </div>
+          <div class="van-corpo">
+            <div class="van-motorista">
+              <div class="avatar av-2">CV</div>
+              <div>
+                <strong>Coopervan Zona Sul</strong>
+                <span class="estrelas">★ 4,7</span> <span class="muted small">· 530 avaliações · 14 vans</span>
+              </div>
+            </div>
+            <div class="escolas">
+              <span class="tag tag-cinza">Santa Maria</span>
+              <span class="tag tag-cinza">Arquidiocesano</span>
+              <span class="tag tag-cinza">+6</span>
+            </div>
+            <div class="muted small">🧒 Monitora · 🔁 Ida e volta · 📍 Rastreio</div>
+            <div class="van-rodape">
+              <div class="preco">R$ 390 <small>/mês</small></div>
+              <a href="pais.html" class="btn btn-escuro btn-sm">Ver detalhes</a>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMO FUNCIONA -->
+  <section class="secao" id="como">
+    <div class="container">
+      <div class="secao-titulo">
+        <span class="sobre">Como funciona</span>
+        <h2>Do cadastro ao embarque em 3 passos</h2>
+        <p>Simples pro pai, organizado pro tio da van.</p>
+      </div>
+      <div class="passos">
+        <div class="passo">
+          <div class="ic">🔍</div>
+          <h3>Encontre a van</h3>
+          <p>Busque pela escola e pelo bairro. Veja preço, vagas, avaliações e o que cada van oferece.</p>
+        </div>
+        <div class="passo">
+          <div class="ic">🤝</div>
+          <h3>Feche direto com o tio</h3>
+          <p>Converse pelo app, assine o contrato digital e pague a mensalidade por Pix ou cartão.</p>
+        </div>
+        <div class="passo">
+          <div class="ic">📍</div>
+          <h3>Acompanhe todo dia</h3>
+          <p>Avise se seu filho vai ou não, veja a van chegando no mapa e receba notificação de embarque.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DIFERENCIAL -->
+  <section class="secao diferencial" id="diferencial">
+    <div class="container">
+      <div class="secao-titulo">
+        <span class="sobre">O diferencial</span>
+        <h2>Igual rastrear encomenda.<br>Só que é seu filho.</h2>
+        <p>Você acompanha o tio chegando, em tempo real, do portão de casa até a escola.</p>
+      </div>
+      <div class="grid2">
+        <div class="lista-dif">
+          <div class="item-dif">
+            <div class="ic">🔔</div>
+            <div><h4>"Seu filho é o próximo"</h4><p>Notificação quando a van sai da casa anterior. Nada de esperar no portão.</p></div>
+          </div>
+          <div class="item-dif">
+            <div class="ic">📍</div>
+            <div><h4>Mapa ao vivo</h4><p>Posição da van atualizada a cada segundo, com previsão de chegada.</p></div>
+          </div>
+          <div class="item-dif">
+            <div class="ic">✅</div>
+            <div><h4>Confirmação de embarque e chegada</h4><p>Aviso quando seu filho entrou na van e quando chegou na escola.</p></div>
+          </div>
+          <div class="item-dif">
+            <div class="ic">🙋</div>
+            <div><h4>"Hoje ele não vai"</h4><p>Um toque e a rota do tio é ajustada automaticamente.</p></div>
+          </div>
+        </div>
+
+        <div class="dif-mapa">
+          <div class="mapa">
+            <svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice">
+              <rect class="quadra" x="0" y="0" width="800" height="500"/>
+              <rect class="parque" x="140" y="270" width="170" height="130" rx="10"/>
+              <rect class="agua" x="560" y="270" width="240" height="230"/>
+              <path class="rua" d="M0 80 H800 M0 250 H800 M0 420 H560 M120 0 V500 M330 0 V500 M540 0 V500 M720 0 V250"/>
+              <path class="rota-feita" d="M120 420 V250 H330"/>
+              <path class="rota" d="M330 250 H540 V80 H720"/>
+              <circle class="parada ok" cx="120" cy="420" r="10"/>
+              <circle class="parada ok" cx="120" cy="250" r="10"/>
+              <circle class="casa" cx="540" cy="250" r="16"/>
+              <text x="556" y="236">Sua casa</text>
+              <circle class="escola" cx="720" cy="80" r="16"/>
+              <text x="640" y="60">Escola</text>
+              <g>
+                <circle r="30" fill="#FFC21A" opacity=".35">
+                  <animate attributeName="r" values="22;40;22" dur="1.8s" repeatCount="indefinite"/>
+                </circle>
+                <circle r="22" fill="#FFC21A" stroke="#fff" stroke-width="4"/>
+                <text text-anchor="middle" dy="7" font-size="20">🚐</text>
+                <animateMotion dur="9s" repeatCount="indefinite" path="M330 250 H520"/>
+              </g>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLANOS -->
+  <section class="secao" id="planos">
+    <div class="container">
+      <div class="secao-titulo">
+        <span class="sobre">Para quem tem van</span>
+        <h2>Gerencie alunos, pagamentos e rotas num lugar só</h2>
+        <p>Quem pagou, quem não pagou, quem embarcou e a rota do dia ajustada automaticamente.</p>
+      </div>
+      <div class="planos">
+        <div class="plano">
+          <div class="ic">🧑‍✈️</div>
+          <h3>Tio individual</h3>
+          <p class="muted">Pra quem tem 1 van e quer parar de anotar no caderno.</p>
+          <div class="valor">R$ 49 <small>/mês</small></div>
+          <ul>
+            <li>Até 30 alunos</li>
+            <li>Cobrança automática por Pix</li>
+            <li>Rota otimizada do dia</li>
+            <li>Rastreio ao vivo pros pais</li>
+          </ul>
+          <a href="dono.html" class="btn btn-contorno btn-bloco">Começar grátis</a>
+        </div>
+        <div class="plano destaque">
+          <div class="ic">🚐🚐</div>
+          <h3>Cooperativa</h3>
+          <p class="muted">Várias vans, vários motoristas, uma gestão.</p>
+          <div class="valor">R$ 199 <small>/mês</small></div>
+          <ul>
+            <li>Até 15 vans</li>
+            <li>Painel por motorista</li>
+            <li>Relatórios financeiros</li>
+            <li>Divulgação na busca em destaque</li>
+          </ul>
+          <a href="dono.html" class="btn btn-primario btn-bloco">Falar com vendas</a>
+        </div>
+        <div class="plano">
+          <div class="ic">🏫</div>
+          <h3>Escola</h3>
+          <p class="muted">Veja todas as vans que chegam e saem da sua escola.</p>
+          <div class="valor">Sob consulta</div>
+          <ul>
+            <li>Painel de chegadas no portão</li>
+            <li>Lista de vans credenciadas</li>
+            <li>Comunicação com os pais</li>
+            <li>Integração com agenda escolar</li>
+          </ul>
+          <a href="#" class="btn btn-contorno btn-bloco">Agendar demo</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="rodape">
+    <div class="container">
+      <div class="logo"><div class="logo-icone">🚐</div><span>Van<b>Aaki</b></span></div>
+      <span>© 2026 VanAaki · Protótipo visual para validação</span>
+    </div>
+  </footer>
+
+</body>
+</html>

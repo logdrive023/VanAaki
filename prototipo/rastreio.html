@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VanAaki — Rastreio ao vivo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <nav class="proto-bar">
+    <strong>Protótipo VanAaki</strong>
+    <a href="index.html">1 · Home</a>
+    <a href="dono.html">2 · Painel do tio</a>
+    <a href="pais.html">3 · App dos pais</a>
+    <a href="aluno.html">4 · App do aluno</a>
+    <a href="rastreio.html" class="ativo">5 · Rastreio</a>
+  </nav>
+
+  <div class="rastreio">
+    <aside class="rastreio-lado">
+      <div class="rastreio-cab">
+        <a href="pais.html" class="voltar">← Voltar</a>
+        <h1>Rota da manhã · Lucas</h1>
+        <span class="tag tag-verde ao-vivo" style="margin-top:8px"><span class="ponto"></span> Ao vivo · atualizado agora</span>
+      </div>
+
+      <div class="eta-grande">
+        <div class="lin">
+          <div>
+            <span style="font-size:13px;font-weight:800;color:#B6C2DD">CHEGA NA SUA CASA EM</span>
+            <div class="num">4 <small>min</small></div>
+          </div>
+          <div style="text-align:right">
+            <span style="font-size:13px;color:#B6C2DD;font-weight:700">Previsão</span>
+            <div style="font-size:22px;font-weight:900">06:55</div>
+          </div>
+        </div>
+        <div class="barra-prog"><i></i></div>
+        <div class="legenda"><span>Garagem</span><span>Você é o próximo</span><span>Escola</span></div>
+      </div>
+
+      <ol class="timeline">
+        <li class="feito"><span class="h">06:30</span><span class="b">✓</span><div><strong>Van saiu da garagem</strong><small>Tio Carlos iniciou a rota</small></div></li>
+        <li class="feito"><span class="h">06:42</span><span class="b">✓</span><div><strong>Buscou Ana</strong><small>R. Domingos de Morais</small></div></li>
+        <li class="feito"><span class="h">06:49</span><span class="b">✓</span><div><strong>Buscou Pedro</strong><small>R. Sena Madureira</small></div></li>
+        <li class="agora voce"><span class="h">06:55</span><span class="b">🏠</span><div><strong>A caminho da sua casa</strong><small>Lucas é o próximo · 1,2 km</small></div></li>
+        <li class="pendente"><span class="h">07:01</span><span class="b"></span><div><strong>Buscar Beatriz</strong><small>Av. Lins de Vasconcelos</small></div></li>
+        <li class="pendente"><span class="h">07:15</span><span class="b">🏫</span><div><strong>Chegada no Colégio Santa Maria</strong><small>Você recebe aviso quando ele descer</small></div></li>
+      </ol>
+    </aside>
+
+    <section class="rastreio-mapa">
+      <div class="mapa">
+        <svg viewBox="-160 -40 960 560" preserveAspectRatio="xMidYMid meet">
+          <rect class="quadra" x="-400" y="-300" width="1600" height="1100"/>
+          <rect class="parque" x="140" y="270" width="170" height="130" rx="10"/>
+          <rect class="parque" x="360" y="100" width="150" height="130" rx="10"/>
+          <rect class="agua" x="560" y="270" width="600" height="500"/>
+          <path class="rua" d="M-400 80 H1200 M-400 250 H1200 M-400 420 H560 M120 -300 V800 M330 -300 V800 M540 -300 V800 M720 -300 V250 M-100 -300 V800"/>
+          <path class="rua-fina" d="M-400 165 H800 M-400 335 H560 M225 -300 V800 M435 -300 V250 M630 -300 V250"/>
+          <path class="rota-feita" d="M-100 420 H120 V250 H330"/>
+          <path class="rota" d="M330 250 H540 V80 H720"/>
+          <circle class="parada ok" cx="-100" cy="420" r="11"/>
+          <circle class="parada ok" cx="120" cy="420" r="11"/>
+          <circle class="parada ok" cx="120" cy="250" r="11"/>
+          <text x="40" y="440">Ana ✓</text>
+          <text x="40" y="236">Pedro ✓</text>
+          <circle class="casa" cx="540" cy="250" r="18"/>
+          <text x="562" y="236" font-size="15">🏠 Sua casa</text>
+          <circle class="parada" cx="540" cy="80" r="11"/>
+          <text x="470" y="66">Beatriz</text>
+          <circle class="escola" cx="720" cy="80" r="18"/>
+          <text x="660" y="56" font-size="15">🏫 Escola</text>
+          <g>
+            <circle r="30" fill="#FFC21A" opacity=".35">
+              <animate attributeName="r" values="22;44;22" dur="1.8s" repeatCount="indefinite"/>
+            </circle>
+            <circle r="24" fill="#FFC21A" stroke="#fff" stroke-width="5"/>
+            <text text-anchor="middle" dy="8" font-size="22">🚐</text>
+            <animateMotion dur="10s" repeatCount="indefinite" path="M330 250 H515"/>
+          </g>
+        </svg>
+      </div>
+
+      <div class="mapa-overlay-top">
+        <span class="pilula">🔔 Notificação ativa: você será avisado quando ele embarcar</span>
+        <span class="pilula">🚦 Trânsito leve</span>
+      </div>
+
+      <div class="mapa-ctrl"><span>+</span><span>−</span><span>◎</span></div>
+
+      <div class="cartao-van">
+        <div class="avatar av-1" style="width:52px;height:52px">TC</div>
+        <div>
+          <strong style="font-size:16px">Tio Carlos</strong> <span class="estrelas">★ 4,9</span><br>
+          <span class="muted small">Sprinter branca · <span class="placa">FXK-2B19</span> · 32 km/h</span>
+        </div>
+        <div class="acoes">
+          <span class="icone-btn">💬</span>
+          <span class="icone-btn verde">📞</span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+</body>
+</html>
