@@ -32,8 +32,12 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      # "build" = checagem de tipos (tsc) + build do Vite com Service Worker
+      # "build" = checagem de tipos (tsc) + build do Vite com Service Worker.
+      # Endereço da API (Go): Settings → Secrets and variables → Actions → Variables → VITE_API_URL
+      # (ex.: https://api.seudominio.com.br). Sem ela, o app publicado não acha o servidor.
       - run: npm run build
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
       - uses: actions/upload-pages-artifact@v5
         with:
           path: dist

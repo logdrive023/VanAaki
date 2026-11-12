@@ -4,9 +4,10 @@ import type {
 } from './types';
 
 /**
- * Banco local (IndexedDB) — tudo fica no navegador, sem servidor.
- * Várias abas abertas (motorista, pais, aluno, escola) enxergam as mesmas tabelas e
- * o `useLiveQuery` do Dexie atualiza todas na hora quando uma delas grava.
+ * Cópia local (IndexedDB) do que o servidor mandou para ESTE perfil.
+ * O servidor (Go + Postgres) é quem manda: o app só guarda para abrir rápido e funcionar sem sinal,
+ * e o `useLiveQuery` do Dexie redesenha a tela quando chega dado novo pelo tempo real.
+ * Cada perfil tem o próprio banco (dá para abrir tio, pais, aluno e escola em abas do mesmo navegador).
  */
 export class VanDB extends Dexie {
   escolas!: Table<Escola, string>;
@@ -22,8 +23,8 @@ export class VanDB extends Dexie {
   resgates!: Table<Resgate, string>;
   config!: Table<Config, string>;
 
-  constructor() {
-    super('vanaaki');
+  constructor(nome: string) {
+    super(nome);
     this.version(1).stores({
       escolas: 'id',
       vans: 'id',
@@ -46,15 +47,5 @@ export class VanDB extends Dexie {
   }
 }
 
-export const db = new VanDB();
-
-if (typeof window !== 'undefined') {
-  db.on('versionchange', () => { db.close(); window.location.reload(); return false; });
-}
-
-/** Pede ao navegador para não apagar os dados quando faltar espaço (igual ao dia-dia). */
-export async function pedirPersistencia() {
-  try {
-    if (navigator.storage?.persist && !(await navigator.storage.persisted())) await navigator.storage.persist();
-  } catch { /* sem suporte */ }
-}
+const perfil = location.hash.replace(/^#\/?/, '').split('/')[0] || 'nenhum';
+export const db = new VanDB(`vanaaki-${perfil}`);

@@ -1,0 +1,38 @@
+# Ambiente local do VanAaki
+#   docker compose up -d banco      → só o Postgres (para rodar a API com `go run ./cmd/api`)
+#   docker compose up -d --build    → Postgres + API
+services:
+  banco:
+    image: postgres:16-alpine
+    container_name: vanaaki_postgres
+    environment:
+      POSTGRES_USER: vanaaki
+      POSTGRES_PASSWORD: vanaaki
+      POSTGRES_DB: vanaaki
+    ports:
+      - "127.0.0.1:5434:5432"
+    volumes:
+      - vanaaki_dados:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vanaaki"]
+      interval: 3s
+      retries: 20
+
+  api:
+    build: .
+    container_name: vanaaki_api
+    depends_on:
+      banco:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://vanaaki:vanaaki@banco:5432/vanaaki?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET:-troque-este-segredo-em-producao}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      DEMO: ${DEMO:-true}
+      PORT: "8090"
+    ports:
+      - "127.0.0.1:8090:8090"
+    profiles: ["completo"]
+
+volumes:
+  vanaaki_dados:

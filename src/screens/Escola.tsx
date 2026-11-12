@@ -5,7 +5,8 @@ import Mapa3D from '../components/Mapa3D';
 import { ShellPainel, type ItemMenu } from '../components/Shell';
 import { Avatar, Toggle, Vazio } from '../components/ui';
 import { db } from '../db/db';
-import { ESCOLA_PRINCIPAL } from '../db/seed';
+import { useEu } from '../api/sync';
+import { FormEscola } from '../components/formularios';
 import { TURNOS, type Aluno, type Escola as TEscola, type Presenca, type TipoViagem, type Turno, type Van, type Viagem } from '../db/types';
 import { tipoEvento } from '../lib/gamificacao';
 import { visaoEscola } from '../lib/privacidade';
@@ -14,17 +15,12 @@ import { dataLonga, hoje, hora, horaMais } from '../lib/util';
 import { credenciar, definirConfirmaEntrada } from '../services/acoes';
 import { confirmarEntradaEscola, idxAluno } from '../services/viagem';
 
-/** Escola escolhida nesta aba (teste) — fica salva no navegador. */
-function useEscolaPerfil(): [string, (id: string) => void] {
-  const ler = () => { try { return localStorage.getItem('vanaaki-escola') ?? ESCOLA_PRINCIPAL; } catch { return ESCOLA_PRINCIPAL; } };
-  const [id, setId] = useState(ler);
-  return [id, (n: string) => { try { localStorage.setItem('vanaaki-escola', n); } catch { /* sem storage */ } setId(n); }];
-}
-
 export default function Escola({ aba = 'chegadas' }: { aba?: string }) {
-  const [escolaId, setEscolaId] = useEscolaPerfil();
+  const eu = useEu();
+  const escolaId = eu?.escolaId ?? '';
   const escolas = useLiveQuery(() => db.escolas.toArray());
-  const escola = escolas?.find((e) => e.id === escolaId) ?? escolas?.[0];
+  const escola = escolas?.find((e) => e.id === escolaId);
+  const [editando, setEditando] = useState(false);
   const turnosEscola = TURNOS.filter((t) => escola?.horarios[t]);
   const [turnoSel, setTurno] = useState<Turno | null>(null);
   const turno: Turno = turnoSel && turnosEscola.includes(turnoSel) ? turnoSel : (turnosEscola.includes(turnoAgora()) ? turnoAgora() : turnosEscola[0] ?? 'manha');
@@ -51,10 +47,8 @@ export default function Escola({ aba = 'chegadas' }: { aba?: string }) {
     <div className="perfil-side">
       <Avatar nome={escola.nome} cor="#00B894" />
       <div style={{ minWidth: 0 }}>
-        <select className="seletor-perfil" value={escola.id} onChange={(e) => setEscolaId(e.target.value)} title="Trocar escola (teste)">
-          {escolas!.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
-        </select>
-        <small>Portaria / coordenação</small>
+        <strong>{escola.nome}</strong>
+        <small>{eu?.usuario.nome}</small>
       </div>
     </div>
   );
@@ -66,11 +60,11 @@ export default function Escola({ aba = 'chegadas' }: { aba?: string }) {
             <button key={t} className={`chip-turno ${turno === t ? 'ativo' : ''}`} onClick={() => setTurno(t)}>{ICONE_TURNO[t]} {NOME_TURNO[t]}</button>
           ))}
         </div>
-        <span className="tag tag-cinza">⏰ entrada {escola.horarios[turno]?.entrada} · saída {escola.horarios[turno]?.saida}</span>
+        <span className="linha" style={{ gap: 6 }}>
+          <span className="tag tag-cinza">⏰ entrada {escola.horarios[turno]?.entrada} · saída {escola.horarios[turno]?.saida}</span>
+          <button className="btn btn-claro btn-sm" onClick={() => setEditando(true)}>Editar horários</button>
+        </span>
       </div>
-      <select className="seletor-perfil so-celular" style={{ maxWidth: '100%' }} value={escola.id} onChange={(e) => setEscolaId(e.target.value)} title="Trocar escola (teste)">
-        {escolas!.map((e) => <option key={e.id} value={e.id}>🏫 {e.nome}</option>)}
-      </select>
     </div>
   );
   return (
@@ -80,6 +74,7 @@ export default function Escola({ aba = 'chegadas' }: { aba?: string }) {
       {aba === 'vans' && <Vans escola={escola} vans={vans} alunos={alunos} />}
       {aba === 'alunos' && <AlunosEscola escola={escola} turno={turno} alunos={alunos.filter((a) => a.turno === turno)} vans={vans} viagens={doTurno} presencas={presencas} />}
       {aba === 'ocorrencias' && <Ocorrencias alunos={mapaAlunos} />}
+      {editando && <FormEscola inicial={escola} onFechar={() => setEditando(false)} />}
     </ShellPainel>
   );
 }
@@ -169,7 +164,7 @@ function Trecho({ titulo, v, ve, escola, alunos }: { titulo: string; v?: Viagem;
             );
           })}
           {v.paradas.some((p) => p.tipo === 'aluno' && p.escolaId === escola.id && p.status === 'feito' && !p.recebidoEscolaEm) && (
-            <button className="btn btn-escuro btn-sm" onClick={async () => { for (const p of v.paradas.filter((x) => x.tipo === 'aluno' && x.escolaId === escola.id && x.status === 'feito' && !x.recebidoEscolaEm)) await confirmarEntradaEscola(v.id, p.alunoId); }}>✅ Confirmar todos</button>
+            <button className="btn btn-escuro btn-sm" onClick={() => void confirmarEntradaEscola(v.id, v.paradas.filter((x) => x.tipo === 'aluno' && x.escolaId === escola.id && x.status === 'feito' && !x.recebidoEscolaEm).map((x) => x.alunoId))}>✅ Confirmar todos</button>
           )}
         </>
       )}

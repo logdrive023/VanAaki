@@ -1,7 +1,6 @@
 /* =========================================================
    VanAaki — protótipo visual (HTML + CSS)
    ========================================================= */
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
 
 :root {
   --amarelo: #FFC21A;
@@ -29,7 +28,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 body {
-  font-family: 'Nunito', system-ui, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   color: var(--texto);
   background: var(--fundo);
   line-height: 1.5;

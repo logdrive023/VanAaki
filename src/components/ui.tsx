@@ -2,7 +2,8 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { db } from '../db/db';
 import type { Aluno, Notificacao, Perfil } from '../db/types';
-import { exportarBackup, restaurarExemplo } from '../db/seed';
+import { api, perfilDaAba, sair } from '../api/cliente';
+import { sincronizar, useEu } from '../api/sync';
 import { marcarLidas } from '../services/notificar';
 import { haQuanto, iniciais } from '../lib/util';
 
@@ -145,24 +146,32 @@ window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); prom
 
 export function PainelTeste() {
   const [aberto, setAberto] = useState(false);
+  const eu = useEu();
+  const perfil = perfilDaAba();
   const abrirAba = (p: string) => window.open(`./app.html#/${p}`, `vanaaki-${p}`);
+  const demo = !!eu?.usuario.demo;
   return (
     <>
-      <button className="demo-btn" onClick={() => setAberto(!aberto)}>🧪 Teste</button>
+      <button className="demo-btn" onClick={() => setAberto(!aberto)} title="Conta">{demo ? '🧪' : '👤'}<span> {demo ? 'Demonstração' : 'Conta'}</span></button>
       {aberto && (
         <div className="demo-painel">
-          <strong style={{ color: 'var(--amarelo)' }}>Modo de validação</strong>
-          <small>Abra cada perfil numa aba: tudo é salvo neste navegador e as abas se atualizam sozinhas.</small>
-          <div className="grade-demo">
-            <button onClick={() => abrirAba('motorista')}>🧑‍✈️ Motorista</button>
-            <button onClick={() => abrirAba('pais')}>👨‍👩‍👦 Pais</button>
-            <button onClick={() => abrirAba('aluno')}>🎒 Aluno</button>
-            <button onClick={() => abrirAba('escola')}>🏫 Escola</button>
-          </div>
-          <a href="./index.html">🏠 Voltar para a landing page</a>
+          <strong>{eu?.usuario.nome}</strong>
+          <small>{eu?.usuario.email ?? (demo ? 'Conta de demonstração' : '')}</small>
+          {demo && (
+            <>
+              <small>Abra cada perfil numa aba e veja tudo acontecer ao vivo.</small>
+              <div className="grade-demo">
+                <button onClick={() => abrirAba('motorista')}>🧑‍✈️ Motorista</button>
+                <button onClick={() => abrirAba('pais')}>👨‍👩‍👧 Família</button>
+                <button onClick={() => abrirAba('aluno')}>🎒 Aluno</button>
+                <button onClick={() => abrirAba('escola')}>🏫 Escola</button>
+              </div>
+              <button onClick={async () => { if (confirm('Voltar os dados da demonstração ao início? (vale para todos que estão testando)')) { await api('/demo/restaurar', { metodo: 'POST', semToken: true }); await sincronizar(); } }}>♻️ Recomeçar a demonstração</button>
+            </>
+          )}
           {promptInstalar && <button onClick={() => { void promptInstalar?.prompt(); promptInstalar = null; setAberto(false); }}>📲 Instalar o app</button>}
-          <button onClick={() => void exportarBackup()}>💾 Baixar backup (JSON)</button>
-          <button onClick={async () => { if (confirm('Apagar tudo e voltar aos dados de exemplo?')) { await restaurarExemplo(); location.reload(); } }}>♻️ Restaurar dados de exemplo</button>
+          <a href="./index.html">🏠 Site do VanAaki</a>
+          <button onClick={() => sair(perfil)}>↩︎ Sair</button>
         </div>
       )}
     </>

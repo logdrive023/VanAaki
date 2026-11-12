@@ -50,6 +50,9 @@ export function etaAte(v: Viagem, i: number) {
 }
 
 export function visaoFamilia(v: Viagem | undefined, aluno: Aluno, escola?: Escola): VisaoFamilia {
+  // família: a visão vem pronta do servidor (ela não recebe a rota dos outros para calcular)
+  const doServidor = v?.visoes?.[aluno.id] as VisaoFamilia | undefined;
+  if (doServidor) return { ...doServidor, caminho: doServidor.caminho ?? [], paradasAntes: doServidor.paradasAntes ?? 0 };
   const base = { mostrarMapa: false, caminho: [] as LatLng[], paradasAntes: 0 };
   if (!v) return { ...base, fase: 'sem_viagem' };
   const k = idxAluno(v, aluno.id);
@@ -90,7 +93,16 @@ export function visaoFamilia(v: Viagem | undefined, aluno: Aluno, escola?: Escol
 }
 
 /** O que a escola pode ver de uma viagem que passa por ela. */
-export function visaoEscola(v: Viagem, escola: Escola) {
+export interface VisaoEscola {
+  estado: 'a_caminho' | 'na_porta' | 'feito' | 'pulada' | 'encerrada';
+  eta: number; horario?: string; atraso: number | null; hora?: string;
+  abordo: number; aBuscar: number; total: number; paradasAntes: number;
+  mostrarMapa: boolean; caminho: LatLng[]; alunosIds: string[];
+}
+
+export function visaoEscola(v: Viagem, escola: Escola): VisaoEscola {
+  const doServidor = v.visoesEscola?.[escola.id] as VisaoEscola | undefined;
+  if (doServidor) return { ...doServidor, atraso: doServidor.atraso ?? null, caminho: doServidor.caminho ?? [] };
   const s = idxEscola(v, escola.id);
   const ps = s >= 0 ? v.paradas[s] : undefined;
   const meus = v.paradas.filter((p) => p.tipo === 'aluno' && p.escolaId === escola.id);

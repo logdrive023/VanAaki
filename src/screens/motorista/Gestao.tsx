@@ -5,7 +5,8 @@ import { Avatar, Toggle, Vazio } from '../../components/ui';
 import { db } from '../../db/db';
 import type { Aluno, Pagamento } from '../../db/types';
 import { CATALOGO, saldoDe } from '../../lib/gamificacao';
-import { haQuanto, hora, linkWhats, mesAtual, nomeMes, primeiroNome, proximoMes, reais, uid } from '../../lib/util';
+import { haQuanto, hora, linkWhats, mesAtual, nomeMes, primeiroNome, proximoMes, reais } from '../../lib/util';
+import { salvarRecompensa } from '../../services/acoes';
 import { atrasado, desfazerPagamento, enviarMensagem, gerarCobrancas, lerMensagens, pagar } from '../../services/acoes';
 import { darPontos, decidirResgate } from '../../services/pontos';
 import type { DadosVan } from './dados';
@@ -164,8 +165,8 @@ export function Premios({ d }: { d: DadosVan }) {
         {recompensas.map((r) => (
           <div key={r.id} className="premio">
             <div className="ic">{r.icone}</div>
-            <div><strong>{r.nome}</strong><div className="linha small"><input className="inp" style={{ width: 90, padding: '4px 8px' }} type="number" min={5} value={r.custo} onChange={(e) => void db.recompensas.update(r.id, { custo: Math.max(5, Number(e.target.value) || 5) })} /> ⭐</div></div>
-            <Toggle on={r.ativo} onChange={(v) => void db.recompensas.update(r.id, { ativo: v })} titulo="Disponível na loja" />
+            <div><strong>{r.nome}</strong><div className="linha small"><input className="inp" style={{ width: 90, padding: '4px 8px' }} type="number" min={5} value={r.custo} onChange={(e) => void db.recompensas.update(r.id, { custo: Number(e.target.value) || 0 })} onBlur={(e) => void salvarRecompensa({ ...r, custo: Math.max(5, Number(e.target.value) || 5) })} /> ⭐</div></div>
+            <Toggle on={r.ativo} onChange={(v) => void salvarRecompensa({ ...r, ativo: v })} titulo="Disponível na loja" />
           </div>
         ))}
         <hr className="sep" style={{ margin: '14px 0' }} />
@@ -176,7 +177,7 @@ export function Premios({ d }: { d: DadosVan }) {
             <input className="inp" style={{ flex: 1, minWidth: 140 }} placeholder="Ex.: Escolher o lanche da sexta" value={novo.nome} onChange={(e) => setNovo({ ...novo, nome: e.target.value })} />
             <input className="inp" style={{ width: 90 }} type="number" min={5} value={novo.custo} onChange={(e) => setNovo({ ...novo, custo: Number(e.target.value) || 5 })} />
           </div>
-          <button className="btn btn-primario" disabled={!novo.nome.trim()} onClick={async () => { await db.recompensas.add({ id: uid(), vanId: d.van!.id, icone: novo.icone || '🎉', nome: novo.nome.trim(), custo: Math.max(5, novo.custo), ativo: true }); setNovo({ icone: '🎉', nome: '', custo: 50 }); }}>＋ Adicionar prêmio</button>
+          <button className="btn btn-primario" disabled={!novo.nome.trim()} onClick={async () => { await salvarRecompensa({ icone: novo.icone || '🎉', nome: novo.nome.trim(), custo: Math.max(5, novo.custo), ativo: true }); setNovo({ icone: '🎉', nome: '', custo: 50 }); }}>＋ Adicionar prêmio</button>
           <small className="muted">Dica: prêmios que custam pouco e mexem com o dia a dia da van (música, janela, ajudante) engajam mais que brindes caros.</small>
         </div>
       </section>

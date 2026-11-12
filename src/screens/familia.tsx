@@ -2,18 +2,21 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useState } from 'react';
 import Mapa3D, { type Marcador } from '../components/Mapa3D';
 import { db } from '../db/db';
-import { ALUNO_PADRAO } from '../db/seed';
+import { useEu } from '../api/sync';
 import type { Aluno, Escola, Viagem } from '../db/types';
 import { visaoFamilia, type VisaoFamilia } from '../lib/privacidade';
 import { NOME_TURNO, planoDe, type Plano } from '../lib/turnos';
 import { hoje, hora, horaMais, primeiroNome } from '../lib/util';
 import { idxAluno, idxEscola } from '../services/viagem';
 
-/** Perfil escolhido nesta aba (pais/aluno). Fica salvo no navegador para o teste. */
+/** Filho escolhido (a família pode ter mais de um). Só vale um dos filhos da conta. */
 export function useAlunoPerfil(): [string, (id: string) => void] {
-  const ler = () => { try { return localStorage.getItem('vanaaki-aluno') ?? ALUNO_PADRAO; } catch { return ALUNO_PADRAO; } };
+  const eu = useEu();
+  const ler = () => { try { return localStorage.getItem('vanaaki-aluno') ?? ''; } catch { return ''; } };
   const [id, setId] = useState(ler);
-  return [id, (n: string) => { try { localStorage.setItem('vanaaki-aluno', n); } catch { /* sem storage */ } setId(n); }];
+  const meus = eu?.alunoIds ?? [];
+  const atual = meus.includes(id) ? id : meus[0] ?? '';
+  return [atual, (n: string) => { try { localStorage.setItem('vanaaki-aluno', n); } catch { /* sem storage */ } setId(n); }];
 }
 
 /** Dados de UMA família — nunca carrega posição/nome de outros alunos para a tela. */
@@ -27,14 +30,16 @@ export function useFamilia(alunoId: string) {
     return l.find((v) => v.status === 'em_andamento') ?? l.sort((a, b) => b.iniciadaEm.localeCompare(a.iniciadaEm))[0];
   }, [aluno?.vanId, alunoId]);
   const presenca = useLiveQuery(() => db.presencas.get(`${alunoId}|${hoje()}`), [alunoId]);
-  const irmaos = useLiveQuery(() => db.alunos.filter((a) => a.ativo).toArray()) ?? [];
+  const eu = useEu();
+  const irmaos = useLiveQuery(() => db.alunos.filter((a) => a.completo).toArray()) ?? [];
   const visao = aluno ? visaoFamilia(viagem, aluno, escola) : undefined;
-  return { aluno, van, escola, viagem, presenca, plano: planoDe(presenca), visao, perfis: irmaos, carregando: aluno === undefined };
+  return { aluno, van, escola, viagem, presenca, plano: planoDe(presenca), visao, perfis: irmaos.filter((a) => eu?.alunoIds.includes(a.id)), carregando: aluno === undefined };
 }
 
 export function SeletorAluno({ id, onChange, perfis }: { id: string; onChange: (id: string) => void; perfis: Aluno[] }) {
+  if (perfis.length < 2) return <strong className="nome-perfil">{perfis[0]?.nome}</strong>;
   return (
-    <select className="seletor-perfil" value={id} onChange={(e) => onChange(e.target.value)} title="Trocar perfil (teste)">
+    <select className="seletor-perfil" value={id} onChange={(e) => onChange(e.target.value)} title="Trocar de filho">
       {perfis.map((a) => <option key={a.id} value={a.id}>{a.nome} · {NOME_TURNO[a.turno]}</option>)}
     </select>
   );

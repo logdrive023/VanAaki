@@ -2,3 +2,7 @@ node_modules
 dist
 # zip das telas (mesmo conteúdo da pasta prototipo/)
 telas.zip
+# binários do backend
+backend/*.exe
+backend/vanaaki-api
+.env

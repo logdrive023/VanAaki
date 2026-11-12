@@ -1,0 +1,163 @@
+/* =========================================================
+   VanAaki — tema minimalista (carregado por último)
+   Tinta escura + amarelo da van como destaque, bordas finas,
+   pouca sombra, tipografia Inter.
+   ========================================================= */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --amarelo: #FFC21A;
+  --amarelo-escuro: #E0A600;
+  --amarelo-claro: #FFF6DB;
+  --azul: #15171C;          /* tinta (fundos escuros, texto forte) */
+  --azul-2: #2B2E36;
+  --azul-claro: #F1F1EE;
+  --verde: #16A35F;
+  --verde-claro: #E3F5EB;
+  --vermelho: #E5484D;
+  --vermelho-claro: #FDECEC;
+  --laranja: #E8780F;
+  --laranja-claro: #FFF0E0;
+  --texto: #15171C;
+  --texto-2: #6B6F7B;
+  --borda: #EAEAE5;
+  --fundo: #F7F7F4;
+  --raio: 14px;
+  --sombra: 0 1px 2px rgba(16, 17, 20, .04);
+  --sombra-forte: 0 16px 48px rgba(16, 17, 20, .14);
+}
+
+body { font-family: 'Inter', system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; letter-spacing: -.005em; }
+h1, h2, h3, h4, strong, b { font-weight: 700; }
+h1 { letter-spacing: -.02em; }
+
+/* ---------- peças ---------- */
+.btn { font-weight: 600; border-radius: 10px; padding: 11px 18px; transition: background .15s, opacity .15s; }
+.btn:hover { transform: none; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn-primario { box-shadow: none; }
+.btn-escuro { background: var(--azul); }
+.btn-escuro:hover { background: var(--azul-2); }
+.btn-claro { background: #fff; color: var(--texto); border: 1px solid var(--borda); }
+.btn-claro:hover { background: var(--fundo); }
+.btn-contorno { border-width: 1px; }
+.btn-sm { padding: 7px 12px; font-size: 13px; border-radius: 9px; }
+.tag { font-weight: 600; padding: 3px 9px; }
+.tag-cinza { background: var(--azul-claro); }
+
+.card, .kpi { box-shadow: none; border: 1px solid var(--borda); }
+.card h3 { font-weight: 700; font-size: 16px; }
+.kpi .num { font-weight: 700; letter-spacing: -.02em; }
+.kpi .rot, .kpi .delta { font-weight: 500; }
+.kpi .ic { width: 42px; height: 42px; border-radius: 12px; font-size: 20px; }
+.m-card { box-shadow: none; border: 1px solid var(--borda); border-radius: 16px; }
+.m-card h4 { font-weight: 700; }
+.avatar { font-weight: 700; }
+.logo { font-weight: 800; letter-spacing: -.02em; }
+.logo-icone { border-radius: 10px; }
+
+.fld > span { text-transform: none; letter-spacing: 0; font-size: 13px; font-weight: 600; color: var(--texto-2); }
+.fld input, .fld select, .fld textarea, .inp { border-width: 1px !important; border-radius: 10px !important; background: #fff; }
+.fld input:focus, .fld select:focus, .fld textarea:focus, .inp:focus { border-color: var(--azul) !important; box-shadow: 0 0 0 3px rgba(21, 23, 28, .08); }
+
+.abas { background: var(--azul-claro); border-radius: 10px; }
+.abas a { font-weight: 600; border-radius: 8px; cursor: pointer; }
+.abas a.ativo { box-shadow: 0 1px 2px rgba(0, 0, 0, .08); color: var(--texto); }
+
+/* ---------- painel (tio e escola): menu lateral claro ---------- */
+.sidebar { background: #fff; color: var(--texto-2); border-right: 1px solid var(--borda); }
+.sidebar .logo { color: var(--texto); }
+.side-menu a { font-weight: 500; padding: 9px 12px; border-radius: 10px; cursor: pointer; }
+.side-menu a:hover { background: var(--fundo); color: var(--texto); }
+.side-menu a.ativo { background: var(--amarelo-claro); color: var(--texto); font-weight: 600; box-shadow: inset 3px 0 0 var(--amarelo); }
+.side-rotulo { color: #A3A6AF; font-weight: 600; letter-spacing: .06em; }
+.perfil-side { background: var(--fundo); border-radius: 12px; }
+.perfil-side strong { color: var(--texto); }
+.main-topo h1 { font-weight: 700; font-size: 24px; }
+.sino { border-radius: 10px; }
+.tabs-mobile { border-top: 1px solid var(--borda); box-shadow: none; }
+
+/* ---------- celular (família e aluno) ---------- */
+.tab-bar a { font-weight: 600; }
+.status-card { box-shadow: none; border: 1px solid var(--borda); }
+.status-card.escuro, .alvo-card { background: var(--azul); border-color: var(--azul); }
+
+/* =========================================================
+   Telas novas: entrar, carregando, avisos
+   ========================================================= */
+.entrar { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 32px 16px; background: var(--fundo); }
+.entrar-card { width: min(420px, 100%); background: #fff; border: 1px solid var(--borda); border-radius: 20px; padding: 26px; display: flex; flex-direction: column; gap: 18px; }
+.entrar-topo { display: flex; gap: 14px; align-items: flex-start; }
+.entrar-topo h1 { font-size: 22px; line-height: 1.2; }
+.entrar-topo p { font-size: 14px; margin-top: 4px; }
+.entrar-ic { width: 48px; height: 48px; border-radius: 14px; background: var(--amarelo-claro); display: grid; place-items: center; font-size: 26px; flex-shrink: 0; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--azul-claro); border-radius: 10px; padding: 4px; }
+.seg button { background: transparent; padding: 8px; border-radius: 8px; font-weight: 600; color: var(--texto-2); }
+.seg button.ativo { background: #fff; color: var(--texto); box-shadow: 0 1px 2px rgba(0, 0, 0, .08); }
+.entrar .form { display: flex; flex-direction: column; gap: 14px; }
+.entrar .fld input { padding: 11px 12px; border: 1px solid var(--borda); border-radius: 10px; outline: 0; }
+.inp-codigo { text-transform: uppercase; letter-spacing: .25em; font-weight: 700; font-size: 18px !important; text-align: center; }
+.entrar .fld small { margin-top: 2px; }
+.entrar-demo { border-top: 1px solid var(--borda); padding-top: 16px; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.aviso-erro { background: var(--vermelho-claro); color: #A4262C; border-radius: 10px; padding: 10px 12px; font-size: 14px; font-weight: 500; }
+
+.carregando { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+.giro { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--borda); border-top-color: var(--azul); animation: girar .8s linear infinite; }
+@keyframes girar { to { transform: rotate(360deg); } }
+
+.offline { position: fixed; top: 10px; left: 50%; translate: -50%; z-index: 600; background: var(--azul); color: #fff; font-size: 13px; font-weight: 600; padding: 7px 14px; border-radius: 999px; }
+.toast-erro { position: fixed; bottom: 90px; left: 50%; translate: -50%; z-index: 700; max-width: calc(100% - 32px); background: #A4262C; color: #fff; padding: 11px 16px; border-radius: 12px; font-weight: 500; font-size: 14px; box-shadow: var(--sombra-forte); animation: entrar .25s ease-out; }
+
+/* conta / demonstração */
+.demo-btn { font-weight: 600; }
+.demo-painel strong { color: #fff !important; }
+
+/* códigos e convites */
+.codigo { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-weight: 700; letter-spacing: .12em; }
+.codigo-grande { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 28px; font-weight: 700; letter-spacing: .3em; text-align: center; padding: 12px; margin-top: 8px; background: var(--fundo); border: 1px dashed #D5D5CE; border-radius: 12px; }
+.convite-box { display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; align-items: center; padding: 12px 14px; background: var(--amarelo-claro); border-radius: 12px; }
+.convite-box > div { display: flex; flex-direction: column; }
+.convite-box .codigo { font-size: 18px; }
+.convite-box .btn { grid-column: 1 / -1; }
+.nome-perfil { display: block; font-size: 16px; }
+
+/* busca de endereço */
+.busca-end input { padding: 10px 12px; border: 1px solid var(--borda); border-radius: 10px; outline: 0; }
+.busca-res { display: flex; flex-direction: column; border: 1px solid var(--borda); border-radius: 10px; margin-top: 6px; overflow: hidden; }
+.busca-res button { text-align: left; background: #fff; padding: 9px 12px; font-size: 13px; border-bottom: 1px solid var(--borda); }
+.busca-res button:last-child { border-bottom: 0; }
+.busca-res button:hover { background: var(--fundo); }
+
+/* horários da escola */
+.horario-linha { display: flex; align-items: center; gap: 10px; padding: 8px 0; flex-wrap: wrap; border-bottom: 1px solid var(--borda); }
+.horario-linha:last-child { border-bottom: 0; }
+.horario-nome { width: 90px; font-weight: 600; }
+.horario-linha input[type=time] { padding: 6px 8px; border: 1px solid var(--borda); border-radius: 8px; }
+
+/* primeiros passos do tio */
+.primeiros-passos { display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 1px dashed #D5D5CE; border-radius: 12px; }
+.primeiros-passos span { color: var(--texto-2); }
+.primeiros-passos span.ok { color: var(--verde); text-decoration: line-through; }
+.primeiros-passos a { color: var(--texto); font-weight: 600; text-decoration: underline; cursor: pointer; }
+
+@media (max-width: 760px) {
+  .entrar-card { padding: 20px; }
+  .main-topo h1 { font-size: 21px; }
+}
+
+/* sobrescreve o painel escuro antigo */
+.perfil-side { color: var(--texto); }
+.perfil-side small { color: var(--texto-2); }
+.perfil-side .seletor-perfil { color: var(--texto); }
+.demo-btn { background: #fff; color: var(--texto); border: 1px solid var(--borda); box-shadow: 0 4px 16px rgba(16, 17, 20, .08); }
+.demo-painel { background: #fff; color: var(--texto); border: 1px solid var(--borda); }
+.demo-painel strong { color: var(--texto) !important; }
+.demo-painel small { color: var(--texto-2); }
+.demo-painel a, .demo-painel button { background: var(--fundo); color: var(--texto); font-weight: 500; }
+.demo-painel a:hover, .demo-painel button:hover { background: var(--azul-claro); }
+@media (max-width: 760px) { .demo-btn span { display: none; } }
+
+/* landing */
+.hero { background: var(--azul); }
+.portais-hero { background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .08); }
+.aluno-ola { background: var(--azul); }

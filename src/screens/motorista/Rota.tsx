@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEu } from '../../api/sync';
 import Mapa3D, { type Linha, type Marcador } from '../../components/Mapa3D';
 import { SeletorPlano } from '../../components/presenca';
 import { Avatar, Toggle } from '../../components/ui';
@@ -8,7 +9,7 @@ import { caminhoAte, etaAte } from '../../lib/privacidade';
 import { atrasoPrevisto, FOLGA_MIN, horarioAlvo, ICONE_TURNO, NOME_TURNO, ordenarEscolas, planejarHorario, turnoAgora, vaiNoTrecho } from '../../lib/turnos';
 import { hora, horaMais, primeiroNome } from '../../lib/util';
 import { definirPresenca, salvarRotaFixa } from '../../services/acoes';
-import { chaveRotaFixa, configurarViagem, encerrarViagem, iniciarViagem, marcarParada, ordemLocal, ordenarPorFixa } from '../../services/viagem';
+import { chaveRotaFixa, configurarViagem, encerrarViagem, enviarPosicao, iniciarViagem, marcarParada, ordemLocal, ordenarPorFixa } from '../../services/viagem';
 import type { DadosVan } from './dados';
 
 const VELOCIDADES = [1, 4, 8, 15, 30];
@@ -36,6 +37,10 @@ function PrepararRota({ d, turnoInicial }: { d: DadosVan; turnoInicial?: Turno }
   const [turno, setTurno] = useState<Turno>(padrao);
   useEffect(() => { if (turnoInicial) setTurno(padrao); }, [turnoInicial]); // eslint-disable-line react-hooks/exhaustive-deps
   const [tipo, setTipo] = useState<TipoViagem>('ida');
+  const eu = useEu();
+  // conta de demonstração: o servidor anda com a van; conta de verdade: GPS do celular
+  const [simuladoSel, setSimulado] = useState<boolean | null>(null);
+  const simulado = simuladoSel ?? !!eu?.usuario.demo;
   const [automatico, setAutomatico] = useState(false);
   const [velocidade, setVelocidade] = useState(8);
   const [saindo, setSaindo] = useState(false);
@@ -85,7 +90,7 @@ function PrepararRota({ d, turnoInicial }: { d: DadosVan; turnoInicial?: Turno }
   ];
   const sair = async () => {
     setErro(''); setSaindo(true);
-    try { await iniciarViagem(van.id, turno, tipo, { otimizar, automatico, velocidade }); } catch (e) { setErro((e as Error).message); }
+    try { await iniciarViagem(van.id, turno, tipo, { otimizar, automatico: simulado && automatico, velocidade, simulado }); } catch (e) { setErro((e as Error).message); }
     setSaindo(false);
   };
   const feitaHoje = d.concluidas.filter((v) => v.turno === turno && v.tipo === tipo);
@@ -156,10 +161,22 @@ function PrepararRota({ d, turnoInicial }: { d: DadosVan; turnoInicial?: Turno }
               ? `Você define a ordem com ↑ ↓ e ela fica salva (ex.: o semestre todo). Quem não vai no dia é só pulado.${rf?.atualizadaEm ? ` Atualizada em ${new Date(rf.atualizadaEm).toLocaleDateString('pt-BR')}.` : ''}`
               : 'O app escolhe a melhor ordem pelas ruas, todo dia, com quem vai.'}</small>
           </div>
-          <label className="check"><input type="checkbox" checked={automatico} onChange={(e) => setAutomatico(e.target.checked)} /> Modo demonstração (confirma sozinho)</label>
-          <label className="fld"><span>Velocidade da simulação</span>
-            <select value={velocidade} onChange={(e) => setVelocidade(Number(e.target.value))}>{VELOCIDADES.map((v) => <option key={v} value={v}>{v}× {v === 1 ? '(tempo real)' : ''}</option>)}</select>
-          </label>
+          <div className="pilha" style={{ gap: 6 }}>
+            <strong className="small">Posição da van</strong>
+            <div className="abas modo-rota">
+              <a className={!simulado ? 'ativo' : ''} onClick={() => setSimulado(false)}>📱 GPS do celular</a>
+              <a className={simulado ? 'ativo' : ''} onClick={() => setSimulado(true)}>🧪 Simulação</a>
+            </div>
+            <small className="muted">{simulado ? 'A van anda sozinha pelas ruas (para testar e mostrar o app).' : 'Deixe esta tela aberta durante a rota: o app usa o GPS do celular e as famílias acompanham.'}</small>
+          </div>
+          {simulado && (
+            <>
+              <label className="check"><input type="checkbox" checked={automatico} onChange={(e) => setAutomatico(e.target.checked)} /> Confirmar as paradas sozinho</label>
+              <label className="fld"><span>Velocidade da simulação</span>
+                <select value={velocidade} onChange={(e) => setVelocidade(Number(e.target.value))}>{VELOCIDADES.map((v) => <option key={v} value={v}>{v}× {v === 1 ? '(tempo real)' : ''}</option>)}</select>
+              </label>
+            </>
+          )}
           <div>
             <div className="entre"><strong>Alunos do turno ({vao.length}/{doTurno.length} nesta {tipo})</strong></div>
             {doTurno.map((a, i) => {
@@ -194,7 +211,35 @@ function PrepararRota({ d, turnoInicial }: { d: DadosVan; turnoInicial?: Turno }
 
 // ---------------- em andamento ----------------
 
+/** GPS do celular do tio: manda a posição para o servidor (no máximo a cada 3 s) enquanto a rota estiver aberta. */
+function useGPS(v: Viagem) {
+  const [estado, setEstado] = useState<'off' | 'buscando' | 'ok' | 'negado' | 'sem'>('off');
+  const ultimo = useRef(0);
+  useEffect(() => {
+    if (v.simulado || v.status !== 'em_andamento') { setEstado('off'); return; }
+    if (!navigator.geolocation) { setEstado('sem'); return; }
+    setEstado('buscando');
+    const id = navigator.geolocation.watchPosition(
+      (p) => {
+        setEstado('ok');
+        if (Date.now() - ultimo.current < 3000) return;
+        ultimo.current = Date.now();
+        void enviarPosicao(v.id, { lat: p.coords.latitude, lng: p.coords.longitude }).catch(() => undefined);
+      },
+      (e) => setEstado(e.code === e.PERMISSION_DENIED ? 'negado' : 'buscando'),
+      { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 },
+    );
+    // tela acesa durante a rota (quando o navegador deixa)
+    let trava: { release: () => Promise<void> } | undefined;
+    const nav = navigator as Navigator & { wakeLock?: { request: (t: 'screen') => Promise<{ release: () => Promise<void> }> } };
+    nav.wakeLock?.request('screen').then((t) => { trava = t; }).catch(() => undefined);
+    return () => { navigator.geolocation.clearWatch(id); void trava?.release().catch(() => undefined); };
+  }, [v.id, v.simulado, v.status]);
+  return estado;
+}
+
 function RotaAoVivo({ d, v }: { d: DadosVan; v: Viagem }) {
+  const gps = useGPS(v);
   const fim = v.paradas.length;
   const atual: Parada | undefined = v.alvo < fim ? v.paradas[v.alvo] : undefined;
   const eta = etaMin([v.pos, ...v.caminho], 0, v.rotaReal);
@@ -231,6 +276,8 @@ function RotaAoVivo({ d, v }: { d: DadosVan; v: Viagem }) {
           <span className="tag tag-azul">🏁 fim ~{horaMais(etaFim)}</span>
           {!!v.economiaKm && v.economiaKm > 0.05 && <span className="tag tag-verde">⚡ -{v.economiaKm.toFixed(1)} km otimizados</span>}
           {!v.rotaReal && <span className="tag tag-laranja">Sem internet: rota em linha reta</span>}
+          {!v.simulado && <span className={`tag ${gps === 'ok' ? 'tag-verde' : gps === 'negado' || gps === 'sem' ? 'tag-vermelho' : 'tag-cinza'}`}>
+            {gps === 'ok' ? '📡 GPS ativo' : gps === 'negado' ? '📡 Libere a localização no navegador' : gps === 'sem' ? '📡 Sem GPS neste aparelho' : '📡 Procurando GPS…'}</span>}
         </div>
       </section>
       <section className="pilha">
@@ -311,11 +358,16 @@ function RotaAoVivo({ d, v }: { d: DadosVan; v: Viagem }) {
         </div>
 
         <div className="card controle-sim">
-          <h3>Simulação do GPS</h3>
-          <div className="entre"><span>Modo demonstração (confirma sozinho)</span><Toggle on={v.automatico} onChange={(x) => void configurarViagem(v.id, { automatico: x })} /></div>
-          <label className="fld"><span>Velocidade</span>
-            <select value={v.velocidade} onChange={(e) => void configurarViagem(v.id, { velocidade: Number(e.target.value) })}>{VELOCIDADES.map((x) => <option key={x} value={x}>{x}×</option>)}</select>
-          </label>
+          <h3>Posição da van</h3>
+          <div className="entre"><span>{v.simulado ? '🧪 Simulação (a van anda sozinha)' : '📱 GPS do celular'}</span><Toggle on={v.simulado} onChange={(x) => void configurarViagem(v.id, { simulado: x })} titulo="Simulação" /></div>
+          {v.simulado && (
+            <>
+              <div className="entre"><span>Confirmar as paradas sozinho</span><Toggle on={v.automatico} onChange={(x) => void configurarViagem(v.id, { automatico: x })} /></div>
+              <label className="fld"><span>Velocidade</span>
+                <select value={v.velocidade} onChange={(e) => void configurarViagem(v.id, { velocidade: Number(e.target.value) })}>{VELOCIDADES.map((x) => <option key={x} value={x}>{x}×</option>)}</select>
+              </label>
+            </>
+          )}
           <button className="btn btn-claro" onClick={() => { if (confirm('Encerrar a rota agora?')) void encerrarViagem(v.id); }}>⏹ Encerrar rota</button>
         </div>
       </section>

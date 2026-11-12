@@ -1,24 +1,11 @@
+import { post } from '../api/cliente';
 import { db } from '../db/db';
-import type { Notificacao, Perfil } from '../db/types';
-import { agoraIso, uid } from '../lib/util';
+import type { Perfil } from '../db/types';
 
-type Nova = Omit<Notificacao, 'id' | 'criadoEm' | 'lida'>;
-
-/** Grava a notificação; cada portal mostra as suas (pais/aluno só as do próprio aluno). */
-export async function notificar(n: Nova) {
-  await db.notificacoes.add({ ...n, id: uid(), criadoEm: agoraIso(), lida: false });
-}
-
-/** Mesma mensagem para pais e aluno. */
-export async function notificarFamilia(alunoId: string, icone: string, titulo: string, texto: string, soPais = false) {
-  await notificar({ para: 'pais', alunoId, icone, titulo, texto });
-  if (!soPais) await notificar({ para: 'aluno', alunoId, icone, titulo, texto });
-}
-
-export async function marcarLidas(para: Perfil, filtro: { alunoId?: string; vanId?: string; escolaId?: string }) {
-  const lista = await db.notificacoes.where('para').equals(para).filter((n) => !n.lida
-    && (!filtro.alunoId || n.alunoId === filtro.alunoId)
-    && (!filtro.vanId || n.vanId === filtro.vanId)
-    && (!filtro.escolaId || n.escolaId === filtro.escolaId)).toArray();
-  await db.notificacoes.bulkPut(lista.map((n) => ({ ...n, lida: true })));
+/** Marca as notificações como lidas (na hora na tela; o servidor grava e avisa os outros aparelhos). */
+export async function marcarLidas(_para: Perfil, _filtro?: unknown) {
+  const l = await db.notificacoes.filter((n) => !n.lida).toArray();
+  if (!l.length) return;
+  await db.notificacoes.bulkPut(l.map((n) => ({ ...n, lida: true })));
+  await post('/notificacoes/lidas').catch(() => undefined);
 }

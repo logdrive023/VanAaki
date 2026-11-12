@@ -19,6 +19,8 @@ export interface Escola {
    * Desligado: a entrega fica com o tio ("Desceram N" já avisa os pais).
    */
   confirmaEntrada?: boolean;
+  /** código para a escola criar o acesso da portaria (o tio vê das escolas que atende) */
+  codigo?: string;
 }
 
 /** Em qual turno o motorista trabalha e quais escolas atende nele. */
@@ -71,6 +73,14 @@ export interface Aluno {
   diaVencimento: number;
   ativo: boolean;
   criadoEm: string;
+  /** convite da família (o tio manda pelo WhatsApp) */
+  codigoFamilia?: string;
+  /** o aluno entra no app só com este código */
+  codigoAluno?: string;
+  /** a família já criou a conta */
+  familiaConectada?: boolean;
+  /** false = colega da van (só apelido, para o ranking) */
+  completo: boolean;
 }
 
 export interface Pagamento {
@@ -154,6 +164,8 @@ export interface Viagem {
   chegouParadaEm?: string;
   /** demo: embarca sozinho depois de alguns segundos na parada */
   automatico: boolean;
+  /** true = o servidor anda com a van (demonstração) · false = GPS do celular do tio */
+  simulado: boolean;
   /** multiplicador da velocidade da simulação */
   velocidade: number;
   iniciadaEm: string;
@@ -165,6 +177,10 @@ export interface Viagem {
   /** km economizados pela otimização */
   economiaKm?: number;
   atualizadoEm: string;
+  /** só na cópia da família: o que ela pode ver de cada filho (calculado no servidor) */
+  visoes?: Record<string, unknown>;
+  /** só na cópia da escola */
+  visoesEscola?: Record<string, unknown>;
 }
 
 export type Perfil = 'motorista' | 'pais' | 'aluno' | 'escola';
@@ -229,3 +245,18 @@ export interface Resgate {
 }
 
 export interface Config { id: string; valor: unknown }
+
+export interface Usuario {
+  id: string;
+  perfil: Perfil;
+  nome: string;
+  email?: string;
+  telefone?: string;
+  vanId?: string;
+  escolaId?: string;
+  alunoId?: string;
+  demo?: boolean;
+}
+
+/** Quem está usando o app e o que pode ver (vem do servidor junto com os dados). */
+export interface Eu { usuario: Usuario; vanIds: string[]; alunoIds: string[]; escolaId?: string }

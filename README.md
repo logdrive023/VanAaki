@@ -1,40 +1,73 @@
 # VanAaki
 
 Van escolar com **gestão para o tio**, **rastreio seguro para os pais**, **gamificação para os alunos** e **portaria para a escola**.
-Versão de validação: roda 100% no navegador (PWA), sem servidor. Os dados ficam no IndexedDB do aparelho.
 
-## Rodar
+- **Frontend:** PWA em React + Vite (`index.html` landing, `app.html` app), mapa 3D MapLibre.
+- **Backend:** API em Go (`backend/`), Postgres, login com JWT e tempo real por SSE.
+- As regras (rota, privacidade, pontos, permissões) rodam no servidor. O app guarda uma cópia local (IndexedDB) só do que aquele perfil pode ver.
+
+## Rodar local
 
 ```bash
-npm install
-npm run dev        # desenvolvimento → http://localhost:5173
-npm run build      # gera dist/ (com Service Worker / PWA)
-npm run preview    # serve o build → http://localhost:4173 (dá para instalar o app)
+# 1. banco (Postgres 16 na porta 5434)
+cd backend && docker compose up -d banco
+
+# 2. API → http://localhost:8090 (cria as tabelas e os dados de demonstração)
+go run ./cmd/api
+
+# 3. app → http://localhost:5173
+cd .. && npm install && npm run dev
 ```
 
-- `index.html`: landing page independente (só HTML + CSS + um script de filtro).
-- `app.html`: o app PWA. Cada botão da landing abre um perfil: `#/motorista`, `#/pais`, `#/aluno`, `#/escola`.
-- `prototipo/`: as telas originais em HTML + CSS (só visual).
+Ou tudo em Docker: `cd backend && docker compose --profile completo up -d --build`.
 
-### Como testar o fluxo completo
+| Variável | Padrão | Para quê |
+|---|---|---|
+| `DATABASE_URL` | `postgres://vanaaki:vanaaki@localhost:5434/vanaaki` | banco |
+| `PORT` | `8090` | porta da API |
+| `JWT_SECRET` | (troque em produção) | assinatura do login |
+| `CORS_ORIGINS` | `*` | domínios do app (ex.: `https://logdrive023.github.io`) |
+| `DEMO` | `true` | cria a demonstração e libera "Entrar na demonstração" |
+| `VITE_API_URL` (app) | mesmo host, porta 8090 | endereço da API no build do app |
 
-1. Abra o **motorista** numa aba e os **pais**, o **aluno** e a **escola** em outras (botão 🧪 Teste, no canto da tela).
-2. No motorista: **Rota → Iniciar ida** (ligue o "modo demonstração" para embarcar sozinho).
-3. Veja as outras abas atualizarem sozinhas: aviso de "é o próximo", mapa liberado na vez da família,
-   embarque, chegada na escola e (no Colégio Santa Maria) a portaria confirmando a entrada.
-4. Nos pais, toque em **Não vai**: a rota do tio é reotimizada na hora.
-5. No aluno, toque em **Tô no portão!** antes da van chegar: vale +10 pontos.
-6. 🧪 Teste → **Restaurar dados de exemplo** volta tudo ao início.
+### Contas
 
-## Publicar (GitHub Pages)
+- **Motorista:** cria a conta com e-mail e senha (já cria a van). Cadastra as escolas e os turnos, depois os alunos.
+- **Família:** entra em "Primeiro acesso" com o **código de convite** de cada aluno (o tio manda pelo WhatsApp com um toque).
+- **Aluno:** entra só com o **código do aluno** (aparece no app dos pais).
+- **Escola (opcional):** cria o acesso da portaria com o **código da escola** (o tio vê em "Turnos e escolas").
+- **Demonstração:** botão "Entrar na demonstração" em cada perfil (contas `tio@`, `familia@` e `escola@demo.vanaaki.app`, senha `vanaaki123`; aluno `LUQUI1`).
 
-O workflow `.github/workflows/deploy.yml` gera o build e publica a cada push na `main`.
-Acompanhe em **Actions**. Quando ficar verde:
+### Testar o fluxo completo
 
-- Landing page: **https://logdrive023.github.io/VanAaki/**
-- App: **https://logdrive023.github.io/VanAaki/app.html** (no celular: "Adicionar à tela inicial")
+1. Entre na demonstração como **motorista**; pelo botão 🧪 abra **família**, **aluno** e **escola** em outras abas.
+2. Motorista: **Rota → Iniciar** com "🧪 Simulação" (a van anda sozinha pelo servidor) ou "📱 GPS do celular" (posição real).
+3. As outras abas atualizam ao vivo (SSE): "é o próximo", mapa liberado só na vez da família, embarque, escola.
+4. Família: **Não vai hoje** → a rota do tio é reotimizada na hora. Aluno: **Tô no portão!** vale +10.
+5. 🧪 → **Recomeçar a demonstração** volta os dados ao início.
 
-Cada pessoa que abre o link tem os próprios dados de exemplo, salvos só no navegador dela.
+## API (resumo)
+
+`backend/` segue o padrão em camadas por domínio: `internal/domains/<domínio>/{controller,service,entities,http}`,
+com `compartilhado/{repositorio,regras,avisos,transmissao}`, `middleware`, `realtime` (SSE) e migrações em
+`internal/database/migrations`.
+
+| Rota | Quem |
+|---|---|
+| `POST /api/auth/entrar`, `/auth/aluno`, `/auth/cadastro/{motorista,familia,escola}`, `/auth/demo` | público |
+| `GET /api/sync` (dados do perfil, filtrados) · `GET /api/eventos` (tempo real) | todos |
+| `POST /api/viagens`, `/viagens/{id}/parada`, `/posicao`, `/encerrar` · `PATCH /viagens/{id}/config` | motorista |
+| `PUT /api/van`, `/van/turnos`, `/van/rota-fixa` · `POST/PUT /api/alunos` · `POST /api/escolas` | motorista |
+| `PUT /api/presencas` · `POST /api/mensagens` · `POST /api/pagamentos/{id}/pagar` | família e motorista |
+| `POST /api/viagens/pronto`, `/api/resgates` | aluno e família |
+| `PUT /api/escola/confirma-entrada`, `/escola/credenciar` · `POST /api/viagens/{id}/entrada` | escola |
+
+## Publicar
+
+- **App (GitHub Pages):** o workflow `.github/workflows/deploy.yml` publica a cada push na `main`. Defina a variável
+  `VITE_API_URL` no repositório (Settings → Secrets and variables → Actions → Variables) com o endereço da API.
+- **API:** qualquer servidor com Docker (VPS, Fly.io, Railway…): `backend/Dockerfile` + um Postgres. Use HTTPS
+  (o GPS do celular e o app instalado exigem) e `CORS_ORIGINS` com o domínio do app.
 
 ## Regras principais
 
@@ -68,8 +101,8 @@ elogios e ocorrências do tio (ocorrência avisa os pais na hora), níveis, selo
 ranking por semana/mês e loja de prêmios que o tio define e aprova. Regras em `src/lib/gamificacao.ts`.
 
 **Rota:** a ordem das paradas é otimizada pelas ruas reais (serviço público OSRM, respeita mão única).
-Sem internet, otimiza em linha reta (vizinho mais próximo + 2-opt). O GPS é simulado: uma única aba move a van
-(Web Locks), e as outras acompanham pelo banco.
+Sem internet, otimiza em linha reta (vizinho mais próximo + 2-opt). A posição vem do GPS do celular do tio (tela da rota aberta)
+ou, na simulação, o servidor anda com a van pelas ruas.
 
 ## Mapa
 
@@ -86,3 +119,5 @@ Só são enviadas coordenadas (dos pontos de exemplo), nunca dados de pessoas.
 - `src/screens`: motorista, pais, aluno, escola.
 
 Os dados de exemplo (nomes, telefones, endereços) são fictícios.
+
+- `backend/`: API em Go (domínios, Postgres, SSE).

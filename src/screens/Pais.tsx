@@ -7,7 +7,9 @@ import { db } from '../db/db';
 import type { Pagamento } from '../db/types';
 import { saldoDe, sequencia, tipoEvento } from '../lib/gamificacao';
 import { haQuanto, nomeMes, primeiroNome, reais } from '../lib/util';
-import { atrasado, definirPresenca, pagar } from '../services/acoes';
+import { atrasado, definirPresenca, pagar, vincularFilho } from '../services/acoes';
+import { useEu } from '../api/sync';
+import { PainelTeste } from '../components/ui';
 import { Chat } from './motorista/Gestao';
 import { EscolhaPlano } from '../components/presenca';
 import { ICONE_TURNO, NOME_TURNO } from '../lib/turnos';
@@ -18,6 +20,8 @@ export default function Pais({ aba = 'inicio' }: { aba?: string }) {
   const f = useFamilia(alunoId);
   const msgs = useLiveQuery(() => db.mensagens.where('alunoId').equals(alunoId).filter((m) => m.de === 'motorista' && !m.lida).count(), [alunoId]) ?? 0;
   const pend = useLiveQuery(() => db.pagamentos.where('alunoId').equals(alunoId).filter((p) => p.status === 'pendente').count(), [alunoId]) ?? 0;
+  const eu = useEu();
+  if (eu && !eu.alunoIds.length) return <SemFilho />;
   if (f.carregando || !f.aluno || !f.visao) return <div className="vazio">Carregando…</div>;
   const menu: ItemMenu[] = [
     { id: 'inicio', ic: '🏠', nome: 'Início' },
@@ -30,7 +34,7 @@ export default function Pais({ aba = 'inicio' }: { aba?: string }) {
     <div className="linha" style={{ flex: 1 }}>
       <Avatar aluno={f.aluno} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <small>Responsável · {f.aluno.responsavel}</small>
+        <small>Família · {eu?.usuario.nome}</small>
         <SeletorAluno id={alunoId} onChange={setAlunoId} perfis={f.perfis} />
       </div>
     </div>
@@ -87,6 +91,7 @@ function Inicio({ f }: { f: F }) {
           <div className="acoes"><button className="icone-btn" onClick={() => ir('pais/chat')}>💬</button><a className="icone-btn verde" href={`tel:${f.van?.telefone}`}>📞</a></div>
         </div>
       </div>
+      <AcessoAluno f={f} />
       <div className="m-card">
         <h4>Últimos avisos</h4>
         {notifs.length === 0 && <Vazio ic="🔕">Nada ainda</Vazio>}
@@ -178,5 +183,55 @@ function CondutaPais({ f }: { f: F }) {
       <div className="m-card"><h4>Conquistas de {primeiroNome(a.nome)}</h4><Selos ev={ev} /></div>
       <div className="m-card"><h4>Histórico de pontos</h4><Feed ev={ev} limite={15} /></div>
     </>
+  );
+}
+
+/** Código para o filho entrar no app dele + adicionar outro filho com o convite do tio. */
+function AcessoAluno({ f }: { f: F }) {
+  const a = f.aluno!;
+  const [codigo, setCodigo] = useState('');
+  const [msg, setMsg] = useState('');
+  const [aberto, setAberto] = useState(false);
+  const app = `${location.origin}${location.pathname}#/aluno`;
+  return (
+    <div className="m-card">
+      <h4>App do {primeiroNome(a.nome)}</h4>
+      <p className="muted small">No celular dele, abra o app em <b>Aluno</b> e digite o código:</p>
+      <div className="codigo-grande">{a.codigoAluno ?? '—'}</div>
+      <div className="linha" style={{ marginTop: 10 }}>
+        <button className="btn btn-claro btn-sm" onClick={() => void navigator.clipboard?.writeText(`${app}
+Código: ${a.codigoAluno}`)}>Copiar link e código</button>
+        <button className="btn btn-claro btn-sm" onClick={() => setAberto(!aberto)}>＋ Outro filho</button>
+      </div>
+      {aberto && (
+        <form className="linha" style={{ marginTop: 10 }} onSubmit={async (e) => {
+          e.preventDefault(); setMsg('');
+          try { await vincularFilho(codigo); setMsg('Pronto! Recarregando…'); setTimeout(() => location.reload(), 600); } catch (er) { setMsg((er as Error).message); }
+        }}>
+          <input className="inp inp-codigo" style={{ flex: 1 }} placeholder="Código de convite" value={codigo} onChange={(e) => setCodigo(e.target.value)} />
+          <button className="btn btn-primario btn-sm">Adicionar</button>
+        </form>
+      )}
+      {msg && <small className="muted">{msg}</small>}
+    </div>
+  );
+}
+
+/** Conta sem filho ligado (ex.: o tio arquivou): pede o código de convite. */
+function SemFilho() {
+  const [codigo, setCodigo] = useState('');
+  const [msg, setMsg] = useState('');
+  return (
+    <div className="entrar">
+      <div className="entrar-card">
+        <div className="entrar-topo"><span className="entrar-ic">👨‍👩‍👧</span><div><h1>Adicione seu filho</h1><p className="muted">Digite o código de convite que o tio da van mandou.</p></div></div>
+        <form className="form" onSubmit={async (e) => { e.preventDefault(); try { await vincularFilho(codigo); location.reload(); } catch (er) { setMsg((er as Error).message); } }}>
+          <input className="inp inp-codigo" required value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="EX: AB12CD" />
+          {msg && <div className="aviso-erro">{msg}</div>}
+          <button className="btn btn-primario btn-bloco">Adicionar</button>
+        </form>
+      </div>
+      <PainelTeste />
+    </div>
   );
 }
