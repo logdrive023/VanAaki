@@ -1,10 +1,10 @@
 import { db } from '../db/db';
-import type { Aluno, Pagamento } from '../db/types';
+import type { Aluno, Pagamento, RotaFixa, TipoViagem, Turno } from '../db/types';
 import { agoraIso, hoje, mesAtual, nomeMes, primeiroNome, reais, uid } from '../lib/util';
 import { notificar } from './notificar';
 import { darPontos } from './pontos';
 import { nomePlano, planoDe, trechosDoPlano, type Plano } from '../lib/turnos';
-import { ajustarRotaPorPresenca } from './viagem';
+import { ajustarRotaPorPresenca, chaveRotaFixa } from './viagem';
 
 // ---------------- presença (por trecho) ----------------
 
@@ -112,4 +112,20 @@ export async function credenciar(vanId: string, escolaId: string, situacao: 'cre
   const v = await db.vans.get(vanId);
   if (!v) return;
   await db.vans.update(vanId, { credenciamento: { ...v.credenciamento, [escolaId]: situacao } });
+}
+
+// ---------------- rota fixa e escola ----------------
+
+/** O tio liga/desliga a rota fixa ou muda a ordem (vale até ele mudar de novo, ex.: o semestre todo). */
+export async function salvarRotaFixa(vanId: string, turno: Turno, tipo: TipoViagem, mud: Partial<Pick<RotaFixa, 'ativa' | 'ordem'>>) {
+  const van = await db.vans.get(vanId);
+  if (!van) return;
+  const k = chaveRotaFixa(turno, tipo);
+  const atual = van.rotasFixas?.[k] ?? { ativa: false, ordem: [], atualizadaEm: agoraIso() };
+  await db.vans.update(vanId, { rotasFixas: { ...van.rotasFixas, [k]: { ...atual, ...mud, atualizadaEm: agoraIso() } } });
+}
+
+/** A escola escolhe se a portaria confirma a entrada no app (senão, fica com o tio). */
+export async function definirConfirmaEntrada(escolaId: string, confirma: boolean) {
+  await db.escolas.update(escolaId, { confirmaEntrada: confirma });
 }

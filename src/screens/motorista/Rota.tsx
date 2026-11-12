@@ -5,10 +5,10 @@ import { Avatar, Toggle } from '../../components/ui';
 import { TURNOS, type Escola, type Parada, type TipoViagem, type Turno, type Viagem } from '../../db/types';
 import { compCaminho, etaMin } from '../../lib/geo';
 import { caminhoAte, etaAte } from '../../lib/privacidade';
-import { atrasoPrevisto, horarioAlvo, ICONE_TURNO, NOME_TURNO, ordenarEscolas, turnoAgora, vaiNoTrecho } from '../../lib/turnos';
+import { atrasoPrevisto, FOLGA_MIN, horarioAlvo, ICONE_TURNO, NOME_TURNO, ordenarEscolas, planejarHorario, turnoAgora, vaiNoTrecho } from '../../lib/turnos';
 import { hora, horaMais, primeiroNome } from '../../lib/util';
-import { definirPresenca } from '../../services/acoes';
-import { configurarViagem, encerrarViagem, iniciarViagem, marcarParada, ordemLocal } from '../../services/viagem';
+import { definirPresenca, salvarRotaFixa } from '../../services/acoes';
+import { chaveRotaFixa, configurarViagem, encerrarViagem, iniciarViagem, marcarParada, ordemLocal, ordenarPorFixa } from '../../services/viagem';
 import type { DadosVan } from './dados';
 
 const VELOCIDADES = [1, 4, 8, 15, 30];
@@ -36,24 +36,45 @@ function PrepararRota({ d, turnoInicial }: { d: DadosVan; turnoInicial?: Turno }
   const [turno, setTurno] = useState<Turno>(padrao);
   useEffect(() => { if (turnoInicial) setTurno(padrao); }, [turnoInicial]); // eslint-disable-line react-hooks/exhaustive-deps
   const [tipo, setTipo] = useState<TipoViagem>('ida');
-  const [otimizar, setOtimizar] = useState(true);
   const [automatico, setAutomatico] = useState(false);
   const [velocidade, setVelocidade] = useState(8);
   const [saindo, setSaindo] = useState(false);
   const [erro, setErro] = useState('');
 
   const cfg = van.turnos.find((t) => t.turno === turno);
-  const doTurno = d.ativos.filter((a) => a.turno === turno && !!cfg?.escolaIds.includes(a.escolaId));
+  const doTurnoBase = d.ativos.filter((a) => a.turno === turno && !!cfg?.escolaIds.includes(a.escolaId));
+  const escolasDe = (l: typeof doTurnoBase) => ordenarEscolas([...new Set(l.map((a) => a.escolaId))].map((id) => d.mapaEscolas.get(id)!).filter(Boolean), turno, tipo);
+  const pontas = (es: Escola[]) => ({ inicio: tipo === 'ida' ? van.garagem : es[0]?.local ?? van.garagem, fim: tipo === 'ida' ? es[es.length - 1]?.local ?? van.garagem : van.garagem });
+
+  // rota fixa (vale até o tio mudar): ordem salva; senão sugere a otimizada com todos do turno (ou a ida ao contrário, na volta)
+  const rf = van.rotasFixas?.[chaveRotaFixa(turno, tipo)];
+  const fixa = !!rf?.ativa;
+  const sugerida = () => {
+    const daIda = tipo === 'volta' ? van.rotasFixas?.[chaveRotaFixa(turno, 'ida')]?.ordem : undefined;
+    if (daIda?.length) return [...daIda].reverse();
+    const es = escolasDe(doTurnoBase); const pt = pontas(es);
+    return ordemLocal(tipo, pt.inicio, doTurnoBase, es, pt.fim, true).paradas.filter((p) => p.tipo === 'aluno').map((p) => p.alunoId);
+  };
+  const doTurno = fixa ? ordenarPorFixa(doTurnoBase, rf!.ordem) : doTurnoBase;
   const vao = doTurno.filter((a) => vaiNoTrecho(d.presencaPorAluno.get(a.id), tipo));
-  const escolas = ordenarEscolas([...new Set(vao.map((a) => a.escolaId))].map((id) => d.mapaEscolas.get(id)!).filter(Boolean), turno, tipo);
-  const inicio = tipo === 'ida' ? van.garagem : escolas[0]?.local ?? van.garagem;
-  const fim = tipo === 'ida' ? escolas[escolas.length - 1]?.local ?? van.garagem : van.garagem;
+  const otimizar = !fixa;
+  const escolas = escolasDe(vao);
+  const { inicio, fim } = pontas(escolas);
+  const usarFixa = (ativa: boolean) => void salvarRotaFixa(van.id, turno, tipo, ativa && !rf?.ordem.length ? { ativa, ordem: sugerida() } : { ativa });
+  const mover = (id: string, delta: number) => {
+    const ids = doTurno.map((a) => a.id); const i = ids.indexOf(id); const j = i + delta;
+    if (i < 0 || j < 0 || j >= ids.length) return;
+    [ids[i], ids[j]] = [ids[j], ids[i]];
+    void salvarRotaFixa(van.id, turno, tipo, { ordem: ids });
+  };
 
   const previa = useMemo(() => {
     const o = ordemLocal(tipo, inicio, vao, escolas, fim, otimizar);
     const base = ordemLocal(tipo, inicio, vao, escolas, fim, false);
     const km = compCaminho(o.pts) / 1000;
-    return { ...o, km, economia: Math.max(0, compCaminho(base.pts) / 1000 - km), min: etaMin(o.pts, o.paradas.length) };
+    const min = etaMin(o.pts, o.paradas.length);
+    const horario = planejarHorario(tipo, turno, o.paradas, d.mapaEscolas, (i) => etaMin(o.pts.slice(0, i + 2), i), min);
+    return { ...o, km, economia: Math.max(0, compCaminho(base.pts) / 1000 - km), min, horario };
   }, [vao.map((a) => a.id).join(), otimizar, tipo, turno]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const numero = new Map(previa.paradas.map((p, i) => [p.tipo === 'aluno' ? p.alunoId : `esc:${p.escolaId}`, i + 1]));
@@ -95,28 +116,65 @@ function PrepararRota({ d, turnoInicial }: { d: DadosVan; turnoInicial?: Turno }
         </section>
         <section className="card pilha">
           <h3>{ICONE_TURNO[turno]} {tipo === 'ida' ? 'Ida' : 'Volta'} da {NOME_TURNO[turno].toLowerCase()}</h3>
+          {escolas.length > 0 && previa.horario.sairAs && (
+            <div className={`horario-saida ${previa.horario.atrasadoMin ? 'atrasado' : ''}`}>
+              <span className="ic">⏰</span>
+              <div>
+                <strong>{tipo === 'ida' ? `Saia da garagem até ${previa.horario.sairAs}` : `Esteja em ${escolas[0].nome} às ${previa.horario.sairAs}`}</strong>
+                <span className="small">{tipo === 'ida'
+                  ? `Calculado pelo horário de entrada das escolas (${FOLGA_MIN} min de folga) · última escola ~${previa.horario.fimAs}`
+                  : `Horário de saída da escola · todos em casa ~${previa.horario.fimAs}`}</span>
+                {previa.horario.atrasadoMin ? <span className="tag atraso" style={{ marginTop: 6, alignSelf: 'start' }}>⚠️ Já passou {previa.horario.atrasadoMin} min da hora de {tipo === 'ida' ? 'sair' : 'estar lá'}</span> : null}
+              </div>
+            </div>
+          )}
           <div>
             <strong className="small">Escolas, na ordem {tipo === 'ida' ? 'da entrada' : 'da saída'}</strong>
-            {escolas.map((e: Escola, i) => (
-              <div key={e.id} className="linha-item">
-                <span>🏫 {i + 1}º · {e.nome}</span>
-                <span className="tag tag-cinza">{tipo === 'ida' ? 'entra' : 'sai'} {horarioAlvo(e, turno, tipo) ?? '—'}</span>
-              </div>
-            ))}
+            {escolas.map((e: Escola, i) => {
+              const h = previa.horario.escolas.find((x) => x.escolaId === e.id);
+              return (
+                <div key={e.id} className="linha-item">
+                  <span>🏫 {i + 1}º · {e.nome}</span>
+                  <span className="linha" style={{ gap: 6, justifyContent: 'flex-end' }}>
+                    <span className="tag tag-cinza">{tipo === 'ida' ? 'entra' : 'sai'} {horarioAlvo(e, turno, tipo) ?? '—'}</span>
+                    {h && h.folga !== null && (tipo === 'ida'
+                      ? <span className={`tag ${h.folga >= 0 ? 'no-horario' : 'atraso'}`}>chega ~{h.chegada}</span>
+                      : i > 0 && <span className="tag tag-cinza">chega ~{h.chegada}{h.espera ? ` · espera ${h.espera} min` : ''}</span>)}
+                  </span>
+                </div>
+              );
+            })}
             {!escolas.length && <span className="muted small">Nenhuma escola com aluno neste trecho.</span>}
           </div>
-          <label className="check"><input type="checkbox" checked={otimizar} onChange={(e) => setOtimizar(e.target.checked)} /> Otimizar a ordem das casas</label>
+          <div className="pilha" style={{ gap: 6 }}>
+            <strong className="small">Ordem das casas</strong>
+            <div className="abas modo-rota">
+              <a className={!fixa ? 'ativo' : ''} onClick={() => usarFixa(false)}>⚡ Otimizada</a>
+              <a className={fixa ? 'ativo' : ''} onClick={() => usarFixa(true)}>📌 Rota fixa</a>
+            </div>
+            <small className="muted">{fixa
+              ? `Você define a ordem com ↑ ↓ e ela fica salva (ex.: o semestre todo). Quem não vai no dia é só pulado.${rf?.atualizadaEm ? ` Atualizada em ${new Date(rf.atualizadaEm).toLocaleDateString('pt-BR')}.` : ''}`
+              : 'O app escolhe a melhor ordem pelas ruas, todo dia, com quem vai.'}</small>
+          </div>
           <label className="check"><input type="checkbox" checked={automatico} onChange={(e) => setAutomatico(e.target.checked)} /> Modo demonstração (confirma sozinho)</label>
           <label className="fld"><span>Velocidade da simulação</span>
             <select value={velocidade} onChange={(e) => setVelocidade(Number(e.target.value))}>{VELOCIDADES.map((v) => <option key={v} value={v}>{v}× {v === 1 ? '(tempo real)' : ''}</option>)}</select>
           </label>
           <div>
             <div className="entre"><strong>Alunos do turno ({vao.length}/{doTurno.length} nesta {tipo})</strong></div>
-            {doTurno.map((a) => {
+            {doTurno.map((a, i) => {
               const n = numero.get(a.id);
               return (
                 <div key={a.id} className="linha-item" style={{ opacity: n ? 1 : 0.55 }}>
-                  <div className="aluno-cel"><Avatar aluno={a} tam={34} /><div><strong>{n ? `${n}. ` : ''}{a.nome}</strong><span className="muted small">{d.mapaEscolas.get(a.escolaId)?.nome} · {a.endereco}</span></div></div>
+                  <div className="aluno-cel">
+                    {fixa && (
+                      <div className="ordem-btns">
+                        <button className="btn btn-claro btn-sm" title="Subir" disabled={i === 0} onClick={() => mover(a.id, -1)}>↑</button>
+                        <button className="btn btn-claro btn-sm" title="Descer" disabled={i === doTurno.length - 1} onClick={() => mover(a.id, 1)}>↓</button>
+                      </div>
+                    )}
+                    <Avatar aluno={a} tam={34} /><div><strong>{n ? `${n}. ` : ''}{a.nome}</strong><span className="muted small">{d.mapaEscolas.get(a.escolaId)?.nome} · {a.endereco}</span></div>
+                  </div>
                   <SeletorPlano valor={d.plano(a.id)} onChange={(x) => void definirPresenca(a.id, x, undefined, 'motorista')} />
                 </div>
               );
@@ -177,6 +235,7 @@ function RotaAoVivo({ d, v }: { d: DadosVan; v: Viagem }) {
       </section>
       <section className="pilha">
         <div className="alvo-card">
+          <Navegar destino={atual ? (atual.tipo === 'aluno' ? d.mapaAlunos.get(atual.alunoId)?.local : d.mapaEscolas.get(atual.escolaId)?.local) : v.destino} />
           {atual?.tipo === 'aluno' ? (() => {
             const a = d.mapaAlunos.get(atual.alunoId)!;
             return (
@@ -260,6 +319,18 @@ function RotaAoVivo({ d, v }: { d: DadosVan; v: Viagem }) {
           <button className="btn btn-claro" onClick={() => { if (confirm('Encerrar a rota agora?')) void encerrarViagem(v.id); }}>⏹ Encerrar rota</button>
         </div>
       </section>
+    </div>
+  );
+}
+
+/** Abre a parada atual no Waze ou no Google Maps do celular (link grátis, sem API paga). */
+function Navegar({ destino }: { destino?: { lat: number; lng: number } }) {
+  if (!destino) return null;
+  const ll = `${destino.lat},${destino.lng}`;
+  return (
+    <div className="navegar">
+      <a className="btn btn-sm" href={`https://waze.com/ul?ll=${ll}&navigate=yes`} target="_blank" rel="noreferrer">🧭 Waze</a>
+      <a className="btn btn-sm" href={`https://www.google.com/maps/dir/?api=1&destination=${ll}&travelmode=driving`} target="_blank" rel="noreferrer">🗺️ Maps</a>
     </div>
   );
 }

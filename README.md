@@ -21,7 +21,7 @@ npm run preview    # serve o build → http://localhost:4173 (dá para instalar 
 1. Abra o **motorista** numa aba e os **pais**, o **aluno** e a **escola** em outras (botão 🧪 Teste, no canto da tela).
 2. No motorista: **Rota → Iniciar ida** (ligue o "modo demonstração" para embarcar sozinho).
 3. Veja as outras abas atualizarem sozinhas: aviso de "é o próximo", mapa liberado na vez da família,
-   embarque, chegada na escola e a portaria confirmando a entrada.
+   embarque, chegada na escola e (no Colégio Santa Maria) a portaria confirmando a entrada.
 4. Nos pais, toque em **Não vai**: a rota do tio é reotimizada na hora.
 5. No aluno, toque em **Tô no portão!** antes da van chegar: vale +10 pontos.
 6. 🧪 Teste → **Restaurar dados de exemplo** volta tudo ao início.
@@ -46,6 +46,17 @@ chegadas, saídas, quem confirmou entrada e a **previsão de atraso** (previsão
 **Ida e volta separadas:** o combinado do dia pode ser *ida e volta*, *só a volta* ("eu levo, o tio traz"),
 *só a ida* ("o tio leva, eu busco") ou *não vai*. A família e o tio podem mudar; se a rota já está andando, ela é reotimizada.
 
+
+**Horário das escolas:** a rota é planejada de trás para frente. Na ida, o app calcula a **hora limite para sair da garagem**
+(entrada de cada escola − tempo até ela − 5 min de folga) e a chegada prevista em cada escola. Na volta, mostra a hora de estar
+na 1ª escola, quanto tempo espera nas seguintes e a hora em que todos chegam em casa.
+
+**Rota otimizada ou rota fixa:** por turno e trecho, o tio escolhe entre a ordem otimizada do dia ou a **rota fixa** dele
+(ordena com ↑ ↓; fica salva até ele mudar, ex.: o semestre todo). Na rota fixa, quem não vai no dia é só pulado, sem reotimizar.
+A parada atual abre no **Waze** ou no **Google Maps** do celular (link, sem API paga).
+
+**Entrada na escola:** por padrão fica com o tio: o "Desceram N" já avisa os pais. A escola que quiser (ex.: particular com plano)
+liga "Confirmar a entrada na portaria" e confirma aluno por aluno.
 
 **Privacidade (combinado com o time):** a família não vê onde a van está enquanto o tio busca outras crianças
 e não sabe quem são nem onde moram. Vê só o próprio filho, quantas paradas faltam, a previsão e o destino final.

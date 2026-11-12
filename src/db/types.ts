@@ -14,6 +14,11 @@ export interface Escola {
   local: LatLng;
   /** horários por turno (a escola pode não ter todos os turnos) */
   horarios: Partial<Record<Turno, Horario>>;
+  /**
+   * A portaria confirma a entrada de cada aluno no app (opcional — escolas com plano).
+   * Desligado: a entrega fica com o tio ("Desceram N" já avisa os pais).
+   */
+  confirmaEntrada?: boolean;
 }
 
 /** Em qual turno o motorista trabalha e quais escolas atende nele. */
@@ -38,7 +43,14 @@ export interface Van {
   precoPadrao: number;
   vagas: number;
   avaliacao: number;
+  /**
+   * Rota fixa definida pelo tio (ex.: para o semestre todo), por `${turno}|${tipo}`.
+   * ativa = usa a ordem dele em vez de otimizar; quem não está na lista entra no fim.
+   */
+  rotasFixas?: Record<string, RotaFixa>;
 }
+
+export interface RotaFixa { ativa: boolean; ordem: string[]; atualizadaEm: string }
 
 export interface Aluno {
   id: string;
@@ -148,6 +160,8 @@ export interface Viagem {
   concluidaEm?: string;
   /** alunos que já receberam o aviso de "é o próximo" */
   avisados: string[];
+  /** ordem fixa do tio: ao reajustar, não reotimiza as casas */
+  fixa?: boolean;
   /** km economizados pela otimização */
   economiaKm?: number;
   atualizadoEm: string;

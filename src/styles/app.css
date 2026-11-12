@@ -329,3 +329,16 @@ hr.sep { border: 0; border-top: 1px solid var(--borda); margin: 6px 0; }
 .mk-escola.mk-feito-esc { background: #9AA7BD; }
 .atraso { color: #B4252A; background: var(--vermelho-claro); }
 .no-horario { color: #0E7A45; background: var(--verde-claro); }
+
+/* horário da escola → hora de sair */
+.horario-saida { display: flex; gap: 12px; align-items: flex-start; background: var(--azul-claro); border-radius: 14px; padding: 12px 14px; }
+.horario-saida .ic { font-size: 22px; line-height: 1; }
+.horario-saida > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.horario-saida strong { font-size: 16px; }
+.horario-saida.atrasado { background: var(--vermelho-claro); }
+.modo-rota { align-self: start; }
+.ordem-btns { display: flex; flex-direction: column; gap: 2px; }
+.ordem-btns .btn { padding: 0 8px; min-height: 0; line-height: 18px; font-size: 12px; }
+.navegar { display: flex; gap: 6px; justify-content: flex-end; margin-bottom: 8px; }
+.navegar .btn { background: rgba(255,255,255,.14); color: #fff; border: 1px solid rgba(255,255,255,.25); }
+.confirma-entrada { display: flex; justify-content: space-between; align-items: center; gap: 12px; }

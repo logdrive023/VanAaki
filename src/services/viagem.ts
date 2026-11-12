@@ -102,10 +102,23 @@ export async function participantes(vanId: string, turno: Turno, tipo: TipoViage
 
 export interface OpcoesViagem { automatico: boolean; velocidade: number; otimizar: boolean }
 
+/** Chave da rota fixa da van: um turno + um trecho. */
+export const chaveRotaFixa = (turno: Turno, tipo: TipoViagem) => `${turno}|${tipo}`;
+
+/** Ordena alunos pela ordem fixa do tio (quem é novo e não está na lista vai para o fim). */
+export function ordenarPorFixa<T extends { id: string }>(alunos: T[], ordem: string[]) {
+  const pos = new Map(ordem.map((id, i) => [id, i]));
+  return [...alunos].sort((a, b) => (pos.get(a.id) ?? 1e6) - (pos.get(b.id) ?? 1e6));
+}
+
 export async function iniciarViagem(vanId: string, turno: Turno, tipo: TipoViagem, op: OpcoesViagem) {
   const { van, alunos, escolas } = await participantes(vanId, turno, tipo);
   if (!van) throw new Error('Van não encontrada');
   if (!alunos.length) throw new Error(`Nenhum aluno vai de van na ${tipo} deste turno.`);
+  // rota fixa do tio: mantém a ordem dele e só pula quem não vai hoje
+  const rf = van.rotasFixas?.[chaveRotaFixa(turno, tipo)];
+  const fixa = !!rf?.ativa;
+  if (fixa) { alunos.splice(0, alunos.length, ...ordenarPorFixa(alunos, rf!.ordem)); op = { ...op, otimizar: false }; }
   const inicio = tipo === 'ida' ? van.garagem : escolas[0].local;
   const destino = tipo === 'ida' ? escolas[escolas.length - 1].local : van.garagem;
   const plano = await planejar(tipo, inicio, alunos, escolas, destino, op.otimizar);
@@ -119,7 +132,7 @@ export async function iniciarViagem(vanId: string, turno: Turno, tipo: TipoViage
       paradas: plano.paradas, alvo: 0, pos: { ...inicio }, caminho: (plano.trechos[chaveParada(plano.paradas[0])] ?? []).slice(),
       trechos: plano.trechos, rotaReal: plano.rotaReal, rastro: [{ ...inicio }], naParada: false,
       automatico: op.automatico, velocidade: op.velocidade, iniciadaEm: agoraIso(), avisados: [],
-      economiaKm: plano.economiaKm, atualizadoEm: agoraIso(),
+      economiaKm: plano.economiaKm, fixa, atualizadoEm: agoraIso(),
     };
     const t = NOME_TURNO[turno].toLowerCase();
     for (const a of alunos) {
@@ -216,9 +229,9 @@ async function concluirParada(v: Viagem, L: Locais, status: 'feito' | 'ausente')
       const desceram = v.paradas.filter((x) => x.tipo === 'aluno' && x.escolaId === e.id && x.status === 'feito');
       for (const k of desceram) {
         const a = L.alunos.get(k.alunoId)!;
-        await notificarFamilia(a.id, '🏫', `${primeiroNome(a.nome)} chegou na escola`, `${e.nome} às ${hora(p.hora)}`, true);
+        await notificarFamilia(a.id, '🏫', `${primeiroNome(a.nome)} chegou na escola`, `${e.nome} às ${hora(p.hora)} · ${e.confirmaEntrada ? 'a portaria confirma a entrada' : 'entregue pelo tio no portão'}`, true);
       }
-      await notificar({ para: 'escola', escolaId: e.id, icone: '🚐', titulo: `Van de ${van?.motorista} deixou ${desceram.length} aluno(s)`, texto: 'Confirme a entrada de cada um na portaria' });
+      await notificar({ para: 'escola', escolaId: e.id, icone: '🚐', titulo: `Van de ${van?.motorista} deixou ${desceram.length} aluno(s)`, texto: e.confirmaEntrada ? 'Confirme a entrada de cada um na portaria' : `Entregues pelo tio às ${hora(p.hora)}` });
     } else {
       const subiram = v.paradas.filter((x) => x.tipo === 'aluno' && x.escolaId === e.id && x.status === 'pendente');
       for (const k of subiram) {
@@ -282,8 +295,9 @@ export async function retracarRota(viagemId: string) {
   const de = v0.tipo === 'ida' || !escolas.length ? (fixo ? localDe(fixo, L) : v0.pos) : localDe(escolas[escolas.length - 1], L);
   const ate = v0.tipo === 'ida' ? (escolas[0] ? localDe(escolas[0], L) : destino) : destino;
   const locs = casas.map((p) => localDe(p, L));
-  const r = casas.length > 1 ? await otimizarPelasRuas(de, locs, ate) : null;
-  const ordem = r?.ordem ?? otimizarOrdem(de, locs, ate);
+  // rota fixa: só tira quem saiu e mantém a ordem do tio
+  const r = casas.length > 1 && !v0.fixa ? await otimizarPelasRuas(de, locs, ate) : null;
+  const ordem = v0.fixa ? casas.map((_, i) => i) : r?.ordem ?? otimizarOrdem(de, locs, ate);
   const casasOrd = ordem.map((i) => casas[i]);
   const novaOrdem = [...(fixo ? [fixo] : []), ...(v0.tipo === 'ida' ? [...casasOrd, ...escolas] : [...escolas, ...casasOrd])];
   const rota = await tracarRota([v0.pos, ...novaOrdem.map((p) => localDe(p, L)), destino]);

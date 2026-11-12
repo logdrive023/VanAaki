@@ -96,8 +96,8 @@ export function LinhaTempo({ viagem, aluno, escola, v }: { viagem?: Viagem; alun
     { ok: true, t: `Van saiu (${NOME_TURNO[viagem.turno].toLowerCase()})`, h: hora(viagem.iniciadaEm) },
     { ok: viagem.avisados.includes(aluno.id), agora: v.fase === 'aguardando', t: 'É o próximo a ser buscado', h: '' },
     { ok: p?.status === 'feito', agora: v.fase === 'proximo' || v.fase === 'na_porta', t: p?.status === 'ausente' ? 'Não embarcou' : 'Embarcou', h: p?.hora ? hora(p.hora) : '' },
-    { ok: naEscola && p?.status === 'feito', agora: v.fase === 'a_bordo' || v.fase === 'a_bordo_final', t: `Chegou em ${nomeEsc}`, h: naEscola ? hora(ps.hora) : '' },
-    { ok: !!p?.recebidoEscolaEm, t: 'Entrada confirmada pela escola', h: p?.recebidoEscolaEm ? hora(p.recebidoEscolaEm) : '' },
+    { ok: naEscola && p?.status === 'feito', agora: v.fase === 'a_bordo' || v.fase === 'a_bordo_final', t: escola?.confirmaEntrada ? `Chegou em ${nomeEsc}` : `Entregue em ${nomeEsc} pelo tio`, h: naEscola ? hora(ps.hora) : '' },
+    ...(escola?.confirmaEntrada ? [{ ok: !!p?.recebidoEscolaEm, t: 'Entrada confirmada pela escola', h: p?.recebidoEscolaEm ? hora(p.recebidoEscolaEm) : '' }] : []),
   ] : [
     { ok: true, t: `Tio saiu para buscar (${NOME_TURNO[viagem.turno].toLowerCase()})`, h: hora(viagem.iniciadaEm) },
     { ok: naEscola || v.fase === 'volta_na_escola', agora: v.fase === 'volta_outra_escola' || v.fase === 'volta_indo_escola', t: `Tio chegou em ${nomeEsc}`, h: '' },

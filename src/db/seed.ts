@@ -8,7 +8,7 @@ import { novaCobranca } from '../services/acoes';
 export const VAN_PRINCIPAL = 'van-carlos';
 export const ESCOLA_PRINCIPAL = 'esc-santa-maria';
 export const ALUNO_PADRAO = 'al-lucas';
-const VERSAO_SEED = 4;
+const VERSAO_SEED = 5;
 
 /** Gerador pseudoaleatório com semente (o histórico de exemplo sai sempre igual). */
 function rng(seed: number) {
@@ -51,7 +51,7 @@ export async function restaurarExemplo() {
 
     await db.escolas.bulkAdd([
       { id: SM, nome: 'Colégio Santa Maria', endereco: 'Rua Domingos de Morais, 1.200 · Vila Mariana', local: { lat: -23.5861, lng: -46.6338 },
-        horarios: { manha: { entrada: '07:15', saida: '12:20' }, tarde: { entrada: '13:15', saida: '18:00' } } },
+        horarios: { manha: { entrada: '07:15', saida: '12:20' }, tarde: { entrada: '13:15', saida: '18:00' } }, confirmaEntrada: true },
       { id: HZ, nome: 'Colégio Horizonte', endereco: 'Rua Vergueiro, 3.100 · Vila Mariana', local: { lat: -23.5822, lng: -46.6403 },
         horarios: { manha: { entrada: '07:30', saida: '12:40' }, noite: { entrada: '19:00', saida: '22:30' } } },
       { id: RL, nome: 'EE Prof. Roberto Lima', endereco: 'Rua Loefgren, 800 · Vila Clementino', local: { lat: -23.5968, lng: -46.6431 },

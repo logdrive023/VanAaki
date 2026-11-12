@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Feed } from '../components/gamificacao';
 import Mapa3D from '../components/Mapa3D';
 import { ShellPainel, type ItemMenu } from '../components/Shell';
-import { Avatar, Vazio } from '../components/ui';
+import { Avatar, Toggle, Vazio } from '../components/ui';
 import { db } from '../db/db';
 import { ESCOLA_PRINCIPAL } from '../db/seed';
 import { TURNOS, type Aluno, type Escola as TEscola, type Presenca, type TipoViagem, type Turno, type Van, type Viagem } from '../db/types';
@@ -11,7 +11,7 @@ import { tipoEvento } from '../lib/gamificacao';
 import { visaoEscola } from '../lib/privacidade';
 import { ICONE_TURNO, NOME_TURNO, nomePlano, planoDe, turnoAgora } from '../lib/turnos';
 import { dataLonga, hoje, hora, horaMais } from '../lib/util';
-import { credenciar } from '../services/acoes';
+import { credenciar, definirConfirmaEntrada } from '../services/acoes';
 import { confirmarEntradaEscola, idxAluno } from '../services/viagem';
 
 /** Escola escolhida nesta aba (teste) — fica salva no navegador. */
@@ -37,7 +37,7 @@ export default function Escola({ aba = 'chegadas' }: { aba?: string }) {
 
   const mapaAlunos = new Map(alunos.map((a) => [a.id, a]));
   const doTurno = viagens.filter((v) => v.turno === turno);
-  const aConfirmar = viagens.filter((v) => v.tipo === 'ida').flatMap((v) => v.paradas.filter((p) => p.tipo === 'aluno' && p.escolaId === escola.id && p.status === 'feito' && !p.recebidoEscolaEm
+  const aConfirmar = !escola.confirmaEntrada ? 0 : viagens.filter((v) => v.tipo === 'ida').flatMap((v) => v.paradas.filter((p) => p.tipo === 'aluno' && p.escolaId === escola.id && p.status === 'feito' && !p.recebidoEscolaEm
     && v.paradas.some((s) => s.tipo === 'escola' && s.escolaId === escola.id && s.status === 'feito'))).length;
   const pendCred = vans.filter((v) => v.credenciamento[escola.id] === 'pendente').length;
   const menu: ItemMenu[] = [
@@ -108,6 +108,12 @@ function Portaria({ escola, turno, vans, viagens, alunos }: { escola: TEscola; t
         <div className="kpi"><div className="ic" style={{ background: 'var(--vermelho-claro)' }}>⚠️</div><div><div className="num">{atrasadas}</div><div className="rot">Previsão de atraso</div></div></div>
         <div className="kpi"><div className="ic" style={{ background: 'var(--amarelo-claro)' }}>⏰</div><div><div className="num">{escola.horarios[turno]?.entrada}</div><div className="rot">Entrada · saída {escola.horarios[turno]?.saida}</div></div></div>
       </section>
+      <section className="card confirma-entrada">
+        <div><strong>Confirmar a entrada na portaria</strong><br /><span className="muted small">{escola.confirmaEntrada
+          ? 'Ligado: a portaria confirma cada aluno no app e os pais recebem "entrou na escola".'
+          : 'Desligado: a entrega fica com o tio. Quando ele marca "Desceram", os pais já são avisados.'}</span></div>
+        <Toggle on={!!escola.confirmaEntrada} onChange={(x) => void definirConfirmaEntrada(escola.id, x)} />
+      </section>
       <div className="privacidade"><span className="ic">🔒</span><span>A escola vê quantos alunos estão a bordo e a previsão. A posição da van no mapa só aparece quando o <b>próximo destino dela é esta escola</b>.</span></div>
       {!doTurno.length && <Vazio ic="🚐">Nenhuma van credenciada atende este turno</Vazio>}
       {resumo.map(({ van, ida, volta, vi, vv }) => (
@@ -145,7 +151,10 @@ function Trecho({ titulo, v, ve, escola, alunos }: { titulo: string; v?: Viagem;
         </div>
       )}
       {ve.mostrarMapa && <Mapa3D altura={280} marcadores={[{ id: 'escola', pos: escola.local, tipo: 'escola', rotulo: escola.nome }, { id: 'van', pos: v.pos, tipo: 'van' }]} linhas={[{ id: 'r', pts: ve.caminho, tipo: 'rota' }]} seguir={v.pos} />}
-      {ida && ve.estado === 'feito' && (
+      {ida && ve.estado === 'feito' && !escola.confirmaEntrada && (
+        <span className="muted small">Entregues pelo tio: {v.paradas.filter((p) => p.tipo === 'aluno' && p.escolaId === escola.id && p.status === 'feito').map((p) => alunos.get(p.alunoId)?.nome.split(' ')[0]).filter(Boolean).join(', ') || '—'}</span>
+      )}
+      {ida && ve.estado === 'feito' && escola.confirmaEntrada && (
         <>
           <strong className="small">Confirme a entrada (os pais são avisados na hora)</strong>
           {v.paradas.filter((p) => p.tipo === 'aluno' && p.escolaId === escola.id && p.status === 'feito').map((p) => {
@@ -219,7 +228,9 @@ function AlunosEscola({ escola, turno, alunos, vans, viagens, presencas }: { esc
     const pi = ida?.paradas[idxAluno(ida, a.id)];
     if (pi) {
       if (pi.recebidoEscolaEm) return <span className="tag tag-verde">✓ Na escola {hora(pi.recebidoEscolaEm)}</span>;
-      if (pi.status === 'feito') return <span className="tag tag-azul">🚐 {ida!.paradas.some((s) => s.tipo === 'escola' && s.escolaId === escola.id && s.status === 'feito') ? 'Chegou, falta confirmar' : 'A caminho'}</span>;
+      const deixou = ida!.paradas.find((s) => s.tipo === 'escola' && s.escolaId === escola.id && s.status === 'feito');
+      if (pi.status === 'feito' && deixou && !escola.confirmaEntrada) return <span className="tag tag-verde">✓ Entregue pelo tio {hora(deixou.hora)}</span>;
+      if (pi.status === 'feito') return <span className="tag tag-azul">🚐 {deixou ? 'Chegou, falta confirmar' : 'A caminho'}</span>;
       if (pi.status === 'ausente') return <span className="tag tag-vermelho">{pi.avisou ? 'Fora da ida' : 'Não embarcou'}</span>;
       return <span className="tag tag-amarelo">Aguardando a van</span>;
     }
