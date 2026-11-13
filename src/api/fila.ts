@@ -6,6 +6,7 @@ import { distM } from '../lib/geo';
 import { agoraIso, uid } from '../lib/util';
 import { api, ErroApi } from './cliente';
 import { sincronizar } from './sync';
+import { ehDemoLocal, espalharOp } from './demoLocal';
 
 /**
  * OFFLINE-FIRST — a fila de ações do aparelho.
@@ -76,6 +77,11 @@ export async function processar(): Promise<void> {
   rodando = true;
   clearTimeout(proxima);
   let enviouAlgo = false;
+  if (ehDemoLocal()) {
+    // demonstração no navegador: já valeu no aparelho; só conta para as outras abas
+    try { for (const op of await db.fila.orderBy('seq').toArray()) { await db.fila.delete(op.seq!); espalharOp(op); } } finally { rodando = false; }
+    return;
+  }
   try {
     for (;;) {
       const op = await db.fila.orderBy('seq').first();
@@ -127,6 +133,11 @@ if (typeof window !== 'undefined') {
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') void processar(); });
   setInterval(() => { void db.fila.count().then((n) => { if (n && !rodando) void processar(); }); }, 20000);
   setTimeout(() => void processar(), 1500);
+}
+
+/** Ação vinda de outra aba da demonstração: só aplica (não entra na fila). */
+export async function aplicarRecebida(o: OpFila) {
+  await db.transaction('rw', tabelas(), () => aplicarLocal(o));
 }
 
 /** Algo ainda não foi enviado? (ex.: antes de sair da conta) */
@@ -186,7 +197,7 @@ async function aplicarLocal(o: OpFila) {
     }
     case 'posicoes': {
       const v = await db.viagens.get(o.viagemId!);
-      if (!v || v.status !== 'em_andamento' || v.simulado) return;
+      if (!v || v.status !== 'em_andamento' || (v.simulado && !ehDemoLocal())) return;
       const auto = !(await db.vans.get(v.vanId))?.config?.confirmarManual;
       const loc = await locais(v);
       for (const p of c.pontos as { lat: number; lng: number; em: string }[]) {

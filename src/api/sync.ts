@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 import { db } from '../db/db';
 import type { Aluno, Escola, Eu, EventoPontos, LatLng, Mensagem, Notificacao, Pagamento, Presenca, Recado, Recompensa, Resgate, Van, Viagem } from '../db/types';
 import { api, API_URL, lerSessao } from './cliente';
-import { reaplicar } from './fila';
+import { aplicarRecebida, reaplicar } from './fila';
+import { ehDemoLocal, ligarDemoLocal } from './demoLocal';
 
 interface Pacote {
   eu: Eu; hoje: string;
@@ -13,6 +14,8 @@ interface Pacote {
 
 /** Baixa tudo o que este perfil pode ver e troca a cópia local (numa transação: a tela redesenha uma vez). */
 export async function sincronizar() {
+  // demonstração no navegador: depois de carregar o exemplo, a cópia do aparelho é a verdade
+  if (ehDemoLocal() && await db.config.get('eu')) return;
   const p = await api<Pacote>('/sync');
   await db.transaction('rw', db.todas, async () => {
     const trocar = async <T,>(t: { clear: () => Promise<void>; bulkPut: (l: T[]) => Promise<unknown> }, l: T[]) => { await t.clear(); await t.bulkPut(l); };
@@ -46,6 +49,7 @@ interface Movimento { id: string; pos: LatLng; caminho: LatLng[]; naParada: bool
 
 /** Conecta no tempo real (SSE). Reconecta sozinho; ao voltar, sincroniza tudo de novo. */
 export function conectarTempoReal(perfil: string, onEstado: (online: boolean) => void) {
+  if (ehDemoLocal(perfil)) { onEstado(true); return ligarDemoLocal(perfil, aplicarRecebida); }
   let es: EventSource | null = null;
   let parar = false;
   let espera = 1000;

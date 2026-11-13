@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { ehDemoLocal } from '../../api/demoLocal';
 import { CuidadosLinha } from '../../components/cuidados';
 import { useEu } from '../../api/sync';
 import { useFila } from '../../api/fila';
@@ -289,7 +290,7 @@ function RotaAoVivo({ d, v }: { d: DadosVan; v: Viagem }) {
           <span className="tag"><I n={v.turno} />{NOME_TURNO[v.turno]} · {v.tipo} · {feitos}/{casas.length} {v.tipo === 'ida' ? 'embarcados' : 'entregues'}</span>
           <span className="tag"><I n="bandeira" />fim ~{horaMais(etaFim)}</span>
           {!!v.economiaKm && v.economiaKm > 0.05 && <span className="tag tag-verde"><I n="raio" />-{v.economiaKm.toFixed(1)} km</span>}
-          {!v.rotaReal && <span className="tag tag-laranja">Sem internet: rota em linha reta</span>}
+          {!v.rotaReal && !ehDemoLocal() && <span className="tag tag-laranja">Sem internet: rota em linha reta</span>}
           {!v.simulado && <span className={`tag ${gps === 'ok' ? 'tag-verde' : gps === 'negado' || gps === 'sem' ? 'tag-vermelho' : 'tag-cinza'}`}>
             <I n="satelite" />{gps === 'ok' ? `GPS ativo${fila ? ` · ${fila} na fila` : ''}` : gps === 'negado' ? 'Libere a localização no navegador' : gps === 'sem' ? 'Sem GPS neste aparelho' : 'Procurando GPS…'}</span>}
         </div>

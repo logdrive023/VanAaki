@@ -37,7 +37,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest,json}'],
         navigateFallback: null,
         // azulejos do mapa já vistos ficam guardados (abre o mapa mesmo sem internet)
         runtimeCaching: [{

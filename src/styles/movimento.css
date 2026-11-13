@@ -1,0 +1,52 @@
+/* =========================================================
+   VanAaki — movimento padrão (components/Transicao.tsx)
+   Um tempo e uma curva para o app todo: nada "pula", nada demora.
+   ========================================================= */
+:root {
+  --t-rapido: 160ms;
+  --t-tela: 260ms;
+  --curva: cubic-bezier(.2, .8, .2, 1);
+}
+
+@keyframes t-surgir  { from { opacity: 0; transform: translateY(8px); } }
+@keyframes t-avancar { from { opacity: 0; transform: translateX(24px); } }
+@keyframes t-voltar  { from { opacity: 0; transform: translateX(-24px); } }
+@keyframes t-sobe    { from { opacity: 0; transform: translateY(16px) scale(.98); } }
+
+.transicao { display: contents; }
+.transicao > * { animation: t-surgir var(--t-tela) var(--curva) both; }
+.transicao.t-avancar > * { animation-name: t-avancar; }
+.transicao.t-voltar > * { animation-name: t-voltar; }
+/* blocos que precisam de caixa (formulários, passos) */
+.transicao.bloco { display: flex; flex-direction: column; gap: inherit; }
+.transicao.bloco > * { animation: none; }
+.transicao.bloco { animation: t-surgir var(--t-tela) var(--curva) both; }
+.transicao.bloco.t-avancar { animation-name: t-avancar; }
+.transicao.bloco.t-voltar { animation-name: t-voltar; }
+
+/* janelas: sobem do mesmo jeito em todo lugar */
+.modal { animation: t-sobe var(--t-tela) var(--curva) both; }
+.modal-fundo { animation: fade var(--t-rapido) ease-out both; }
+
+/* ---------- segmento com marcação deslizante ---------- */
+.segmento { position: relative; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); background: var(--azul-claro); border-radius: 14px; padding: 4px; }
+.seg-marca { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px) / var(--n)); border-radius: 10px; background: var(--superficie); box-shadow: 0 1px 3px rgba(17, 19, 24, .14); transform: translateX(calc(var(--i) * 100%)); transition: transform var(--t-tela) var(--curva); }
+.segmento button { position: relative; z-index: 1; min-height: 44px; padding: 6px 10px; border: 0; background: none; border-radius: 10px; font: 600 calc(14px * var(--esc, 1)) var(--fonte); color: var(--texto-2); transition: color var(--t-rapido); }
+.segmento button.ativo { color: var(--texto); }
+
+/* ---------- cena do login ---------- */
+.cena-login { display: grid; grid-template-columns: 116px minmax(0, 1fr); gap: 14px; align-items: center; padding: 12px 14px; border-radius: 16px; background: var(--tinta); color: #fff; animation: t-surgir var(--t-tela) var(--curva) both; }
+.cena-estrada { position: relative; height: 44px; }
+.cena-faixa { position: absolute; left: 0; right: 0; bottom: 4px; height: 4px; border-radius: 99px; background: repeating-linear-gradient(90deg, var(--amarelo) 0 10px, transparent 10px 16px); background-size: 32px 4px; animation: cena-estrada .9s linear 2; }
+.cena-van { position: absolute; bottom: 9px; left: 0; width: 34px; height: 26px; border-radius: 8px; background: var(--amarelo); color: var(--tinta); display: grid; place-items: center; animation: cena-chegar 1.1s var(--curva) both; }
+.cena-van svg { width: 18px; height: 18px; }
+.cena-van.cena-criar { animation-name: cena-chegar, cena-pula; animation-duration: 1.1s, .5s; animation-delay: 0s, 1.1s; animation-timing-function: var(--curva), ease-out; }
+.cena-casa { position: absolute; right: 0; bottom: 8px; width: 30px; height: 30px; border-radius: 9px; background: #fff; color: var(--tinta); display: grid; place-items: center; }
+.cena-casa svg { width: 17px; height: 17px; }
+.cena-txt strong { display: block; font-family: var(--display); font-size: calc(17px * var(--esc, 1)); font-weight: 800; letter-spacing: -.01em; }
+.cena-txt span { display: block; font-size: calc(13px * var(--esc, 1)); color: #C9CCD2; margin-top: 2px; }
+@keyframes cena-chegar { from { transform: translateX(-30px); opacity: 0; } 70% { opacity: 1; } to { transform: translateX(44px); } }
+@keyframes cena-estrada { to { background-position: -32px 0; } }
+@keyframes cena-pula { 40% { transform: translateX(44px) translateY(-5px); } to { transform: translateX(44px); } }
+
+.login-status.navegador { background: var(--azul-claro); color: var(--texto); border: 1px solid var(--borda); }

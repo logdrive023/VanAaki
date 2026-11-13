@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { BotaoAcessibilidade } from '../components/Acessibilidade';
-import { api, API_URL, salvarSessao, type Sessao } from '../api/cliente';
+import { api, API_URL, salvarSessao, SEM_API, type ErroApi, type Sessao } from '../api/cliente';
+import { sessaoDemoLocal } from '../api/demoLocal';
+import { CenaLogin, Segmento, Transicao } from '../components/Transicao';
 import { I, Marca, type NomeIcone } from '../components/Icone';
 import type { Perfil } from '../db/types';
 
@@ -31,8 +33,15 @@ const INFO: Record<Perfil, {
 };
 const PERFIS: Perfil[] = ['motorista', 'pais', 'aluno', 'escola'];
 
-/** Site publicado sem o endereço da API configurado: o login explica em vez de dar erro genérico. */
-const SEM_API = !(import.meta.env.VITE_API_URL as string | undefined)?.trim() && !/^(localhost|127\.|192\.168\.|10\.)/.test(location.hostname);
+/** O que a cena animada diz em cada caso (entre "Entrar" e "Primeiro acesso"). */
+const CENA: Record<'entrar' | Perfil, { titulo: string; texto: string }> = {
+  entrar: { titulo: 'Que bom te ver de novo', texto: 'Entre com o e-mail e a senha de sempre.' },
+  motorista: { titulo: 'Bem-vindo, tio!', texto: 'Três passos e a sua van já está no app.' },
+  pais: { titulo: 'Primeira vez por aqui?', texto: 'Use o código que o tio da van mandou no WhatsApp.' },
+  escola: { titulo: 'Bem-vinda, escola!', texto: 'Use o código que veio com o convite da van.' },
+  aluno: { titulo: 'Oi!', texto: 'Digite o código que seus pais receberam.' },
+};
+
 
 type Servidor = 'verificando' | 'online' | 'acordando' | 'fora';
 
@@ -99,7 +108,22 @@ export default function Entrar({ perfil, autoDemo, convite }: { perfil: Perfil; 
       concluir(await api<Sessao>(caminho, { metodo: 'POST', corpo, semToken: true, timeoutMs: 70000 }));
     } catch (e) {
       const m = (e as Error).message;
-      setErro(SEM_API ? 'A demonstração online ainda não está ligada a um servidor. Veja o aviso acima.' : m);
+      setErro(SEM_API ? 'Contas reais abrem quando o servidor estiver no ar. Por enquanto, use a demonstração acima.' : m);
+    }
+    clearTimeout(timer.current);
+    setEnviando(''); setDemorando(false);
+  };
+  /** Demonstração: com servidor, a do servidor (as abas conversam pelo tempo real); sem servidor ou com ele fora, a do navegador. */
+  const entrarDemo = async () => {
+    if (SEM_API) { setEnviando('demo'); try { concluir(await sessaoDemoLocal(perfil)); } catch (e) { setErro((e as Error).message); setEnviando(''); } return; }
+    setErro(''); setEnviando('demo'); setDemorando(false);
+    timer.current = setTimeout(() => setDemorando(true), 4000);
+    try {
+      concluir(await api<Sessao>('/auth/demo', { metodo: 'POST', corpo: { perfil }, semToken: true, timeoutMs: 15000 }));
+    } catch (e) {
+      const st = (e as ErroApi).status;
+      if (st === 0 || st >= 500) { try { concluir(await sessaoDemoLocal(perfil)); } catch (e2) { setErro((e2 as Error).message); } }
+      else setErro((e as Error).message);
     }
     clearTimeout(timer.current);
     setEnviando(''); setDemorando(false);
@@ -116,10 +140,10 @@ export default function Entrar({ perfil, autoDemo, convite }: { perfil: Perfil; 
   const assistente = perfil === 'motorista' && modo === 'criar';
   const jaFoi = useRef(false);
   useEffect(() => {
-    if (!autoDemo || jaFoi.current || SEM_API) return;
+    if (!autoDemo || jaFoi.current) return;
     jaFoi.current = true;
     history.replaceState(null, '', `#/${perfil}`);
-    void chamar('/auth/demo', { perfil }, 'demo');
+    void entrarDemo();
   }, [autoDemo]); // eslint-disable-line react-hooks/exhaustive-deps
   // aluno com o link do código: entra sozinho (criança pequena não precisa digitar nada)
   useEffect(() => {
@@ -171,7 +195,7 @@ export default function Entrar({ perfil, autoDemo, convite }: { perfil: Perfil; 
               <strong>Conhecer sem cadastro</strong>
               <span>Dados de exemplo, tudo funcionando. Abra os outros perfis em outra aba e veja ao vivo.</span>
             </div>
-            <button type="button" className="btn btn-primario btn-bloco btn-grande" disabled={ocupado || fora} onClick={() => void chamar('/auth/demo', { perfil }, 'demo')}>
+            <button type="button" className="btn btn-primario btn-bloco btn-grande" disabled={ocupado} onClick={() => void entrarDemo()}>
               {enviando === 'demo' ? <><I n="carregando" className="girando" />{demorando ? 'Acordando o servidor…' : 'Entrando…'}</> : <><I n="teste" />Entrar na demonstração</>}
             </button>
           </section>}
@@ -179,10 +203,12 @@ export default function Entrar({ perfil, autoDemo, convite }: { perfil: Perfil; 
           {!convite && <div className="login-ou"><span>ou com a sua conta</span></div>}
 
           {perfil !== 'aluno' && !convite && (
-            <div className="seg login-seg">
-              <button type="button" className={modo === 'entrar' ? 'ativo' : ''} onClick={() => { setModo('entrar'); setErro(''); }}>Entrar</button>
-              <button type="button" className={modo === 'criar' ? 'ativo' : ''} onClick={() => { setModo('criar'); setErro(''); }}>{info.criar}</button>
-            </div>
+            <>
+              <Segmento rotulo="Entrar ou criar a conta" className="login-seg" valor={modo}
+                opcoes={[{ valor: 'entrar', nome: 'Entrar' }, { valor: 'criar', nome: info.criar }]}
+                onChange={(m) => { setModo(m); setErro(''); setEtapa(0); }} />
+              <CenaLogin modo={modo} {...CENA[modo === 'entrar' ? 'entrar' : perfil]} />
+            </>
           )}
 
           <form className="login-form" onSubmit={enviar}>
@@ -191,6 +217,7 @@ export default function Entrar({ perfil, autoDemo, convite }: { perfil: Perfil; 
                 {['Você', 'A van', 'Acesso'].map((t, k) => <li key={t} className={etapa > k ? 'feito' : etapa === k ? 'agora' : ''}><b>{etapa > k ? <I n="check" tam={13} /> : k + 1}</b>{t}</li>)}
               </ol>
             )}
+            <Transicao chave={`${modo}-${etapa}`} ordem={etapa}>
             {assistente && <h2 className="pergunta">{['Como te chamam?', 'E a sua van?', 'Para entrar das próximas vezes'][etapa]}</h2>}
 
             {modo === 'criar' && info.codigo && (
@@ -219,6 +246,7 @@ export default function Entrar({ perfil, autoDemo, convite }: { perfil: Perfil; 
                 </Campo>
               </>
             )}
+            </Transicao>
             {erro && <div className="aviso-erro" role="alert">{erro}</div>}
             <div className="linha" style={{ flexWrap: 'nowrap' }}>
               {assistente && etapa > 0 && <button type="button" className="btn btn-claro btn-grande" onClick={() => setEtapa(etapa - 1)} aria-label="Voltar"><I n="voltar" /></button>}
@@ -239,15 +267,14 @@ export default function Entrar({ perfil, autoDemo, convite }: { perfil: Perfil; 
 
 function StatusServidor({ estado }: { estado: Servidor }) {
   if (estado === 'online' || estado === 'verificando') return null;
+  if (SEM_API) return <div className="login-status navegador"><I n="teste" /><span><b>Demonstração no seu navegador.</b> Tudo funciona com dados de exemplo, até sem internet. Criar conta de verdade abre quando o servidor estiver no ar.</span></div>;
   if (estado === 'acordando') {
     return <div className="login-status acordando"><I n="carregando" className="girando" /><span><b>Acordando o servidor.</b> No plano gratuito ele dorme quando ninguém usa; leva até 1 minuto. Pode tocar em entrar: o app espera.</span></div>;
   }
   return (
     <div className="login-status fora">
       <I n="semWifi" />
-      <span>{SEM_API
-        ? <><b>A demonstração online ainda não está ligada a um servidor.</b> A API em Go precisa estar hospedada (veja o README, seção “Publicar”). Rodando no computador ela funciona normalmente.</>
-        : <><b>O servidor não respondeu.</b> Confira a internet e tente de novo em instantes.</>}</span>
+      <span><b>O servidor não respondeu.</b> Confira a internet e tente de novo em instantes. A demonstração continua funcionando.</span>
     </div>
   );
 }

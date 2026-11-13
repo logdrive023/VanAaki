@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Transicao } from '../../components/Transicao';
 import { BuscaEndereco } from '../../components/formularios';
 import { I } from '../../components/Icone';
 import Mapa3D from '../../components/Mapa3D';
@@ -131,6 +132,7 @@ function Assistente({ d, escola, onFechar, onPronto }: { d: DadosVan; escola?: E
         {['Escola', 'Período', 'Pronto'].map((t, i) => <li key={t} className={passo > i + 1 ? 'feito' : passo === i + 1 ? 'agora' : ''}><b>{passo > i + 1 ? <I n="check" tam={13} /> : i + 1}</b>{t}</li>)}
       </ol>
 
+      <Transicao chave={passo} ordem={passo}>
       {passo === 1 && (
         <div className="pilha" style={{ gap: 14 }}>
           <h4 className="pergunta">Qual é a escola?</h4>
@@ -196,6 +198,7 @@ function Assistente({ d, escola, onFechar, onPronto }: { d: DadosVan; escola?: E
           <p className="muted">Você atende <b className="texto">{nome}</b> {marcados.map((t) => PERGUNTA[t].toLowerCase()).join(' e ')}. Agora é só cadastrar os alunos dessa escola.</p>
         </div>
       )}
+      </Transicao>
     </Modal>
   );
 }

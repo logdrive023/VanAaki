@@ -1,4 +1,5 @@
 import type { Perfil, Usuario } from '../db/types';
+import { responderDemo, TOKEN_DEMO_LOCAL } from './demoLocal';
 
 /**
  * Cliente da API em Go. O endereço vem de VITE_API_URL (build) e, se faltar, usa o mesmo host na porta 8090
@@ -8,6 +9,9 @@ export const API_URL: string = (import.meta.env.VITE_API_URL as string | undefin
   || `${location.protocol}//${location.hostname || 'localhost'}:8090`;
 
 export interface Sessao { token: string; usuario: Usuario }
+
+/** Site publicado sem servidor configurado: a demonstração roda no navegador (api/demoLocal.ts). */
+export const SEM_API = !(import.meta.env.VITE_API_URL as string | undefined)?.trim() && !/^(localhost|127\.|192\.168\.|10\.)/.test(location.hostname);
 
 /** Cada perfil tem a própria sessão (dá para abrir tio, pais, aluno e escola em abas do mesmo navegador). */
 const chave = (p: string) => `vanaaki-sessao-${p}`;
@@ -46,6 +50,7 @@ export interface OpcoesApi {
 export async function api<T = unknown>(caminho: string, op: OpcoesApi = {}): Promise<T> {
   const perfil = op.perfil ?? perfilDaAba();
   const sessao = op.semToken ? null : lerSessao(perfil);
+  if (sessao?.token === TOKEN_DEMO_LOCAL) return responderDemo<T>(caminho, op, perfil);
   let r: Response;
   const ctl = new AbortController();
   const limite = setTimeout(() => ctl.abort(), op.timeoutMs ?? 20000);

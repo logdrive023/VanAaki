@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { I, Logo, type NomeIcone } from './Icone';
 import { ir, PainelTeste, Sino, Toasts, type FiltroNotif } from './ui';
 import { BotaoAcessibilidade } from './Acessibilidade';
+import { Transicao } from './Transicao';
 
 /** `curto`: nome usado nas abas de baixo do celular (onde cabem ~7 palavras curtas). */
 export interface ItemMenu { id: string; ic: NomeIcone; nome: string; curto?: string; badge?: number; grupo?: string; desc?: string
@@ -68,7 +69,7 @@ export function ShellPainel({ base, menu, atual, perfil, filtro, titulo, sub, ac
           <div style={{ minWidth: 0 }}>{sub && <span className="muted small">{sub}</span>}<h1>{titulo}</h1></div>
           <div className="acoes">{acoes}<BotaoAcessibilidade /><Sino filtro={filtro} /><span className="so-celular"><PainelTeste compacto /></span></div>
         </div>
-        {children}
+        <Transicao chave={atual}>{children}</Transicao>
       </main>
       <nav className="tabs-mobile">
         {(temMais ? menu.filter((m) => m.principal) : menu).map((m) => (
@@ -96,7 +97,7 @@ export function ShellFone({ base, menu, atual, classe, topo, filtro, children }:
       <a className="pular" href="#conteudo" onClick={(e) => { e.preventDefault(); document.getElementById('conteudo')?.focus(); }}>Pular para o conteúdo</a>
       <div className="fone-app">
         <div className="fone-topo">{topo}<PainelTeste compacto /><BotaoAcessibilidade /><Sino filtro={filtro} /></div>
-        <main className="fone-corpo" id="conteudo" tabIndex={-1}>{children}</main>
+        <main className="fone-corpo" id="conteudo" tabIndex={-1}><Transicao chave={atual}>{children}</Transicao></main>
         <nav className="tab-bar" aria-label="Menu principal">
           {menu.map((m) => (
             <a key={m.id} className={atual === m.id ? 'ativo' : ''} href={`#/${base}/${m.id}`} aria-current={atual === m.id ? 'page' : undefined}>

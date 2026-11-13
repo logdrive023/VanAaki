@@ -6,6 +6,7 @@ import type { Aluno, Notificacao, Perfil } from '../db/types';
 import { api, perfilDaAba, sair } from '../api/cliente';
 import { sincronizar, useEu } from '../api/sync';
 import { pendentes } from '../api/fila';
+import { ehDemoLocal, recomecarDemoLocal } from '../api/demoLocal';
 import { marcarLidas } from '../services/notificar';
 import { haQuanto, iniciais } from '../lib/util';
 import { I, type NomeIcone } from './Icone';
@@ -161,7 +162,8 @@ export function PainelTeste({ lateral, compacto }: { lateral?: boolean; compacto
   const [aberto, setAberto] = useState(false);
   const eu = useEu();
   const perfil = perfilDaAba();
-  const abrirAba = (p: string) => window.open(`./app.html#/${p}`, `vanaaki-${p}`);
+  // na demonstração, o outro perfil já abre logado ("#/pais/demo")
+  const abrirAba = (p: string) => window.open(`./app.html#/${p}${eu?.usuario.demo ? '/demo' : ''}`, `vanaaki-${p}`);
   const demo = !!eu?.usuario.demo;
   const nome = eu?.usuario.nome ?? '';
   const pos = lateral ? 'pos-lateral' : compacto ? 'pos-topo' : '';
@@ -196,7 +198,7 @@ export function PainelTeste({ lateral, compacto }: { lateral?: boolean; compacto
                   <button onClick={() => abrirAba('escola')}><I n="escola" />Escola</button>
                 </div>
                 <small style={{ padding: '0 8px 6px' }}>Cada perfil abre numa aba. Tudo atualiza ao vivo.</small>
-                <button onClick={async () => { if (confirm('Voltar os dados da demonstração ao início? (vale para todos que estão testando)')) { await api('/demo/restaurar', { metodo: 'POST', semToken: true }); await sincronizar(); } }}><I n="recomecar" />Recomeçar a demonstração</button>
+                <button onClick={async () => { if (ehDemoLocal()) { if (confirm('Voltar a demonstração ao início? (apaga o que você fez neste navegador)')) await recomecarDemoLocal(); return; } if (confirm('Voltar os dados da demonstração ao início? (vale para todos que estão testando)')) { await api('/demo/restaurar', { metodo: 'POST', semToken: true }); await sincronizar(); } }}><I n="recomecar" />Recomeçar a demonstração</button>
               </>
             )}
             {promptInstalar && <button onClick={() => { void promptInstalar?.prompt(); promptInstalar = null; setAberto(false); }}><I n="celular" />Instalar o app</button>}

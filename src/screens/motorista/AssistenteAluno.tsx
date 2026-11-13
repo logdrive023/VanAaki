@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Transicao } from '../../components/Transicao';
 import { BuscaEndereco } from '../../components/formularios';
 import { I } from '../../components/Icone';
 import Mapa3D from '../../components/Mapa3D';
@@ -73,6 +74,7 @@ export function AssistenteAluno({ d, onFechar }: { d: DadosVan; onFechar: () => 
         {PASSOS.map((t, i) => <li key={t} className={passo > i ? 'feito' : passo === i ? 'agora' : ''}><b>{passo > i ? <I n="check" tam={13} /> : i + 1}</b>{t}</li>)}
       </ol>
 
+      <Transicao chave={passo} ordem={passo}>
       {passo === 0 && (
         <div className="pilha" style={{ gap: 14 }}>
           <h4 className="pergunta">Quem é o aluno?</h4>
@@ -153,6 +155,7 @@ export function AssistenteAluno({ d, onFechar }: { d: DadosVan; onFechar: () => 
           </div>
         </div>
       )}
+      </Transicao>
     </Modal>
   );
 }
