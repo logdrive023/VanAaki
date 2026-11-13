@@ -5,6 +5,7 @@ import App from './App';
 import './styles/tokens.css';
 import './styles/app.css';
 import './styles/telas.css';
+import './styles/login.css';
 
 registerSW({ immediate: true });
 

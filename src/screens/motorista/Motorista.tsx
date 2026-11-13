@@ -153,7 +153,7 @@ function ProximaRota({ d }: { d: DadosVan }) {
   if (!prox) {
     return (
       <section className="proxima">
-        <div className="proxima-fim"><span className="entrar-ic"><I n="check" /></span><div><span className="px-rot">Dia concluído</span><h2>Todas as rotas de hoje foram feitas</h2></div></div>
+        <div className="proxima-fim"><span className="entrar-ic"><I n="check" /></span><div><span className="px-rot">Dia concluído</span><h2>Todo mundo entregue. Bom descanso!</h2></div></div>
         <button className="btn btn-claro" onClick={() => ir('motorista/agenda')}><I n="calendario" />Ver amanhã</button>
       </section>
     );

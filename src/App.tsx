@@ -89,6 +89,7 @@ export default function App() {
   // link de fiscalização (PL 1240/2026): página pública, sem login
   if (p === 'fiscal' && aba) return <Fiscal token={aba} />;
   if (!perfil) return <Carregando />;
-  if (!lerSessao(perfil)) return <Entrar perfil={perfil} />;
+  // link "#/motorista/demo" (botão do site): entra direto na demonstração
+  if (!lerSessao(perfil)) return <Entrar perfil={perfil} autoDemo={aba === 'demo'} />;
   return <Conectado perfil={perfil} aba={aba} extra={extra} />;
 }

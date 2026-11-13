@@ -1,25 +1,87 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
-import { api, salvarSessao, type Sessao } from '../api/cliente';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { api, API_URL, salvarSessao, type Sessao } from '../api/cliente';
+import { I, Marca, type NomeIcone } from '../components/Icone';
 import type { Perfil } from '../db/types';
-import { I, Logo, type NomeIcone } from '../components/Icone';
 
-const INFO: Record<Perfil, { ic: NomeIcone; nome: string; frase: string; codigo?: string; dicaCodigo?: string }> = {
-  motorista: { ic: 'van', nome: 'Motorista', frase: 'Alunos, rota do dia, mensalidades e conduta num lugar só.' },
-  pais: { ic: 'casa', nome: 'Família', frase: 'Saiba quando seu filho é o próximo, embarcou e chegou.', codigo: 'Código de convite', dicaCodigo: 'O tio da van manda esse código pelo WhatsApp.' },
-  aluno: { ic: 'aluno', nome: 'Aluno', frase: 'Seus pontos, missões e prêmios da van.', codigo: 'Código do aluno', dicaCodigo: 'Seus pais encontram esse código no app deles.' },
-  escola: { ic: 'escola', nome: 'Escola', frase: 'As vans chegando na portaria, por turno.', codigo: 'Código da escola', dicaCodigo: 'O código aparece para o tio da van em "Turnos e escolas".' },
+const INFO: Record<Perfil, {
+  ic: NomeIcone; nome: string; titulo: string; frase: string; pontos: { ic: NomeIcone; t: string }[];
+  criar: string; codigo?: string; dicaCodigo?: string;
+}> = {
+  motorista: {
+    ic: 'van', nome: 'Motorista', titulo: 'Sua van organizada. Você só dirige.', frase: 'Alunos, rota do dia, mensalidades e o registro do PL 1240 num app só.',
+    pontos: [{ ic: 'navegar', t: 'O GPS confirma o embarque sozinho' }, { ic: 'calendario', t: 'Agenda: quem vai e quem não vai' }, { ic: 'dinheiro', t: 'Mensalidade direto no seu Pix' }],
+    criar: 'Criar conta',
+  },
+  pais: {
+    ic: 'casa', nome: 'Família', titulo: 'Saiba quando seu filho é o próximo.', frase: 'Acompanhe a van na sua vez, receba os avisos e pague a mensalidade pelo Pix.',
+    pontos: [{ ic: 'sino', t: 'Aviso antes da van chegar' }, { ic: 'escudo', t: 'Ninguém vê a casa das outras crianças' }, { ic: 'calendario', t: 'Avise com antecedência se ele não vai' }],
+    criar: 'Primeiro acesso', codigo: 'Código de convite', dicaCodigo: 'O tio da van manda esse código pelo WhatsApp.',
+  },
+  aluno: {
+    ic: 'aluno', nome: 'Aluno', titulo: 'A van, a sua agenda e os seus pontos.', frase: 'Avise que está no portão e veja quando a van chega.',
+    pontos: [{ ic: 'mao', t: '"Tô no portão" com um toque' }, { ic: 'calendario', t: 'Sua semana na van' }, { ic: 'trofeu', t: 'Missões e prêmios' }],
+    criar: 'Entrar', codigo: 'Código do aluno', dicaCodigo: 'Seus pais encontram esse código no app deles.',
+  },
+  escola: {
+    ic: 'escola', nome: 'Escola', titulo: 'As vans chegando na portaria.', frase: 'Previsão de chegada por turno, credenciamento das vans e ocorrências.',
+    pontos: [{ ic: 'portaria', t: 'Chegadas e atrasos ao vivo' }, { ic: 'selo', t: 'Credenciamento das vans' }, { ic: 'lista', t: 'Ocorrências registradas pelo tio' }],
+    criar: 'Primeiro acesso', codigo: 'Código da escola', dicaCodigo: 'O tio da van vê esse código em "Turnos e escolas".',
+  },
 };
+const PERFIS: Perfil[] = ['motorista', 'pais', 'aluno', 'escola'];
 
-function Campo({ rotulo, children }: { rotulo: string; children: ReactNode }) {
-  return <label className="fld"><span>{rotulo}</span>{children}</label>;
+/** Site publicado sem o endereço da API configurado: o login explica em vez de dar erro genérico. */
+const SEM_API = !(import.meta.env.VITE_API_URL as string | undefined)?.trim() && !/^(localhost|127\.|192\.168\.|10\.)/.test(location.hostname);
+
+type Servidor = 'verificando' | 'online' | 'acordando' | 'fora';
+
+/** Confere se o servidor responde (o plano grátis "dorme" e leva até ~1 min para acordar). */
+function useServidor() {
+  const [estado, setEstado] = useState<Servidor>(SEM_API ? 'fora' : 'verificando');
+  useEffect(() => {
+    if (SEM_API) return;
+    let vivo = true;
+    let nova: ReturnType<typeof setTimeout> | undefined;
+    const lento = setTimeout(() => { if (vivo) setEstado((e) => (e === 'verificando' ? 'acordando' : e)); }, 2500);
+    const tentar = async (n: number): Promise<void> => {
+      const ctl = new AbortController();
+      const t = setTimeout(() => ctl.abort(), 30000);
+      try {
+        const r = await fetch(`${API_URL}/saude`, { signal: ctl.signal });
+        if (vivo) setEstado(r.ok ? 'online' : 'fora');
+      } catch {
+        if (!vivo) return;
+        if (n < 3) { setEstado('acordando'); return tentar(n + 1); }
+        setEstado('fora');
+        nova = setTimeout(() => void tentar(0), 10000); // continua tentando: libera sozinho quando o servidor volta
+      } finally { clearTimeout(t); }
+    };
+    void tentar(0);
+    return () => { vivo = false; clearTimeout(lento); clearTimeout(nova); };
+  }, []);
+  return estado;
 }
 
-export default function Entrar({ perfil }: { perfil: Perfil }) {
+function Campo({ rotulo, ic, dica, children }: { rotulo: string; ic?: NomeIcone; dica?: ReactNode; children: ReactNode }) {
+  return (
+    <label className="campo-login">
+      <span className="cl-rot">{rotulo}</span>
+      <span className={`cl-caixa ${ic ? 'com-ic' : ''}`}>{ic && <I n={ic} />}{children}</span>
+      {dica && <small className="cl-dica">{dica}</small>}
+    </label>
+  );
+}
+
+export default function Entrar({ perfil, autoDemo }: { perfil: Perfil; autoDemo?: boolean }) {
   const info = INFO[perfil];
+  const servidor = useServidor();
   const [modo, setModo] = useState<'entrar' | 'criar'>(perfil === 'aluno' ? 'criar' : 'entrar');
   const [f, setF] = useState<Record<string, string>>({});
+  const [verSenha, setVerSenha] = useState(false);
   const [erro, setErro] = useState('');
-  const [enviando, setEnviando] = useState(false);
+  const [enviando, setEnviando] = useState<'' | 'form' | 'demo'>('');
+  const [demorando, setDemorando] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout>>();
   const set = (k: string) => (e: { target: { value: string } }) => setF((x) => ({ ...x, [k]: e.target.value }));
 
   const concluir = (s: Sessao) => {
@@ -27,75 +89,136 @@ export default function Entrar({ perfil }: { perfil: Perfil }) {
     salvarSessao(s);
     location.reload();
   };
-  const chamar = async (caminho: string, corpo: unknown) => {
-    setErro(''); setEnviando(true);
-    try { concluir(await api<Sessao>(caminho, { metodo: 'POST', corpo, semToken: true })); } catch (e) { setErro((e as Error).message); }
-    setEnviando(false);
+  const chamar = async (caminho: string, corpo: unknown, qual: 'form' | 'demo') => {
+    setErro(''); setEnviando(qual); setDemorando(false);
+    timer.current = setTimeout(() => setDemorando(true), 4000);
+    try {
+      // o servidor grátis pode estar acordando: espera até ~70 s antes de desistir
+      concluir(await api<Sessao>(caminho, { metodo: 'POST', corpo, semToken: true, timeoutMs: 70000 }));
+    } catch (e) {
+      const m = (e as Error).message;
+      setErro(SEM_API ? 'A demonstração online ainda não está ligada a um servidor. Veja o aviso acima.' : m);
+    }
+    clearTimeout(timer.current);
+    setEnviando(''); setDemorando(false);
   };
   const enviar = (e: FormEvent) => {
     e.preventDefault();
-    if (modo === 'entrar') return void chamar('/auth/entrar', { email: f.email, senha: f.senha });
-    if (perfil === 'aluno') return void chamar('/auth/aluno', { codigo: f.codigo });
-    if (perfil === 'motorista') return void chamar('/auth/cadastro/motorista', { nome: f.nome, telefone: f.telefone, email: f.email, senha: f.senha, nomeVan: f.nomeVan, placa: f.placa, modelo: f.modelo });
-    return void chamar(`/auth/cadastro/${perfil === 'pais' ? 'familia' : 'escola'}`, { codigo: f.codigo, nome: f.nome, telefone: f.telefone, email: f.email, senha: f.senha });
+    if (modo === 'entrar') return void chamar('/auth/entrar', { email: f.email, senha: f.senha }, 'form');
+    if (perfil === 'aluno') return void chamar('/auth/aluno', { codigo: f.codigo }, 'form');
+    if (perfil === 'motorista') return void chamar('/auth/cadastro/motorista', { nome: f.nome, telefone: f.telefone, email: f.email, senha: f.senha, nomeVan: f.nomeVan, placa: f.placa, modelo: f.modelo }, 'form');
+    return void chamar(`/auth/cadastro/${perfil === 'pais' ? 'familia' : 'escola'}`, { codigo: f.codigo, nome: f.nome, telefone: f.telefone, email: f.email, senha: f.senha }, 'form');
   };
+  const ocupado = !!enviando;
+  const jaFoi = useRef(false);
+  useEffect(() => {
+    if (!autoDemo || jaFoi.current || SEM_API) return;
+    jaFoi.current = true;
+    history.replaceState(null, '', `#/${perfil}`);
+    void chamar('/auth/demo', { perfil }, 'demo');
+  }, [autoDemo]); // eslint-disable-line react-hooks/exhaustive-deps
+  const fora = SEM_API; // sem servidor configurado não há o que tentar; caído, o botão continua (pode voltar a qualquer momento)
 
   return (
-    <div className="entrar">
-      <Logo />
-      <div className="entrar-card">
-        <div className="entrar-topo">
-          <span className="entrar-ic"><I n={info.ic} /></span>
-          <div><h1>{info.nome}</h1><p className="muted">{info.frase}</p></div>
+    <div className="login">
+      {/* lado da marca (no celular vira o topo) */}
+      <aside className="login-marca">
+        <div className="lm-topo">
+          <a href="./index.html" className="lm-logo"><Marca tam={34} /><span>Van<b>Aaki</b></span></a>
+          <a href="./index.html" className="lm-voltar"><I n="voltar" tam={16} /><span>Site</span></a>
         </div>
+        <div className="lm-texto">
+          <span className="faixa">{info.nome}</span>
+          <h1>{info.titulo}</h1>
+          <p>{info.frase}</p>
+          <ul>{info.pontos.map((p) => <li key={p.t}><span><I n={p.ic} /></span>{p.t}</li>)}</ul>
+        </div>
+        <div className="lm-faixa" aria-hidden />
+      </aside>
 
-        {perfil !== 'aluno' && (
-          <div className="seg">
-            <button type="button" className={modo === 'entrar' ? 'ativo' : ''} onClick={() => setModo('entrar')}>Entrar</button>
-            <button type="button" className={modo === 'criar' ? 'ativo' : ''} onClick={() => setModo('criar')}>{perfil === 'motorista' ? 'Criar conta' : 'Primeiro acesso'}</button>
-          </div>
-        )}
+      <main className="login-corpo">
+        <div className="login-caixa">
+          <nav className="login-perfis" aria-label="Entrar como">
+            {PERFIS.map((p) => (
+              <a key={p} href={`./app.html#/${p}`} className={p === perfil ? 'ativo' : ''} aria-current={p === perfil ? 'page' : undefined}>
+                <I n={INFO[p].ic} /><span>{INFO[p].nome}</span>
+              </a>
+            ))}
+          </nav>
 
-        <form className="form" onSubmit={enviar}>
-          {modo === 'criar' && info.codigo && (
-            <Campo rotulo={info.codigo}>
-              <input className="inp-codigo" required autoFocus value={f.codigo ?? ''} onChange={set('codigo')} placeholder="EX: AB12CD" maxLength={8} autoCapitalize="characters" />
-              <small className="muted">{info.dicaCodigo}</small>
-            </Campo>
-          )}
-          {modo === 'criar' && perfil !== 'aluno' && (
-            <>
-              <Campo rotulo={perfil === 'escola' ? 'Seu nome (portaria/coordenação)' : 'Seu nome'}><input required value={f.nome ?? ''} onChange={set('nome')} autoComplete="name" /></Campo>
-              <Campo rotulo="WhatsApp"><input value={f.telefone ?? ''} onChange={set('telefone')} inputMode="tel" autoComplete="tel" placeholder="11 90000-0000" /></Campo>
-            </>
-          )}
+          <StatusServidor estado={servidor} />
+
+          <section className="login-demo">
+            <div className="ld-txt">
+              <strong>Conhecer sem cadastro</strong>
+              <span>Dados de exemplo, tudo funcionando. Abra os outros perfis em outra aba e veja ao vivo.</span>
+            </div>
+            <button type="button" className="btn btn-primario btn-bloco btn-grande" disabled={ocupado || fora} onClick={() => void chamar('/auth/demo', { perfil }, 'demo')}>
+              {enviando === 'demo' ? <><I n="carregando" className="girando" />{demorando ? 'Acordando o servidor…' : 'Entrando…'}</> : <><I n="teste" />Entrar na demonstração</>}
+            </button>
+          </section>
+
+          <div className="login-ou"><span>ou com a sua conta</span></div>
+
           {perfil !== 'aluno' && (
-            <>
-              <Campo rotulo="E-mail"><input required type="email" value={f.email ?? ''} onChange={set('email')} autoComplete="email" /></Campo>
-              <Campo rotulo="Senha"><input required type="password" minLength={6} value={f.senha ?? ''} onChange={set('senha')} autoComplete={modo === 'entrar' ? 'current-password' : 'new-password'} /></Campo>
-            </>
-          )}
-          {modo === 'criar' && perfil === 'motorista' && (
-            <div className="dupla">
-              <Campo rotulo="Placa da van"><input value={f.placa ?? ''} onChange={set('placa')} placeholder="ABC-1D23" /></Campo>
-              <Campo rotulo="Modelo"><input value={f.modelo ?? ''} onChange={set('modelo')} placeholder="Sprinter branca" /></Campo>
+            <div className="seg login-seg">
+              <button type="button" className={modo === 'entrar' ? 'ativo' : ''} onClick={() => { setModo('entrar'); setErro(''); }}>Entrar</button>
+              <button type="button" className={modo === 'criar' ? 'ativo' : ''} onClick={() => { setModo('criar'); setErro(''); }}>{info.criar}</button>
             </div>
           )}
-          {erro && <div className="aviso-erro">{erro}</div>}
-          <button className="btn btn-primario btn-bloco btn-grande" disabled={enviando}>
-            {enviando ? 'Um instante…' : modo === 'entrar' ? 'Entrar' : perfil === 'aluno' ? 'Entrar no app' : 'Criar conta'}
-          </button>
-        </form>
 
-        <div className="entrar-demo">
-          <span className="muted small">Só quer conhecer?</span>
-          <button type="button" className="btn btn-claro btn-bloco" disabled={enviando} onClick={() => void chamar('/auth/demo', { perfil })}><I n="teste" />Entrar na demonstração</button>
+          <form className="login-form" onSubmit={enviar}>
+            {modo === 'criar' && info.codigo && (
+              <Campo rotulo={info.codigo} dica={info.dicaCodigo}>
+                <input className="inp-codigo" required value={f.codigo ?? ''} onChange={(e) => setF((x) => ({ ...x, codigo: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '') }))} placeholder="AB12CD" maxLength={8} autoCapitalize="characters" autoComplete="one-time-code" />
+              </Campo>
+            )}
+            {modo === 'criar' && perfil !== 'aluno' && (
+              <div className="dupla">
+                <Campo rotulo={perfil === 'escola' ? 'Seu nome (portaria)' : 'Seu nome'} ic="usuario"><input required value={f.nome ?? ''} onChange={set('nome')} autoComplete="name" /></Campo>
+                <Campo rotulo="WhatsApp" ic="telefone"><input value={f.telefone ?? ''} onChange={set('telefone')} inputMode="tel" autoComplete="tel" placeholder="11 90000-0000" /></Campo>
+              </div>
+            )}
+            {perfil !== 'aluno' && (
+              <>
+                <Campo rotulo="E-mail" ic="email"><input required type="email" value={f.email ?? ''} onChange={set('email')} autoComplete="email" placeholder="voce@email.com" /></Campo>
+                <Campo rotulo="Senha" ic="cadeado" dica={modo === 'criar' ? 'Pelo menos 6 caracteres.' : undefined}>
+                  <input required type={verSenha ? 'text' : 'password'} minLength={6} value={f.senha ?? ''} onChange={set('senha')} autoComplete={modo === 'entrar' ? 'current-password' : 'new-password'} />
+                  <button type="button" className="cl-olho" onClick={() => setVerSenha(!verSenha)} aria-label={verSenha ? 'Esconder senha' : 'Mostrar senha'}>{verSenha ? 'Esconder' : 'Mostrar'}</button>
+                </Campo>
+              </>
+            )}
+            {modo === 'criar' && perfil === 'motorista' && (
+              <div className="dupla">
+                <Campo rotulo="Placa da van" ic="van"><input value={f.placa ?? ''} onChange={set('placa')} placeholder="ABC-1D23" autoCapitalize="characters" /></Campo>
+                <Campo rotulo="Modelo"><input value={f.modelo ?? ''} onChange={set('modelo')} placeholder="Sprinter branca" /></Campo>
+              </div>
+            )}
+            {erro && <div className="aviso-erro" role="alert">{erro}</div>}
+            <button className="btn btn-escuro btn-bloco btn-grande" disabled={ocupado || fora}>
+              {enviando === 'form' ? <><I n="carregando" className="girando" />{demorando ? 'Acordando o servidor…' : 'Um instante…'}</>
+                : modo === 'entrar' ? 'Entrar' : perfil === 'aluno' ? 'Entrar no app' : perfil === 'motorista' ? 'Criar minha conta' : 'Criar acesso'}
+            </button>
+            {modo === 'criar' && perfil === 'motorista' && <small className="muted small" style={{ textAlign: 'center' }}>Grátis para testar com todos os seus alunos.</small>}
+          </form>
         </div>
-      </div>
-      <div className="entrar-rodape">
-        <a href="./index.html">Voltar para o site</a>
-        {(['motorista', 'pais', 'aluno', 'escola'] as Perfil[]).filter((x) => x !== perfil).map((x) => <a key={x} href={`./app.html#/${x}`}>{INFO[x].nome}</a>)}
-      </div>
+        <footer className="login-rodape">© 2026 VanAaki · <a href="./index.html">Site</a></footer>
+      </main>
+    </div>
+  );
+}
+
+function StatusServidor({ estado }: { estado: Servidor }) {
+  if (estado === 'online' || estado === 'verificando') return null;
+  if (estado === 'acordando') {
+    return <div className="login-status acordando"><I n="carregando" className="girando" /><span><b>Acordando o servidor.</b> No plano gratuito ele dorme quando ninguém usa; leva até 1 minuto. Pode tocar em entrar: o app espera.</span></div>;
+  }
+  return (
+    <div className="login-status fora">
+      <I n="semWifi" />
+      <span>{SEM_API
+        ? <><b>A demonstração online ainda não está ligada a um servidor.</b> A API em Go precisa estar hospedada (veja o README, seção “Publicar”). Rodando no computador ela funciona normalmente.</>
+        : <><b>O servidor não respondeu.</b> Confira a internet e tente de novo em instantes.</>}</span>
     </div>
   );
 }

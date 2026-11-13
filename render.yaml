@@ -1,0 +1,33 @@
+# Render (render.com) — sobe a API em Go + Postgres de uma vez ("Blueprint").
+# No painel do Render: New → Blueprint → escolha este repositório. Ele cria o banco e a API sozinho.
+# Depois, copie o endereço da API (ex.: https://vanaaki-api.onrender.com) para a variável VITE_API_URL
+# do repositório no GitHub (Settings → Secrets and variables → Actions → Variables) e rode o deploy de novo.
+#
+# Plano grátis: a API "dorme" depois de 15 min sem uso e leva até ~1 min para acordar
+# (o login do app avisa e espera). O Postgres grátis do Render expira em 30 dias: para uso real,
+# troque pelo plano pago ou por um Postgres do Neon (é só trocar o DATABASE_URL).
+databases:
+  - name: vanaaki-db
+    plan: free
+    databaseName: vanaaki
+    user: vanaaki
+
+services:
+  - type: web
+    name: vanaaki-api
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /saude
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: vanaaki-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: https://logdrive023.github.io
+      - key: DEMO
+        value: "true"

@@ -2,219 +2,270 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#F6F6F3">
-  <meta name="description" content="O app do tio da van escolar: alunos, rota, mensalidades e rastreio seguro para os pais. Pronto para o GPS obrigatório do PL 1240/2026, só com o celular.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#FFC20E">
+  <meta name="description" content="O app do tio da van escolar: você dirige e o resto é automático. Embarque confirmado pelo GPS, agenda, Pix e rastreio seguro para os pais. Pronto para o GPS obrigatório (PL 1240/2026).">
+  <meta property="og:title" content="VanAaki — Bom dia, tio. Pode dirigir que o resto é com a gente.">
+  <meta property="og:description" content="Embarque pelo GPS, agenda, Pix e rastreio seguro para os pais. Pronto para o PL 1240/2026, só com o celular.">
   <link rel="icon" type="image/svg+xml" href="./icon.svg">
-  <title>VanAaki — O app da van escolar, pronto para o GPS obrigatório</title>
+  <title>VanAaki — O app do tio da van escolar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&display=swap">
   <link rel="stylesheet" href="/src/styles/tokens.css">
   <link rel="stylesheet" href="/src/styles/landing.css">
 </head>
 <body>
 
-  <header class="topo">
+  <header class="topo" id="topo">
     <div class="container topo-linha">
       <a href="./index.html" class="logo" aria-label="VanAaki">
         <svg class="logo-marca" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#111318"/><rect x="11" y="18" width="42" height="24" rx="6" fill="#FFC20E"/><rect x="16" y="22" width="9" height="7" rx="2" fill="#111318"/><rect x="28" y="22" width="9" height="7" rx="2" fill="#111318"/><rect x="40" y="22" width="8" height="7" rx="2" fill="#111318"/><circle cx="21" cy="44" r="4.5" fill="#fff"/><circle cx="43" cy="44" r="4.5" fill="#fff"/></svg>
         <span>Van<b>Aaki</b></span>
       </a>
       <nav class="menu">
-        <a href="#como">Como funciona</a>
+        <a href="#dia">Um dia na van</a>
+        <a href="#recursos">Recursos</a>
         <a href="#pl">PL 1240</a>
-        <a href="#familias">Famílias</a>
         <a href="#preco">Preço</a>
+        <a href="#duvidas">Dúvidas</a>
       </nav>
       <div class="topo-acoes">
         <a href="#entrar" class="btn btn-fantasma">Entrar</a>
-        <a href="./app.html#/motorista" class="btn btn-escuro">Começar grátis</a>
+        <a href="./app.html#/motorista/demo" class="btn btn-escuro">Ver demonstração</a>
       </div>
     </div>
   </header>
 
   <main>
-    <!-- HERO -->
+    <!-- ================= HERO ================= -->
     <section class="hero">
       <div class="container hero-grade">
         <div class="hero-texto">
-          <a href="#pl" class="aviso-pl"><span class="faixa">PL 1240/2026</span> GPS obrigatório no transporte escolar <i data-lucide="arrow-right"></i></a>
-          <h1>A van escolar organizada, e pronta para o GPS obrigatório.</h1>
-          <p class="lead">Alunos, rota do dia, mensalidades e rastreio seguro para os pais, num app só. Sem aparelho extra: o seu celular já é o rastreador.</p>
-          <div class="hero-ctas">
-            <a href="./app.html#/motorista" class="btn btn-primario btn-grande">Testar grátis <i data-lucide="arrow-right"></i></a>
-            <a href="#entrar" class="btn btn-claro btn-grande">Ver a demonstração</a>
+          <p class="saudacao revelar"><span class="sol"></span>Bom dia, tio. Bom dia, tia.</p>
+          <h1 class="revelar">Pode dirigir.<br>O resto é <span class="marca-texto">com a gente.</span></h1>
+          <p class="lead revelar">O GPS confirma cada embarque, a família é avisada sozinha, a mensalidade cai no seu Pix e os trajetos ficam guardados para a fiscalização. Tudo no celular que você já tem.</p>
+          <div class="hero-ctas revelar">
+            <a href="./app.html#/motorista/demo" class="btn btn-escuro btn-grande"><i data-lucide="play"></i>Ver funcionando</a>
+            <a href="./app.html#/motorista" class="btn btn-claro btn-grande">Criar minha conta</a>
           </div>
-          <ul class="provas">
-            <li><i data-lucide="check"></i>Sem rastreador para instalar</li>
-            <li><i data-lucide="check"></i>Embarque confirmado pelo GPS</li>
-            <li><i data-lucide="check"></i>Pais não veem a casa de ninguém</li>
-          </ul>
+          <p class="hero-nota revelar">Grátis para testar · Família e aluno não pagam nada</p>
         </div>
 
-        <!-- celular de exemplo -->
+        <!-- celular + adesivos de vidro traseiro -->
         <div class="hero-visual" aria-hidden="true">
+          <span class="adesivo a1">sem<br>rastreador!</span>
+          <span class="adesivo a2"><i data-lucide="wifi-off"></i>funciona<br>sem sinal</span>
+          <span class="adesivo a3">PL 1240<br><b>ok</b></span>
           <div class="fone">
+            <div class="fone-ilha"></div>
             <div class="fone-tela">
-              <div class="f-topo"><span class="f-av">TC</span><div><small>Rota da manhã · ida</small><strong>Tio Carlos</strong></div><span class="f-vivo"><span class="ponto"></span>ao vivo</span></div>
-              <div class="f-alvo">
-                <small>Próxima parada · 3 min</small>
-                <strong>Lucas Andrade</strong>
-                <span>Rua Áurea, 88 · Santa Maria</span>
-                <div class="f-botoes"><b><i data-lucide="check"></i>Embarcou</b><em>Não estava</em></div>
+              <div class="f-topo"><span class="f-av">TC</span><div><small>Sexta, 13 de novembro</small><strong>Bom dia, Carlos</strong></div></div>
+              <div class="cenas">
+                <div class="cena ativa">
+                  <div class="f-prox">
+                    <small>Próxima rota · ida da manhã</small>
+                    <div class="f-hora">06:53<span>saia até</span></div>
+                    <div class="f-tags"><span><i data-lucide="user-round"></i>6 vão · 2 fora</span><span><i data-lucide="school"></i>2 escolas</span></div>
+                    <b class="f-cta"><i data-lucide="navigation"></i>Começar</b>
+                  </div>
+                  <div class="f-lista">
+                    <div><span class="ok"></span>Pedro Lima<small>ida e volta</small></div>
+                    <div><span class="ok"></span>Lucas Andrade<small>ida e volta</small></div>
+                    <div class="fora"><span></span>Gabriel Rocha<small>não vai hoje</small></div>
+                  </div>
+                </div>
+                <div class="cena">
+                  <div class="f-alvo">
+                    <small>Próxima parada · 1 min</small>
+                    <strong>Lucas Andrade</strong>
+                    <span>Rua Áurea, 88 · Santa Maria</span>
+                    <div class="f-botoes"><b><i data-lucide="check"></i>Embarcou</b><em>Não estava</em></div>
+                    <p>Pode seguir: ao sair daqui o GPS confirma sozinho.</p>
+                  </div>
+                  <div class="f-mapa">
+                    <svg viewBox="0 0 260 120" preserveAspectRatio="none"><path class="f-rua" d="M10 100 L60 100 L60 60 L140 60 L140 30 L250 30"/><path class="f-rota" d="M10 100 L60 100 L60 60 L140 60 L140 30 L250 30"/></svg>
+                    <i class="f-van"></i>
+                  </div>
+                </div>
+                <div class="cena">
+                  <div class="f-ok"><span><i data-lucide="check-check"></i></span><strong>Lucas embarcou às 06:51</strong><small>Confirmado pelo GPS · família avisada</small></div>
+                  <div class="f-lista">
+                    <div><span class="ok"></span>Pedro Lima<small>06:42</small></div>
+                    <div><span class="ok"></span>Lucas Andrade<small>06:51</small></div>
+                    <div><span class="agora"></span>Beatriz Faria<small>~06:55</small></div>
+                  </div>
+                </div>
               </div>
-              <ol class="f-lista">
-                <li class="ok"><span><i data-lucide="check"></i></span>Pedro Lima<small>06:42</small></li>
-                <li class="ok"><span><i data-lucide="check"></i></span>Beatriz Faria<small>06:47</small></li>
-                <li class="agora"><span>3</span>Lucas Andrade<small>~06:51</small></li>
-                <li><span>4</span>Maria Clara<small>~06:55</small></li>
-                <li><span><i data-lucide="school"></i></span>Santa Maria<small>entra 07:15</small></li>
-              </ol>
+              <div class="f-pontos"><i></i><i></i><i></i></div>
             </div>
           </div>
-          <div class="notif">
-            <span class="notif-ic"><i data-lucide="bell"></i></span>
-            <div><strong>Lucas é o próximo!</strong><small>A van chega no portão em ~3 min</small></div>
-          </div>
+          <div class="balao b1"><strong>VanAaki</strong>A van está a 1 parada. Lucas, pro portão! 🎒<small>06:49 ✓✓</small></div>
+          <div class="balao b2"><strong>VanAaki</strong>Lucas embarcou às 06:51 ✅<small>06:51 ✓✓</small></div>
+        </div>
+      </div>
+
+      <!-- a faixa da van escolar -->
+      <div class="faixa-escolar" aria-hidden="true">
+        <div class="fe-trilho">
+          <span>ESCOLAR</span><i></i><span>VOCÊ DIRIGE</span><i></i><span>ESCOLAR</span><i></i><span>O RESTO É AUTOMÁTICO</span><i></i>
+          <span>ESCOLAR</span><i></i><span>VOCÊ DIRIGE</span><i></i><span>ESCOLAR</span><i></i><span>O RESTO É AUTOMÁTICO</span><i></i>
         </div>
       </div>
     </section>
 
-    <!-- COMO FUNCIONA -->
-    <section class="secao" id="como">
-      <div class="container">
-        <div class="titulo-secao">
-          <span class="sobre">Para o tio da van</span>
-          <h2>Largue o caderno. O dia todo cabe no celular.</h2>
-          <p>Cadastre uma vez. Depois é só abrir o app de manhã e sair.</p>
-        </div>
-        <div class="passos">
-          <div class="passo"><span class="n">1</span><h3>Cadastre escolas e alunos</h3><p>Busque o endereço, confira no mapa e mande o convite para cada família pelo WhatsApp com um toque.</p></div>
-          <div class="passo"><span class="n">2</span><h3>Saia na hora certa</h3><p>O app calcula a hora de sair pelo horário de entrada das escolas e monta a melhor ordem das casas, ou segue a sua rota fixa.</p></div>
-          <div class="passo"><span class="n">3</span><h3>Dirija. O resto é automático.</h3><p>Abra a parada no Waze ou no Maps. O GPS confirma cada embarque e as famílias são avisadas sozinhas: está chegando, embarcou, chegou.</p></div>
-        </div>
-
-        <div class="recursos">
-          <div class="recurso"><i data-lucide="navigation"></i><h4>Você só dirige</h4><p>Parou na casa e saiu? O GPS marca o embarque sozinho e avisa a família. Sem ficar tocando na tela.</p></div>
-          <div class="recurso"><i data-lucide="calendar-days"></i><h4>Agenda da semana</h4><p>Toque no turno e veja o caminho do dia: quem vai, quem não vai e a que horas passa em cada casa.</p></div>
-          <div class="recurso"><i data-lucide="alarm-clock"></i><h4>Hora de sair calculada</h4><p>Pelo horário de cada escola, com folga e aviso se você vai atrasar.</p></div>
-          <div class="recurso"><i data-lucide="route"></i><h4>Rota otimizada ou fixa</h4><p>Pelas ruas, todo dia com quem vai, ou na ordem que você definir para o semestre.</p></div>
-          <div class="recurso"><i data-lucide="wallet"></i><h4>Mensalidade no seu Pix</h4><p>A família paga pelo QR Code com o valor certo, direto na sua chave. Sem taxa, sem intermediário.</p></div>
-          <div class="recurso"><i data-lucide="star"></i><h4>Conduta e prêmios, se quiser</h4><p>Um extra para quem gosta: elogios, ocorrências e uma loja de prêmios. Liga e desliga quando quiser.</p></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- PL 1240/2026 -->
-    <section class="secao pl" id="pl">
-      <div class="container">
-        <div class="pl-grade">
-          <div class="pl-texto">
-            <span class="faixa">PL 1240/2026</span>
-            <h2>O GPS vai ser obrigatório na van escolar. Com o VanAaki você já está pronto.</h2>
-            <p>O Projeto de Lei 1240/2026, em análise na Câmara dos Deputados, torna obrigatório o rastreamento por GPS em todos os veículos de transporte escolar, com acesso para os pais e para o poder público. Sem ele, a van não tira nem renova a autorização.</p>
-            <p class="pl-nota">Quem já trabalha teria 180 dias para se adequar depois que a lei for publicada. O texto ainda pode mudar até a votação.</p>
-            <a href="./app.html#/motorista/conformidade" class="btn btn-primario">Ver a tela de fiscalização <i data-lucide="arrow-right"></i></a>
-          </div>
-          <div class="pl-tabela">
-            <div class="pl-cab"><span>O que o PL pede</span><span>No VanAaki</span></div>
-            <div class="pl-linha"><strong>Localização em tempo real durante o trajeto</strong><span><i data-lucide="check"></i>GPS do celular do motorista a cada 3 segundos</span></div>
-            <div class="pl-linha"><strong>Acesso dos pais e responsáveis</strong><span><i data-lucide="check"></i>App da família: a van na vez dela e com o filho a bordo</span></div>
-            <div class="pl-linha"><strong>Acesso da escola, conforme o contrato</strong><span><i data-lucide="check"></i>Portaria vê as vans chegando, se quiser</span></div>
-            <div class="pl-linha"><strong>Acesso do poder público</strong><span><i data-lucide="check"></i>Link de fiscalização somente leitura, que você cria e cancela</span></div>
-            <div class="pl-linha"><strong>Registro das rotas por 90 dias</strong><span><i data-lucide="check"></i>Cada posição com data e hora, guardada por mais de um ano</span></div>
-            <div class="pl-linha"><strong>Funcionamento contínuo</strong><span><i data-lucide="check"></i>Sem internet, o celular guarda e envia depois</span></div>
-            <div class="pl-linha"><strong>Relatórios para a fiscalização</strong><span><i data-lucide="check"></i>Planilha dos trajetos e relatório para imprimir</span></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- FAMÍLIAS -->
-    <section class="secao" id="familias">
-      <div class="container familias-grade">
-        <div>
-          <span class="sobre">Para as famílias</span>
-          <h2>Igual rastrear encomenda. Só que é o seu filho.</h2>
-          <p class="lead-2">E com uma regra que nenhum grupo de WhatsApp tem: ninguém sabe onde moram as outras crianças.</p>
-          <ul class="lista-check">
-            <li><i data-lucide="shield-check"></i><div><strong>A van aparece na sua vez</strong><span>Enquanto o tio busca outros alunos, você vê quantas paradas faltam e a previsão.</span></div></li>
-            <li><i data-lucide="bus"></i><div><strong>Com o filho a bordo, o trajeto todo</strong><span>Do embarque até a escola (ou até em casa), a posição da van ao vivo.</span></div></li>
-            <li><i data-lucide="bell"></i><div><strong>Avisos que importam</strong><span>“É o próximo”, “embarcou”, “chegou na escola”. Nada de ficar no portão esperando.</span></div></li>
+    <!-- ================= UM DIA NA VAN (conversa) ================= -->
+    <section class="secao" id="dia">
+      <div class="container dia-grade">
+        <div class="titulo-secao revelar">
+          <span class="sobre">Um dia na van</span>
+          <h2>O que a mãe do Lucas recebe. Sem você digitar nada.</h2>
+          <p>Chega de "tio, já saiu?" no WhatsApp. O app avisa cada família na hora certa, só sobre o filho dela.</p>
+          <ul class="lista-check pequena">
+            <li><i data-lucide="alarm-clock"></i><div><strong>Hora de sair calculada</strong><span>Pelo horário de entrada de cada escola.</span></div></li>
+            <li><i data-lucide="navigation"></i><div><strong>Embarque confirmado pelo GPS</strong><span>Parou e saiu da casa: pronto.</span></div></li>
+            <li><i data-lucide="shield-check"></i><div><strong>Ninguém vê a casa de ninguém</strong><span>Cada família só vê o próprio filho.</span></div></li>
           </ul>
         </div>
-        <div class="estados" aria-hidden="true">
-          <div class="estado escuro"><i data-lucide="shield-check"></i><strong>O tio está buscando outros alunos</strong><small>Faltam 2 paradas antes da sua casa · previsão 06:55</small></div>
-          <div class="seta"><i data-lucide="arrow-down"></i>quando for a sua vez</div>
-          <div class="estado amarelo"><i data-lucide="bell"></i><strong>Lucas é o próximo!</strong><small>A van chega em ~4 min · mapa liberado</small></div>
-          <div class="seta"><i data-lucide="arrow-down"></i>embarcou</div>
-          <div class="estado claro"><i data-lucide="bus"></i><strong>Lucas está a bordo</strong><small>Você acompanha a van até a escola</small></div>
+        <div class="conversa revelar" aria-label="Exemplo de avisos que a família recebe">
+          <div class="cv-topo"><span class="cv-av"><svg viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#111318"/><rect x="11" y="18" width="42" height="24" rx="6" fill="#FFC20E"/><circle cx="21" cy="44" r="4.5" fill="#fff"/><circle cx="43" cy="44" r="4.5" fill="#fff"/></svg></span><div><strong>Van do Tio Carlos</strong><small>avisos do Lucas</small></div></div>
+          <div class="cv-corpo">
+            <span class="cv-dia">hoje</span>
+            <p class="msg"><b>🚐 O tio saiu para a rota da manhã</b>Avisamos quando o Lucas for o próximo.<time>06:30</time></p>
+            <p class="msg"><b>⏳ A van está a 2 paradas</b>Pode ir se preparando.<time>06:44</time></p>
+            <p class="msg"><b>🔔 Lucas é o próximo!</b>A van chega no portão em ~3 min. Dá para ver no mapa.<time>06:48</time></p>
+            <p class="msg"><b>✅ Lucas embarcou</b>Destino: Colégio Santa Maria.<time>06:51</time></p>
+            <p class="msg"><b>🏫 Chegou na escola</b>Entregue às 07:09. Bom dia de aula!<time>07:09</time></p>
+            <p class="msg eu">Obrigada, tio! 🙏<time>07:10 ✓✓</time></p>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- PREÇO -->
-    <section class="secao fundo-branco" id="preco">
+    <!-- ================= RECURSOS (bento) ================= -->
+    <section class="secao fundo-branco" id="recursos">
       <div class="container">
-        <div class="titulo-secao">
+        <div class="titulo-secao revelar">
+          <span class="sobre">Recursos</span>
+          <h2>Feito para usar dirigindo.</h2>
+          <p>Botões grandes, quase nenhum toque e tudo funcionando mesmo sem sinal.</p>
+        </div>
+        <div class="bento">
+          <article class="b-card b-agenda revelar">
+            <div class="b-txt"><i data-lucide="calendar-days"></i><h3>Agenda da semana</h3><p>Toque no turno e veja o caminho do dia: quem vai, quem não vai e a que horas passa em cada casa. A família avisa com antecedência e aparece aqui.</p></div>
+            <div class="b-mock m-agenda">
+              <div class="m-dias"><span class="on">Hoje<b>13</b></span><span>Seg<b>16</b><i></i></span><span>Ter<b>17</b></span><span>Qua<b>18</b><i></i></span><span>Qui<b>19</b></span></div>
+              <div class="m-quem"><span class="vai">Pedro</span><span class="vai">Lucas</span><span class="vai">Beatriz</span><span class="fora">Gabriel · febre</span><span class="vai">Sofia</span><span class="fora">Ana · eu levo</span></div>
+            </div>
+          </article>
+          <article class="b-card b-gps revelar">
+            <div class="b-txt"><i data-lucide="navigation"></i><h3>Embarque pelo GPS</h3><p>Chegou e saiu da casa: o app confirma e avisa a família.</p></div>
+            <div class="b-mock m-gps"><span class="ok"><i data-lucide="check"></i></span><span class="ok"><i data-lucide="check"></i></span><span class="agora">3</span><span>4</span></div>
+          </article>
+          <article class="b-card b-pix revelar">
+            <div class="b-txt"><i data-lucide="qr-code"></i><h3>Pix sem taxa</h3><p>A família paga pelo QR Code com o valor certo e toca em "Já paguei". Você confirma.</p></div>
+            <div class="b-mock m-pix"><div class="qr"></div><span>R$ 420,00</span></div>
+          </article>
+          <article class="b-card b-offline revelar">
+            <div class="b-txt"><i data-lucide="wifi-off"></i><h3>Caiu o sinal? Segue o jogo.</h3><p>Tudo fica guardado no celular e é enviado quando a conexão volta. Nada se perde, nada duplica.</p></div>
+            <div class="b-mock m-off"><span class="pill escuro"><i data-lucide="wifi-off"></i>3 ações guardadas</span><i data-lucide="arrow-down"></i><span class="pill verde"><i data-lucide="check"></i>Tudo enviado</span></div>
+          </article>
+          <article class="b-card b-priv revelar">
+            <div class="b-txt"><i data-lucide="shield-check"></i><h3>Privacidade das crianças</h3><p>O mapa abre na vez da família e com o filho a bordo. Nunca a casa dos outros.</p></div>
+          </article>
+          <article class="b-card b-extra revelar">
+            <div class="b-txt"><i data-lucide="star"></i><h3>Conduta e prêmios, se quiser</h3><p>Elogios, ocorrências e loja de prêmios. Liga e desliga quando quiser.</p></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PL 1240 ================= -->
+    <section class="secao pl" id="pl">
+      <div class="container pl-grade">
+        <div class="pl-texto revelar">
+          <span class="faixa">PL 1240/2026</span>
+          <h2>O GPS vai ser obrigatório. Você já está pronto.</h2>
+          <p>O projeto, em análise na Câmara dos Deputados, exige rastreamento em tempo real com acesso para pais, escola e poder público, e o registro dos trajetos por pelo menos 90 dias. Sem isso, a van não tira nem renova a autorização.</p>
+          <p class="pl-nota">Quem já trabalha teria 180 dias para se adequar depois de publicada a lei. O texto ainda pode mudar até a votação.</p>
+          <a href="./app.html#/motorista/demo" class="btn btn-primario">Ver a tela de fiscalização <i data-lucide="arrow-right"></i></a>
+        </div>
+        <div class="pl-tabela revelar">
+          <div class="pl-cab"><span>O que o PL pede</span><span>No VanAaki</span></div>
+          <div class="pl-linha"><strong>Localização em tempo real</strong><span><i data-lucide="check"></i>GPS do celular, a cada 3 segundos</span></div>
+          <div class="pl-linha"><strong>Acesso dos pais</strong><span><i data-lucide="check"></i>Na vez da família e com o filho a bordo</span></div>
+          <div class="pl-linha"><strong>Acesso da escola</strong><span><i data-lucide="check"></i>Portaria vê as vans chegando</span></div>
+          <div class="pl-linha"><strong>Acesso do poder público</strong><span><i data-lucide="check"></i>Link de fiscalização que você cria e cancela</span></div>
+          <div class="pl-linha"><strong>Trajetos por 90 dias</strong><span><i data-lucide="check"></i>Cada posição com data e hora, por mais de um ano</span></div>
+          <div class="pl-linha"><strong>Funcionamento contínuo</strong><span><i data-lucide="check"></i>Sem internet, guarda e envia depois</span></div>
+          <div class="pl-linha"><strong>Relatórios</strong><span><i data-lucide="check"></i>Planilha e relatório para imprimir</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PREÇO ================= -->
+    <section class="secao" id="preco">
+      <div class="container">
+        <div class="titulo-secao centro revelar">
           <span class="sobre">Preço</span>
           <h2>Menos que uma mensalidade por mês.</h2>
           <p>Família e aluno usam de graça. Teste com todos os seus alunos antes de pagar.</p>
         </div>
         <div class="planos">
-          <div class="plano destaque">
-            <span class="plano-selo">Mais escolhido</span>
-            <h3>Tio individual</h3>
-            <p class="muted">Para quem tem uma van.</p>
+          <div class="plano destaque revelar">
+            <span class="plano-selo">o do tio</span>
+            <h3>Tio individual</h3><p class="muted">Para quem tem uma van.</p>
             <div class="valor">R$ 49<small>/mês</small></div>
-            <ul>
-              <li><i data-lucide="check"></i>Até 30 alunos</li>
-              <li><i data-lucide="check"></i>Rota otimizada ou fixa e hora de sair</li>
-              <li><i data-lucide="check"></i>Rastreio seguro para os pais</li>
-              <li><i data-lucide="check"></i>Pronto para o PL 1240/2026</li>
-              <li><i data-lucide="check"></i>Mensalidades, mensagens e prêmios</li>
-            </ul>
-            <a href="./app.html#/motorista" class="btn btn-primario btn-bloco">Testar grátis</a>
+            <ul><li><i data-lucide="check"></i>Até 30 alunos</li><li><i data-lucide="check"></i>Embarque pelo GPS e agenda</li><li><i data-lucide="check"></i>Pix sem taxa</li><li><i data-lucide="check"></i>Pronto para o PL 1240/2026</li><li><i data-lucide="check"></i>Funciona sem internet</li></ul>
+            <a href="./app.html#/motorista" class="btn btn-primario btn-bloco">Começar grátis</a>
           </div>
-          <div class="plano">
-            <h3>Cooperativa</h3>
-            <p class="muted">Várias vans, uma gestão.</p>
+          <div class="plano revelar">
+            <h3>Cooperativa</h3><p class="muted">Várias vans, uma gestão.</p>
             <div class="valor">R$ 199<small>/mês</small></div>
-            <ul>
-              <li><i data-lucide="check"></i>Até 15 vans</li>
-              <li><i data-lucide="check"></i>Painel por motorista</li>
-              <li><i data-lucide="check"></i>Relatórios financeiros</li>
-              <li><i data-lucide="check"></i>Fiscalização de toda a frota</li>
-            </ul>
-            <a href="./app.html#/motorista" class="btn btn-claro btn-bloco">Testar grátis</a>
+            <ul><li><i data-lucide="check"></i>Até 15 vans</li><li><i data-lucide="check"></i>Painel por motorista</li><li><i data-lucide="check"></i>Relatórios financeiros</li><li><i data-lucide="check"></i>Fiscalização de toda a frota</li></ul>
+            <a href="./app.html#/motorista" class="btn btn-claro btn-bloco">Começar grátis</a>
           </div>
-          <div class="plano">
-            <h3>Escola particular</h3>
-            <p class="muted">Opcional: o app funciona sem a escola.</p>
+          <div class="plano revelar">
+            <h3>Escola particular</h3><p class="muted">Opcional: o app funciona sem a escola.</p>
             <div class="valor valor-texto">Sob consulta</div>
-            <ul>
-              <li><i data-lucide="check"></i>Portaria: chegadas ao vivo</li>
-              <li><i data-lucide="check"></i>Credenciamento das vans</li>
-              <li><i data-lucide="check"></i>Confirmação de entrada, se quiser</li>
-            </ul>
-            <a href="./app.html#/escola" class="btn btn-claro btn-bloco">Ver a portaria</a>
+            <ul><li><i data-lucide="check"></i>Portaria: chegadas ao vivo</li><li><i data-lucide="check"></i>Credenciamento das vans</li><li><i data-lucide="check"></i>Confirmação de entrada, se quiser</li></ul>
+            <a href="./app.html#/escola/demo" class="btn btn-claro btn-bloco">Ver a portaria</a>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ENTRAR -->
-    <section class="secao" id="entrar">
-      <div class="container">
-        <div class="cta-final">
-          <div>
-            <h2>Entre no app</h2>
-            <p>Cada um tem a sua conta. Para conhecer, use “Entrar na demonstração” e abra os outros perfis em outras abas: tudo atualiza ao vivo.</p>
-          </div>
-          <div class="portais">
-            <a class="portal" href="./app.html#/motorista"><span class="portal-ic"><i data-lucide="bus"></i></span><span><strong>Motorista</strong><small>Alunos, rota, mensalidades</small></span><i data-lucide="chevron-right"></i></a>
-            <a class="portal" href="./app.html#/pais"><span class="portal-ic"><i data-lucide="house"></i></span><span><strong>Família</strong><small>Rastreio, avisos, mensalidade</small></span><i data-lucide="chevron-right"></i></a>
-            <a class="portal" href="./app.html#/aluno"><span class="portal-ic"><i data-lucide="user-round"></i></span><span><strong>Aluno</strong><small>Missões, ranking e prêmios</small></span><i data-lucide="chevron-right"></i></a>
-            <a class="portal" href="./app.html#/escola"><span class="portal-ic"><i data-lucide="school"></i></span><span><strong>Escola</strong><small>Portaria e vans credenciadas</small></span><i data-lucide="chevron-right"></i></a>
-          </div>
+    <!-- ================= DÚVIDAS ================= -->
+    <section class="secao fundo-branco" id="duvidas">
+      <div class="container duvidas-grade">
+        <div class="titulo-secao revelar">
+          <span class="sobre">Dúvidas</span>
+          <h2>Pergunta de quem dirige van.</h2>
+          <p>Não achou? <a href="./app.html#/motorista/demo">Veja funcionando</a>: leva 10 segundos.</p>
+        </div>
+        <div class="faq revelar">
+          <details><summary>Preciso comprar rastreador?<i data-lucide="chevron-down"></i></summary><p>Não. O GPS é o do seu celular, com o app aberto durante a rota. Os trajetos ficam guardados com data e hora, como pede o PL 1240/2026.</p></details>
+          <details><summary>E se a internet cair no caminho?<i data-lucide="chevron-down"></i></summary><p>O app continua funcionando. Tudo fica guardado no celular e é enviado quando a conexão volta, com o horário certo de cada embarque. Nada se perde e nada é enviado duas vezes.</p></details>
+          <details><summary>Vou ter que ficar mexendo no celular dirigindo?<i data-lucide="chevron-down"></i></summary><p>Não. O GPS confirma o embarque quando você sai de cada casa e avisa a família. Os botões grandes ficam para o que o GPS não sabe, como "não estava".</p></details>
+          <details><summary>O PL 1240 já é lei?<i data-lucide="chevron-down"></i></summary><p>Ainda não: é um projeto em análise na Câmara dos Deputados e pode mudar. Se for aprovado, as vans em operação teriam 180 dias para se adequar. O VanAaki já atende o que o texto pede hoje.</p></details>
+          <details><summary>A família paga alguma coisa?<i data-lucide="chevron-down"></i></summary><p>Não. Família, aluno e escola usam de graça. A mensalidade da van vai direto para o seu Pix, sem taxa.</p></details>
+          <details><summary>A escola precisa participar?<i data-lucide="chevron-down"></i></summary><p>Não. Tudo funciona só com você e as famílias. A escola que quiser acompanha as chegadas na portaria.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= ENTRAR ================= -->
+    <section class="cta-amarelo" id="entrar">
+      <div class="container cta-grade">
+        <div class="revelar">
+          <h2>Bora rodar?</h2>
+          <p>Veja a demonstração com dados de exemplo, ou entre no seu perfil.</p>
+          <a href="./app.html#/motorista/demo" class="btn btn-escuro btn-grande"><i data-lucide="play"></i>Ver funcionando</a>
+        </div>
+        <div class="portais revelar">
+          <a class="portal" href="./app.html#/motorista"><span class="portal-ic"><i data-lucide="bus"></i></span><span><strong>Motorista</strong><small>Rota, agenda, Pix</small></span><i data-lucide="chevron-right"></i></a>
+          <a class="portal" href="./app.html#/pais"><span class="portal-ic"><i data-lucide="house"></i></span><span><strong>Família</strong><small>Avisos, rastreio, mensalidade</small></span><i data-lucide="chevron-right"></i></a>
+          <a class="portal" href="./app.html#/aluno"><span class="portal-ic"><i data-lucide="user-round"></i></span><span><strong>Aluno</strong><small>Agenda e prêmios</small></span><i data-lucide="chevron-right"></i></a>
+          <a class="portal" href="./app.html#/escola"><span class="portal-ic"><i data-lucide="school"></i></span><span><strong>Escola</strong><small>Portaria e vans</small></span><i data-lucide="chevron-right"></i></a>
         </div>
       </div>
     </section>
@@ -223,9 +274,13 @@
   <footer class="rodape">
     <div class="container rodape-linha">
       <span class="logo"><svg class="logo-marca" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#111318"/><rect x="11" y="18" width="42" height="24" rx="6" fill="#FFC20E"/><rect x="16" y="22" width="9" height="7" rx="2" fill="#111318"/><rect x="28" y="22" width="9" height="7" rx="2" fill="#111318"/><rect x="40" y="22" width="8" height="7" rx="2" fill="#111318"/><circle cx="21" cy="44" r="4.5" fill="#fff"/><circle cx="43" cy="44" r="4.5" fill="#fff"/></svg><span>Van<b>Aaki</b></span></span>
-      <span class="muted">© 2026 VanAaki · Mapas e rotas com dados do OpenStreetMap.</span>
+      <span class="muted">Feito para quem leva as crianças todo dia · © 2026 VanAaki · Mapas: OpenStreetMap</span>
     </div>
   </footer>
+
+  <div class="barra-cta" id="barra-cta">
+    <a href="./app.html#/motorista/demo" class="btn btn-escuro btn-bloco"><i data-lucide="play"></i>Ver funcionando</a>
+  </div>
 
   <script type="module" src="/src/landing.ts"></script>
 </body>

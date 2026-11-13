@@ -1,7 +1,7 @@
 import {
   AlarmClock, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, BadgeCheck, Bell, BellOff, Bus, CalendarDays, Check, CheckCheck, ChevronRight,
   CircleAlert, CircleDollarSign, ClipboardList, Clock, Copy, Download, ExternalLink, FileText, Flag, FlaskConical, Gift, GraduationCap,
-  Hand, History, House, Inbox, Landmark, LayoutDashboard, Link2, ListChecks, Loader2, LogOut, MapPin, Map as MapaIc, MessageCircle,
+  Hand, History, House, Inbox, Landmark, LayoutDashboard, Lock, Mail, Link2, ListChecks, Loader2, LogOut, MapPin, Map as MapaIc, MessageCircle,
   Moon, Navigation, Phone, Plus, Printer, RefreshCcw, Route, Satellite, School, Search, Send, Settings2, ShieldCheck, Smartphone, Sparkles,
   Square, Star, Sun, Sunset, Target, ThumbsUp, Timer, Trash2, TrafficCone, Trophy, User, UserRound, Users, Wallet, Wifi, WifiOff, X, Zap,
   type LucideProps,
@@ -17,7 +17,7 @@ const ICONES = {
   externo: ExternalLink, documento: FileText, governo: Landmark, sair: LogOut, recomecar: RefreshCcw, config: Settings2, celular: Smartphone,
   satelite: Satellite, teste: FlaskConical, raio: Zap, alvo: Target, trofeu: Trophy, joinha: ThumbsUp, mao: Hand, brilho: Sparkles, bandeira: Flag,
   lixo: Trash2, parar: Square, cima: ArrowUp, baixo: ArrowDown, voltar: ArrowLeft, seguir: ArrowRight, chevron: ChevronRight, caixa: Inbox,
-  portaria: TrafficCone, carregando: Loader2, wifi: Wifi, semWifi: WifiOff, manha: Sun, tarde: Sunset, noite: Moon,
+  email: Mail, cadeado: Lock, portaria: TrafficCone, carregando: Loader2, wifi: Wifi, semWifi: WifiOff, manha: Sun, tarde: Sunset, noite: Moon,
 } as const;
 
 export type NomeIcone = keyof typeof ICONES;

@@ -158,3 +158,19 @@
   .salvar-barra { bottom: 16px; }
   .proxima { grid-template-columns: 1fr auto; align-items: end; }
 }
+
+/* =========================================================
+   ALMA — a mesma voz do site dentro do app
+   ========================================================= */
+.main-topo h1, .status-card .st-titulo, .status-card .eta-num, .proxima h2, .proxima .px-hora, .big, .kpi .num,
+.alvo-card .nome-alvo, .lm-texto h1, .entrar-topo h1, .selo-pl h2, .aluno-ola h2, .aluno-ola .grande, .modal h3,
+.card h3, .m-card h4, .fiscal-cab h1, .agenda-resumo strong, .dia strong, .nome-perfil, .ld-txt strong {
+  font-family: var(--display); letter-spacing: -.02em;
+}
+.main-topo h1 { font-weight: 800; }
+.card h3, .m-card h4 { font-weight: 700; }
+/* botão principal "de van": borda de tinta e sombra firme, como no site */
+.btn-primario { border-color: var(--tinta); box-shadow: 0 2px 0 var(--tinta); }
+.btn-primario:active:not(:disabled) { transform: translateY(1px); box-shadow: 0 1px 0 var(--tinta); }
+.alvo-card .btn-primario, .proxima .btn-primario, .selo-pl .btn-primario { box-shadow: 0 2px 0 var(--amarelo-forte); border-color: var(--amarelo); }
+.login-perfis a.ativo { box-shadow: inset 0 -3px 0 var(--amarelo); }

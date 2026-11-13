@@ -5,7 +5,7 @@
    O amarelo aparece pouco (ação principal, estado ativo, destaque);
    o resto é neutro: papel, tinta e bordas finas.
    ========================================================= */
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&display=swap');
 
 :root {
   /* marca */
@@ -49,6 +49,8 @@
   --sombra-forte: 0 18px 48px rgba(17, 19, 24, .16);
   --fonte: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  /* títulos e números grandes: a voz da marca (gente, não sistema) */
+  --display: 'Bricolage Grotesque', var(--fonte);
 
   /* nomes antigos usados nas telas (mantidos como apelidos) */
   --fundo: var(--papel);
