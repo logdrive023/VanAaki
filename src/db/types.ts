@@ -26,8 +26,27 @@ export interface Escola {
 /** Em qual turno o motorista trabalha e quais escolas atende nele. */
 export interface TurnoVan { turno: Turno; ativo: boolean; escolaIds: string[] }
 
+/** O que o tio ajusta em Configurações (o servidor completa os padrões). */
+export interface ConfigVan {
+  pixTipo?: 'cpf' | 'cnpj' | 'celular' | 'email' | 'aleatoria';
+  pixChave?: string;
+  pixNome?: string;
+  pixCidade?: string;
+  /** dia de vencimento sugerido para aluno novo (padrão 10) */
+  diaVencimento?: number;
+  /** minutos de folga na hora de sair (padrão 5) */
+  folgaMin?: number;
+  /** avisar a família quando faltarem N paradas (1 = quando é o próximo) */
+  avisoParadas?: number;
+  /** true = o GPS NÃO confirma sozinho o embarque; só pelo botão */
+  confirmarManual?: boolean;
+  /** true = esconde conduta, pontos e prêmios */
+  semGamificacao?: boolean;
+}
+
 export interface Van {
   id: string;
+  config?: ConfigVan;
   /** nome comercial: "Tio Carlos Transportes" */
   nome: string;
   motorista: string;
@@ -93,6 +112,8 @@ export interface Pagamento {
   status: 'pendente' | 'pago';
   pagoEm?: string;
   metodo?: 'pix' | 'dinheiro' | 'cartao';
+  /** a família avisou que pagou; o tio confirma quando o dinheiro cair */
+  informadoEm?: string;
 }
 
 /**

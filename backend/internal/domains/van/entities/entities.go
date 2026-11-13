@@ -13,6 +13,8 @@ type VanRequest struct {
 	Vagas       int           `json:"vagas"`
 }
 
+type ConfigRequest = models.ConfigVan
+
 type TurnosRequest struct {
 	Turnos []models.TurnoVan `json:"turnos"`
 }
@@ -32,4 +34,6 @@ type PresencaRequest struct {
 	AlunoID string `json:"alunoId"`
 	Plano   string `json:"plano"` // ambos | so_ida | so_volta | nao_vai
 	Motivo  string `json:"motivo"`
+	// dia do combinado (AAAA-MM-DD). Vazio = hoje. Até 30 dias à frente (agenda).
+	Data string `json:"data"`
 }

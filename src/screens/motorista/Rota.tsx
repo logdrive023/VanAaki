@@ -7,7 +7,7 @@ import { I } from '../../components/Icone';
 import { TURNOS, type Escola, type Parada, type TipoViagem, type Turno, type Viagem } from '../../db/types';
 import { compCaminho, etaMin } from '../../lib/geo';
 import { caminhoAte, etaAte } from '../../lib/privacidade';
-import { atrasoPrevisto, FOLGA_MIN, horarioAlvo, NOME_TURNO, ordenarEscolas, planejarHorario, turnoAgora, vaiNoTrecho } from '../../lib/turnos';
+import { atrasoPrevisto, horarioAlvo, NOME_TURNO, ordenarEscolas, planejarHorario, turnoAgora, vaiNoTrecho } from '../../lib/turnos';
 import { hora, horaMais, primeiroNome } from '../../lib/util';
 import { definirPresenca, salvarRotaFixa } from '../../services/acoes';
 import { chaveRotaFixa, configurarViagem, encerrarViagem, enviarPosicao, iniciarViagem, marcarParada, ordemLocal, ordenarPorFixa } from '../../services/viagem';
@@ -120,7 +120,7 @@ function PrepararRota({ d, turnoInicial }: { d: DadosVan; turnoInicial?: Turno }
             <span className="muted small">Linha tracejada = ordem prevista. Ao sair, a rota é traçada pelas ruas.</span>
           </div>
         </section>
-        <section className="card pilha">
+        <section className="card pilha rota-lado">
           <h3 className="turno-titulo"><I n={turno} />{tipo === 'ida' ? 'Ida' : 'Volta'} da {NOME_TURNO[turno].toLowerCase()}</h3>
           {escolas.length > 0 && previa.horario.sairAs && (
             <div className={`horario-saida ${previa.horario.atrasadoMin ? 'atrasado' : ''}`}>
@@ -128,12 +128,38 @@ function PrepararRota({ d, turnoInicial }: { d: DadosVan; turnoInicial?: Turno }
               <div>
                 <strong>{tipo === 'ida' ? `Saia da garagem até ${previa.horario.sairAs}` : `Esteja em ${escolas[0].nome} às ${previa.horario.sairAs}`}</strong>
                 <span className="small">{tipo === 'ida'
-                  ? `Calculado pelo horário de entrada das escolas (${FOLGA_MIN} min de folga) · última escola ~${previa.horario.fimAs}`
+                  ? `Calculado pelo horário de entrada das escolas (${d.cfg.folgaMin} min de folga) · última escola ~${previa.horario.fimAs}`
                   : `Horário de saída da escola · todos em casa ~${previa.horario.fimAs}`}</span>
                 {previa.horario.atrasadoMin ? <span className="tag atraso" style={{ marginTop: 6, alignSelf: 'start' }}><I n="alerta" />Já passou {previa.horario.atrasadoMin} min da hora de {tipo === 'ida' ? 'sair' : 'estar lá'}</span> : null}
               </div>
             </div>
           )}
+          {erro && <div className="aviso-erro">{erro}</div>}
+          <button className="btn btn-primario btn-bloco btn-grande" disabled={saindo || !vao.length} onClick={() => void sair()}>
+            <I n={saindo ? 'satelite' : 'navegar'} />{saindo ? 'Traçando a rota pelas ruas…' : `Começar ${tipo} · ${vao.length} aluno${vao.length === 1 ? '' : 's'}`}
+          </button>
+          {!simulado && <div className="dica-gps"><I n="check" /><span>{d.van?.config?.confirmarManual ? 'Confirme cada embarque no botão grande da tela.' : 'Só dirija: o GPS confirma o embarque sozinho quando você sai de cada casa e avisa as famílias.'}</span></div>}
+          <div>
+            <div className="entre"><strong>Alunos do turno ({vao.length}/{doTurno.length} nesta {tipo})</strong></div>
+            {doTurno.map((a, i) => {
+              const n = numero.get(a.id);
+              return (
+                <div key={a.id} className="linha-item" style={{ opacity: n ? 1 : 0.55 }}>
+                  <div className="aluno-cel">
+                    {fixa && (
+                      <div className="ordem-btns">
+                        <button className="btn btn-claro btn-sm" title="Subir" disabled={i === 0} onClick={() => mover(a.id, -1)}><I n="cima" /></button>
+                        <button className="btn btn-claro btn-sm" title="Descer" disabled={i === doTurno.length - 1} onClick={() => mover(a.id, 1)}><I n="baixo" /></button>
+                      </div>
+                    )}
+                    <Avatar aluno={a} tam={34} /><div><strong>{n ? `${n}. ` : ''}{a.nome}</strong><span className="muted small">{d.mapaEscolas.get(a.escolaId)?.nome} · {a.endereco}</span></div>
+                  </div>
+                  <SeletorPlano valor={d.plano(a.id)} onChange={(x) => void definirPresenca(a.id, x, undefined, 'motorista')} />
+                </div>
+              );
+            })}
+            {!doTurno.length && <span className="muted small">Nenhum aluno neste turno.</span>}
+          </div>
           <div>
             <strong className="small">Escolas, na ordem {tipo === 'ida' ? 'da entrada' : 'da saída'}</strong>
             {escolas.map((e: Escola, i) => {
@@ -152,6 +178,9 @@ function PrepararRota({ d, turnoInicial }: { d: DadosVan; turnoInicial?: Turno }
             })}
             {!escolas.length && <span className="muted small">Nenhuma escola com aluno neste trecho.</span>}
           </div>
+          <details className="opcoes">
+            <summary><I n="config" />Opções da rota<I n="chevron" /></summary>
+            <div>
           <div className="pilha" style={{ gap: 6 }}>
             <strong className="small">Ordem das casas</strong>
             <div className="abas modo-rota">
@@ -178,32 +207,9 @@ function PrepararRota({ d, turnoInicial }: { d: DadosVan; turnoInicial?: Turno }
               </label>
             </>
           )}
-          <div>
-            <div className="entre"><strong>Alunos do turno ({vao.length}/{doTurno.length} nesta {tipo})</strong></div>
-            {doTurno.map((a, i) => {
-              const n = numero.get(a.id);
-              return (
-                <div key={a.id} className="linha-item" style={{ opacity: n ? 1 : 0.55 }}>
-                  <div className="aluno-cel">
-                    {fixa && (
-                      <div className="ordem-btns">
-                        <button className="btn btn-claro btn-sm" title="Subir" disabled={i === 0} onClick={() => mover(a.id, -1)}><I n="cima" /></button>
-                        <button className="btn btn-claro btn-sm" title="Descer" disabled={i === doTurno.length - 1} onClick={() => mover(a.id, 1)}><I n="baixo" /></button>
-                      </div>
-                    )}
-                    <Avatar aluno={a} tam={34} /><div><strong>{n ? `${n}. ` : ''}{a.nome}</strong><span className="muted small">{d.mapaEscolas.get(a.escolaId)?.nome} · {a.endereco}</span></div>
-                  </div>
-                  <SeletorPlano valor={d.plano(a.id)} onChange={(x) => void definirPresenca(a.id, x, undefined, 'motorista')} />
-                </div>
-              );
-            })}
-            {!doTurno.length && <span className="muted small">Nenhum aluno neste turno.</span>}
-          </div>
-          {erro && <div className="aviso-erro">{erro}</div>}
-          <button className="btn btn-primario btn-bloco btn-grande" disabled={saindo || !vao.length} onClick={() => void sair()}>
-            <I n={saindo ? 'satelite' : 'navegar'} />{saindo ? 'Traçando a rota pelas ruas…' : `Iniciar ${tipo} com ${vao.length} aluno${vao.length === 1 ? '' : 's'}`}
-          </button>
-          <small className="muted">Cada família e cada escola recebem um aviso. Antes do embarque a família só vê a van quando ela é a próxima; com o filho a bordo, acompanha o trajeto todo. Os trajetos ficam guardados para a fiscalização.</small>
+            </div>
+          </details>
+          <small className="muted">Antes do embarque a família só vê a van quando ela é a próxima; com o filho a bordo, acompanha o trajeto todo. Os trajetos ficam guardados para a fiscalização (PL 1240).</small>
         </section>
       </div>
     </>
@@ -306,6 +312,7 @@ function RotaAoVivo({ d, v }: { d: DadosVan; v: Viagem }) {
                   {v.tipo === 'ida' ? <button className="btn btn-claro" onClick={() => void marcarParada(v.id, 'ausente')}><I n="fechar" />Não estava</button>
                     : <a className="btn btn-claro" href={`tel:${a.telefoneResp}`}><I n="telefone" />Ligar</a>}
                 </div>
+                {!v.simulado && !d.van?.config?.confirmarManual && <small className="muted" style={{ display: 'block', marginTop: 10 }}>Pode seguir: ao sair daqui o GPS confirma {v.tipo === 'ida' ? 'o embarque' : 'a entrega'} sozinho.</small>}
               </>
             );
           })() : atual?.tipo === 'escola' ? (() => {

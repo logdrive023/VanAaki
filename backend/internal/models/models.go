@@ -108,6 +108,43 @@ type Van struct {
 	Vagas          int                 `json:"vagas"`
 	Avaliacao      float64             `json:"avaliacao"`
 	RotasFixas     map[string]RotaFixa `json:"rotasFixas,omitempty"`
+	Config         ConfigVan           `json:"config"`
+}
+
+// ConfigVan = o que o tio ajusta em Configurações.
+type ConfigVan struct {
+	// Pix para as famílias pagarem a mensalidade direto na conta dele (QR Code e copia e cola gerados no app)
+	PixTipo   string `json:"pixTipo,omitempty"` // cpf | cnpj | celular | email | aleatoria
+	PixChave  string `json:"pixChave,omitempty"`
+	PixNome   string `json:"pixNome,omitempty"`
+	PixCidade string `json:"pixCidade,omitempty"`
+	// dia de vencimento sugerido para aluno novo
+	DiaVencimento int `json:"diaVencimento,omitempty"`
+	// minutos de folga na hora de sair (padrão 5)
+	FolgaMin int `json:"folgaMin,omitempty"`
+	// avisar a família quando faltarem N paradas (1 = quando é o próximo)
+	AvisoParadas int `json:"avisoParadas,omitempty"`
+	// padrão: o GPS confirma sozinho o embarque/entrega quando a van sai da parada. true = só pelo botão
+	ConfirmarManual bool `json:"confirmarManual,omitempty"`
+	// padrão: conduta, pontos e prêmios ligados. true = esconde tudo (é um extra)
+	SemGamificacao bool `json:"semGamificacao,omitempty"`
+}
+
+// Normalizar põe os valores padrão no que não foi configurado.
+func (c ConfigVan) Normalizar() ConfigVan {
+	if c.DiaVencimento < 1 || c.DiaVencimento > 28 {
+		c.DiaVencimento = 10
+	}
+	if c.FolgaMin < 0 || c.FolgaMin > 30 {
+		c.FolgaMin = 5
+	}
+	if c.FolgaMin == 0 {
+		c.FolgaMin = 5
+	}
+	if c.AvisoParadas < 1 || c.AvisoParadas > 3 {
+		c.AvisoParadas = 1
+	}
+	return c
 }
 
 func (v *Van) TurnoCfg(t Turno) *TurnoVan {
@@ -154,6 +191,8 @@ type Pagamento struct {
 	Status     string `json:"status"`
 	PagoEm     string `json:"pagoEm,omitempty"`
 	Metodo     string `json:"metodo,omitempty"`
+	// a família avisou que pagou (o tio confirma quando o dinheiro cair)
+	InformadoEm string `json:"informadoEm,omitempty"`
 }
 
 type Presenca struct {
@@ -199,14 +238,14 @@ type Viagem struct {
 	ChegouParadaEm string              `json:"chegouParadaEm,omitempty"`
 	Automatico     bool                `json:"automatico"`
 	// true = o servidor anda com a van (demonstração); false = posição vem do GPS do celular do tio
-	Simulado    bool     `json:"simulado"`
-	Velocidade  float64  `json:"velocidade"`
-	IniciadaEm  string   `json:"iniciadaEm"`
-	ConcluidaEm string   `json:"concluidaEm,omitempty"`
-	Avisados    []string `json:"avisados"`
-	EconomiaKm  float64  `json:"economiaKm,omitempty"`
-	Fixa        bool     `json:"fixa,omitempty"`
-	AtualizadoEm string  `json:"atualizadoEm"`
+	Simulado     bool     `json:"simulado"`
+	Velocidade   float64  `json:"velocidade"`
+	IniciadaEm   string   `json:"iniciadaEm"`
+	ConcluidaEm  string   `json:"concluidaEm,omitempty"`
+	Avisados     []string `json:"avisados"`
+	EconomiaKm   float64  `json:"economiaKm,omitempty"`
+	Fixa         bool     `json:"fixa,omitempty"`
+	AtualizadoEm string   `json:"atualizadoEm"`
 
 	// só nas cópias enviadas para família/escola (calculado no servidor, respeitando a privacidade)
 	Visoes       map[string]VisaoFamilia `json:"visoes,omitempty"`
@@ -245,11 +284,11 @@ type ResumoViagem struct {
 	IniciadaEm  string   `json:"iniciadaEm"`
 	ConcluidaEm string   `json:"concluidaEm,omitempty"`
 	Escolas     []string `json:"escolas"`
-	Alunos      int      `json:"alunos"`    // embarcados (ida) ou entregues (volta)
-	Ausentes    int      `json:"ausentes"`  // não estavam / fora do trecho
-	Pontos      int      `json:"pontos"`    // posições registradas
-	Km          float64  `json:"km"`        // distância percorrida pelo registro
-	Origem      string   `json:"origem"`    // gps | simulacao
+	Alunos      int      `json:"alunos"`   // embarcados (ida) ou entregues (volta)
+	Ausentes    int      `json:"ausentes"` // não estavam / fora do trecho
+	Pontos      int      `json:"pontos"`   // posições registradas
+	Km          float64  `json:"km"`       // distância percorrida pelo registro
+	Origem      string   `json:"origem"`   // gps | simulacao
 	PrimeiraEm  string   `json:"primeiraEm,omitempty"`
 	UltimaEm    string   `json:"ultimaEm,omitempty"`
 }
@@ -363,14 +402,14 @@ type Usuario struct {
 
 // Escopo = o que um usuário pode ver (calculado do banco a cada pedido / conexão).
 type Escopo struct {
-	Usuario   Usuario
-	VanIDs    []string // vans que ele acompanha
-	AlunoIDs  []string // alunos da família (pais) ou o próprio (aluno)
-	EscolaID  string
+	Usuario  Usuario
+	VanIDs   []string // vans que ele acompanha
+	AlunoIDs []string // alunos da família (pais) ou o próprio (aluno)
+	EscolaID string
 }
 
-func (e Escopo) TemVan(id string) bool    { return contem(e.VanIDs, id) }
-func (e Escopo) TemAluno(id string) bool  { return contem(e.AlunoIDs, id) }
+func (e Escopo) TemVan(id string) bool   { return contem(e.VanIDs, id) }
+func (e Escopo) TemAluno(id string) bool { return contem(e.AlunoIDs, id) }
 
 func contem(l []string, x string) bool {
 	for _, v := range l {

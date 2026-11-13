@@ -87,13 +87,24 @@ func (s *service) Pagar(ctx context.Context, e models.Escopo, id, metodo string)
 	if p.Status == "pago" {
 		return nil
 	}
+	if e.Usuario.Perfil == models.PerfilPais {
+		// a família só INFORMA que pagou: quem confirma é o tio, quando o Pix cair na conta dele
+		if p.InformadoEm != "" {
+			return nil
+		}
+		p.InformadoEm, p.Metodo = models.AgoraIso(), metodo
+		if err := s.repo.SalvarPagamento(ctx, p); err != nil {
+			return err
+		}
+		_ = s.av.Motorista(ctx, a.VanID, "💰", "Família informou o pagamento", regras.PrimeiroNome(a.Nome)+" · "+nomeMes(p.Mes)+" · "+Reais(p.Valor)+". Confira o Pix e confirme no Financeiro.")
+		s.tx.Van(ctx, a.VanID)
+		return nil
+	}
 	p.Status, p.PagoEm, p.Metodo = "pago", models.AgoraIso(), metodo
 	if err := s.repo.SalvarPagamento(ctx, p); err != nil {
 		return err
 	}
-	if e.Usuario.Perfil == models.PerfilPais {
-		_ = s.av.Motorista(ctx, a.VanID, "💰", "Pagamento recebido", regras.PrimeiroNome(a.Nome)+" · "+nomeMes(p.Mes)+" · "+Reais(p.Valor)+" ("+metodo+")")
-	} else {
+	{
 		_ = s.av.Pais(ctx, a.ID, "🧾", "Pagamento confirmado", nomeMes(p.Mes)+" · "+Reais(p.Valor)+". Obrigado!")
 	}
 	s.tx.Van(ctx, a.VanID)
@@ -108,7 +119,7 @@ func (s *service) Desfazer(ctx context.Context, e models.Escopo, id string) erro
 	if err != nil {
 		return err
 	}
-	p.Status, p.PagoEm, p.Metodo = "pendente", "", ""
+	p.Status, p.PagoEm, p.Metodo, p.InformadoEm = "pendente", "", "", ""
 	if err := s.repo.SalvarPagamento(ctx, p); err != nil {
 		return err
 	}

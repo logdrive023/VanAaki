@@ -1,7 +1,10 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useState } from 'react';
 import Mapa3D from '../../components/Mapa3D';
-import { ShellPainel, type ItemMenu } from '../../components/Shell';
+import { MenuMais, ShellPainel, type ItemMenu } from '../../components/Shell';
+import { Agenda } from './Agenda';
+import { Configuracoes } from './Configuracoes';
+import { planejarTrecho } from './plano';
 import { SeletorPlano } from '../../components/presenca';
 import { Avatar, ir, Kpi, Modal, saudacao, Toggle, useNotificacoes, Vazio } from '../../components/ui';
 import { I } from '../../components/Icone';
@@ -23,21 +26,28 @@ export default function Motorista({ aba = 'painel', extra }: { aba?: string; ext
   const d = useDadosVan(vanId);
   const pedidos = useLiveQuery(() => db.resgates.where('status').equals('pendente').count()) ?? 0;
   const msgs = useLiveQuery(() => db.mensagens.filter((m) => m.de === 'pais' && !m.lida).count()) ?? 0;
-  if (d.carregando || !d.van) return <div className="vazio">Carregando…</div>;
-  const pend = d.pagamentosMes.filter((p) => p.status === 'pendente').length;
+  const [modal, setModal] = useState<'van' | 'turnos' | null>(null);
+  if (d.carregando || !d.van) return <div className="carregando"><div className="giro" /></div>;
+  const pend = d.pagamentosMes.filter((p) => p.status === 'pendente' && !p.informadoEm).length;
+  const informados = d.pagamentosMes.filter((p) => p.status === 'pendente' && p.informadoEm).length;
 
+  // mobile first: 4 abas para o dia a dia; o resto fica em "Mais"
   const menu: ItemMenu[] = [
-    { id: 'painel', ic: 'painel', nome: 'Painel', grupo: 'Operação' },
-    { id: 'rota', ic: 'rota', nome: 'Rota', grupo: 'Operação', badge: d.ativa ? 1 : 0 },
-    { id: 'alunos', ic: 'alunos', nome: 'Alunos', grupo: 'Operação' },
-    { id: 'financeiro', ic: 'financeiro', nome: 'Financeiro', curto: 'Caixa', grupo: 'Gestão', badge: pend },
-    { id: 'mensagens', ic: 'mensagem', nome: 'Mensagens', curto: 'Chat', grupo: 'Gestão', badge: msgs },
-    { id: 'conformidade', ic: 'escudo', nome: 'Fiscalização', curto: 'PL 1240', grupo: 'Gestão' },
-    { id: 'conduta', ic: 'estrela', nome: 'Conduta', grupo: 'Alunos' },
-    { id: 'premios', ic: 'premio', nome: 'Prêmios', grupo: 'Alunos', badge: pedidos },
+    { id: 'painel', ic: 'painel', nome: 'Hoje', grupo: 'Dia a dia', principal: true },
+    { id: 'agenda', ic: 'calendario', nome: 'Agenda', grupo: 'Dia a dia', principal: true },
+    { id: 'rota', ic: 'rota', nome: 'Rota', grupo: 'Dia a dia', badge: d.ativa ? 1 : 0, principal: true },
+    { id: 'alunos', ic: 'alunos', nome: 'Alunos', grupo: 'Dia a dia', principal: true },
+    { id: 'financeiro', ic: 'financeiro', nome: 'Financeiro', desc: 'Mensalidades e cobranças', grupo: 'Gestão', badge: pend + informados },
+    { id: 'mensagens', ic: 'mensagem', nome: 'Mensagens', desc: 'Conversas com as famílias', grupo: 'Gestão', badge: msgs },
+    { id: 'conformidade', ic: 'escudo', nome: 'Fiscalização', desc: 'PL 1240: trajetos e relatórios', grupo: 'Gestão' },
+    ...(d.gamificacao ? [
+      { id: 'conduta', ic: 'estrela', nome: 'Conduta', desc: 'Elogios e ocorrências', grupo: 'Extras' },
+      { id: 'premios', ic: 'premio', nome: 'Prêmios', desc: 'Loja de prêmios dos alunos', grupo: 'Extras', badge: pedidos },
+    ] as ItemMenu[] : []),
+    { id: 'configuracoes', ic: 'config', nome: 'Configurações', desc: 'Pix, avisos, rota e extras', grupo: 'Conta' },
   ];
   const titulos: Record<string, string> = {
-    painel: `${saudacao()}, ${d.van.motorista}`, rota: d.ativa ? 'Rota em andamento' : 'Rota do dia', alunos: 'Alunos',
+    painel: `${saudacao()}, ${primeiroNome(d.van.motorista.replace(/^(tio|tia)\s+/i, ''))}`, agenda: 'Agenda', mais: 'Mais', configuracoes: 'Configurações', rota: d.ativa ? 'Rota em andamento' : 'Rota do dia', alunos: 'Alunos',
     financeiro: 'Financeiro', conduta: 'Conduta e ranking', premios: 'Loja de prêmios', mensagens: 'Mensagens dos pais',
     conformidade: 'Fiscalização e trajetos',
   };
@@ -50,13 +60,18 @@ export default function Motorista({ aba = 'painel', extra }: { aba?: string; ext
   return (
     <ShellPainel base="motorista" menu={menu} atual={aba} perfil={perfil} filtro={{ para: 'motorista', vanId }}
       titulo={titulos[aba] ?? 'Painel'} sub={dataLonga()}
-      acoes={aba !== 'rota' && <button className="btn btn-primario" onClick={() => ir('motorista/rota')}><I n={d.ativa ? 'navegar' : 'rota'} /><span className="esconde-celular">{d.ativa ? 'Ver rota ao vivo' : 'Iniciar rota'}</span><span className="so-celular">Rota</span></button>}>
-      {aba === 'painel' && <Painel d={d} pedidos={pedidos} />}
+      acoes={aba !== 'rota' && aba !== 'painel' && aba !== 'agenda' && <button className="btn btn-primario" onClick={() => ir('motorista/rota')}><I n={d.ativa ? 'navegar' : 'rota'} /><span className="esconde-celular">{d.ativa ? 'Ver rota ao vivo' : 'Iniciar rota'}</span><span className="so-celular">Rota</span></button>}>
+      {aba === 'painel' && <Painel d={d} pedidos={pedidos} onMinhaVan={() => setModal('van')} onTurnos={() => setModal('turnos')} />}
+      {aba === 'agenda' && <Agenda d={d} />}
+      {aba === 'mais' && <MenuMais base="motorista" menu={menu} />}
+      {aba === 'configuracoes' && <Configuracoes d={d} onMinhaVan={() => setModal('van')} onTurnos={() => setModal('turnos')} />}
+      {modal === 'turnos' && <EditarTurnos d={d} onFechar={() => setModal(null)} />}
+      {modal === 'van' && <MinhaVan d={d} onFechar={() => setModal(null)} />}
       {aba === 'rota' && <Rota d={d} turnoInicial={extra as Turno | undefined} />}
       {aba === 'alunos' && <Alunos d={d} />}
       {aba === 'financeiro' && <Financeiro d={d} />}
-      {aba === 'conduta' && <Conduta d={d} />}
-      {aba === 'premios' && <Premios d={d} />}
+      {aba === 'conduta' && d.gamificacao && <Conduta d={d} />}
+      {aba === 'premios' && d.gamificacao && <Premios d={d} />}
       {aba === 'mensagens' && <Mensagens d={d} />}
       {aba === 'conformidade' && <Conformidade d={d} />}
     </ShellPainel>
@@ -65,14 +80,15 @@ export default function Motorista({ aba = 'painel', extra }: { aba?: string; ext
 
 // ---------------- painel ----------------
 
-function Painel({ d, pedidos }: { d: DadosVan; pedidos: number }) {
+function Painel({ d, pedidos, onMinhaVan, onTurnos }: { d: DadosVan; pedidos: number; onMinhaVan: () => void; onTurnos: () => void }) {
   const notifs = useNotificacoes({ para: 'motorista', vanId: d.van!.id });
-  const [editarVan, setEditarVan] = useState(false);
+  const setEditarTurnos = (_: boolean) => onTurnos();
   const pagos = d.pagamentosMes.filter((p) => p.status === 'pago');
   const pend = d.pagamentosMes.filter((p) => p.status === 'pendente');
-  const [editarTurnos, setEditarTurnos] = useState(false);
+  const configurado = d.van!.turnos.some((t) => t.ativo && t.escolaIds.length) && d.ativos.length > 0;
   return (
     <>
+      {configurado ? <ProximaRota d={d} /> : <PrimeirosPassos d={d} onMinhaVan={onMinhaVan} onTurnos={onTurnos} />}
       <section className="kpis">
         <Kpi ic="alunos" rot="Alunos ativos" num={d.ativos.length} sub={`${d.van!.turnos.filter((t) => t.ativo).length} turno(s) de trabalho`} />
         <Kpi ic="check" rot={`Pagaram ${nomeMes(mesAtual()).toLowerCase()}`} num={<>{pagos.length}<span className="muted">/{d.pagamentosMes.length}</span></>} sub={reais(pagos.reduce((s, p) => s + p.valor, 0))} subCls="verde" />
@@ -81,17 +97,10 @@ function Painel({ d, pedidos }: { d: DadosVan; pedidos: number }) {
       </section>
       <div className="grade-painel">
         <section className="card">
-          <div className="card-topo"><h3>Turnos de hoje</h3><div className="linha" style={{ gap: 6 }}><button className="btn btn-claro btn-sm" onClick={() => setEditarVan(true)}><I n="van" />Minha van</button><button className="btn btn-claro btn-sm" onClick={() => setEditarTurnos(true)}><I n="config" />Turnos e escolas</button></div></div>
+          <div className="card-topo"><h3>Turnos de hoje</h3><button className="btn btn-fantasma btn-sm" onClick={() => ir('motorista/agenda')}><I n="calendario" />Agenda</button></div>
           <div className="pilha">
             {d.van!.turnos.filter((t) => t.ativo).map((t) => <CartaoTurno key={t.turno} d={d} t={t} />)}
-            {!d.van!.turnos.some((t) => t.ativo && t.escolaIds.length) && (
-              <div className="primeiros-passos">
-                <strong>Primeiros passos</strong>
-                <span className={d.van!.escolaIds.length ? 'ok' : ''}><I n={d.van!.escolaIds.length ? 'check' : 'chevron'} />Cadastre as escolas e os turnos em <a onClick={() => setEditarTurnos(true)}>Turnos e escolas</a></span>
-                <span className={d.alunos.length ? 'ok' : ''}><I n={d.alunos.length ? 'check' : 'chevron'} />Cadastre os alunos em <a onClick={() => ir('motorista/alunos')}>Alunos</a> e mande o convite para cada família</span>
-                <span><I n="chevron" />Marque a garagem em <a onClick={() => setEditarVan(true)}>Minha van</a> e inicie a rota</span>
-              </div>
-            )}
+            {!d.van!.turnos.some((t) => t.ativo && t.escolaIds.length) && <span className="muted small">Nenhum turno configurado. <a style={{ textDecoration: 'underline', cursor: 'pointer' }} onClick={() => setEditarTurnos(true)}>Configurar turnos e escolas</a></span>}
           </div>
           <hr className="sep" style={{ margin: '16px 0' }} />
           <h3 style={{ marginBottom: 8 }}>Combinados de hoje</h3>
@@ -115,9 +124,83 @@ function Painel({ d, pedidos }: { d: DadosVan; pedidos: number }) {
           ))}
         </section>
       </div>
-      {editarTurnos && <EditarTurnos d={d} onFechar={() => setEditarTurnos(false)} />}
-      {editarVan && <MinhaVan d={d} onFechar={() => setEditarVan(false)} />}
     </>
+  );
+}
+
+/** O que vem agora: a rota em andamento ou o próximo trecho de hoje com a hora de sair (um toque para iniciar). */
+function ProximaRota({ d }: { d: DadosVan }) {
+  if (d.ativa) {
+    const v = d.ativa;
+    const casas = v.paradas.filter((p) => p.tipo === 'aluno');
+    return (
+      <section className="proxima">
+        <div>
+          <span className="px-rot">Rota em andamento</span>
+          <h2>{v.tipo === 'ida' ? 'Ida' : 'Volta'} da {NOME_TURNO[v.turno].toLowerCase()}</h2>
+          <div className="px-info" style={{ marginTop: 10 }}><span className="tag ao-vivo"><span className="ponto" />ao vivo</span><span className="tag">{casas.filter((p) => p.status !== 'pendente').length} de {casas.length} paradas</span></div>
+        </div>
+        <button className="btn btn-primario btn-grande" onClick={() => ir('motorista/rota')}><I n="navegar" />Abrir a rota</button>
+      </section>
+    );
+  }
+  const hojePres = (id: string) => d.presencaPorAluno.get(id);
+  const feitos = (t: Turno, tipo: 'ida' | 'volta') => d.concluidas.some((v) => v.turno === t && v.tipo === tipo);
+  const ordem = TURNOS.flatMap((t) => (['ida', 'volta'] as const).map((tipo) => ({ t, tipo })))
+    .filter(({ t }) => d.van!.turnos.some((x) => x.turno === t && x.ativo && x.escolaIds.length))
+    .filter(({ t, tipo }) => !feitos(t, tipo));
+  const prox = ordem.map(({ t, tipo }) => planejarTrecho(d, t, tipo, hojePres)).find((p) => p.vao.length);
+  if (!prox) {
+    return (
+      <section className="proxima">
+        <div className="proxima-fim"><span className="entrar-ic"><I n="check" /></span><div><span className="px-rot">Dia concluído</span><h2>Todas as rotas de hoje foram feitas</h2></div></div>
+        <button className="btn btn-claro" onClick={() => ir('motorista/agenda')}><I n="calendario" />Ver amanhã</button>
+      </section>
+    );
+  }
+  const h = prox.horario;
+  return (
+    <section className="proxima">
+      <div>
+        <span className="px-rot">Próxima rota · {prox.tipo === 'ida' ? 'ida' : 'volta'} da {NOME_TURNO[prox.turno].toLowerCase()}</span>
+        <div className="px-hora" style={{ marginTop: 10 }}>{h.sairAs ?? '—'}<small>{prox.tipo === 'ida' ? 'saia da garagem até' : 'esteja na 1ª escola'}</small></div>
+        <div className="px-info" style={{ marginTop: 12 }}>
+          <span className="tag"><I n="alunos" />{prox.vao.length} vão{prox.fora.length ? ` · ${prox.fora.length} fora` : ''}</span>
+          <span className="tag"><I n="escola" />{prox.escolas.length} escola(s)</span>
+          <span className="tag"><I n="bandeira" />fim ~{h.fimAs}</span>
+          {!!h.atrasadoMin && <span className="tag atraso"><I n="alerta" />{h.atrasadoMin} min atrasado</span>}
+        </div>
+      </div>
+      <div className="px-acoes">
+        <button className="btn btn-primario btn-grande" onClick={() => ir(`motorista/rota/${prox.turno}`)}><I n="navegar" />Começar</button>
+        <button className="btn btn-claro btn-grande" onClick={() => ir('motorista/agenda')} aria-label="Ver na agenda"><I n="calendario" /></button>
+      </div>
+    </section>
+  );
+}
+
+/** Conta nova: o caminho até a primeira rota, passo a passo. */
+function PrimeirosPassos({ d, onMinhaVan, onTurnos }: { d: DadosVan; onMinhaVan: () => void; onTurnos: () => void }) {
+  const passos = [
+    { ok: d.van!.turnos.some((t) => t.ativo && t.escolaIds.length), t: 'Escolas e turnos', s: 'Cadastre as escolas com o horário de entrada e saída.', acao: onTurnos, rot: 'Cadastrar' },
+    { ok: d.ativos.length > 0, t: 'Alunos', s: 'Endereço de cada um, conferido no mapa.', acao: () => ir('motorista/alunos'), rot: 'Adicionar' },
+    { ok: d.van!.garagem.lat !== 0 && d.ativos.length > 0, t: 'Garagem', s: 'De onde a van sai de manhã.', acao: onMinhaVan, rot: 'Marcar' },
+    { ok: d.ativos.some((a) => a.familiaConectada), t: 'Convidar as famílias', s: 'Um toque manda o convite pelo WhatsApp.', acao: () => ir('motorista/alunos'), rot: 'Convidar' },
+    { ok: !!d.van!.config?.pixChave, t: 'Receber pelo Pix (opcional)', s: 'As famílias pagam direto na sua chave.', acao: () => ir('motorista/configuracoes'), rot: 'Configurar' },
+  ];
+  const feitos = passos.filter((p) => p.ok).length;
+  return (
+    <section className="card">
+      <div className="entre"><h3>Vamos deixar sua van pronta</h3><span className="muted small">{feitos} de {passos.length}</span></div>
+      <div className="barra-onb"><i style={{ width: `${(feitos / passos.length) * 100}%` }} /></div>
+      {passos.map((p, i) => (
+        <div key={p.t} className={`onb-item ${p.ok ? 'ok' : ''}`}>
+          <span className="onb-n">{p.ok ? <I n="check" /> : i + 1}</span>
+          <div><strong>{p.t}</strong><small>{p.s}</small></div>
+          {!p.ok && <button className="btn btn-claro btn-sm" onClick={p.acao}>{p.rot}</button>}
+        </div>
+      ))}
+    </section>
   );
 }
 
@@ -136,7 +219,7 @@ function CartaoTurno({ d, t }: { d: DadosVan; t: TurnoVan }) {
   };
   return (
     <div className="turno-card">
-      <div className="entre"><span className="turno-titulo"><I n={t.turno} />{NOME_TURNO[t.turno]}</span><button className="btn btn-primario btn-sm" onClick={() => ir(`motorista/rota/${t.turno}`)}><I n={d.ativa?.turno === t.turno ? 'navegar' : 'rota'} />{d.ativa?.turno === t.turno ? 'Ao vivo' : 'Rota'}</button></div>
+      <div className="entre"><span className="turno-titulo"><I n={t.turno} />{NOME_TURNO[t.turno]}</span><button className={`btn ${d.ativa?.turno === t.turno ? 'btn-primario' : 'btn-claro'} btn-sm`} onClick={() => ir(`motorista/rota/${t.turno}`)}><I n={d.ativa?.turno === t.turno ? 'navegar' : 'rota'} />{d.ativa?.turno === t.turno ? 'Ao vivo' : 'Rota'}</button></div>
       <div className="escolas-turno">
         {t.escolaIds.map((id) => { const e = d.mapaEscolas.get(id); const h = e?.horarios[t.turno]; return <span key={id} className="tag"><I n="escola" />{e?.nome}{h ? ` · ${h.entrada}–${h.saida}` : ''}</span>; })}
       </div>
@@ -218,7 +301,7 @@ function Alunos({ d }: { d: DadosVan }) {
   const novo = (): Aluno => ({
     id: uid(), vanId: d.van!.id, escolaId: d.van!.escolaIds[0] ?? '', nome: '', apelido: '', cor: CORES[d.alunos.length % CORES.length],
     serie: '', turno: d.van!.turnos.find((t) => t.ativo)?.turno ?? 'manha', responsavel: '', telefoneResp: '', endereco: '', local: { ...d.van!.garagem },
-    mensalidade: d.van!.precoPadrao, diaVencimento: 10, ativo: true, criadoEm: agoraIso(), completo: true,
+    mensalidade: d.van!.precoPadrao, diaVencimento: d.cfg.diaVencimento, ativo: true, criadoEm: agoraIso(), completo: true,
   });
   return (
     <section className="card">

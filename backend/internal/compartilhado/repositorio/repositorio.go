@@ -117,14 +117,16 @@ func (r *Repo) SalvarEscola(ctx context.Context, e models.Escola) error {
 
 // ---------------- vans ----------------
 
-const colVan = `id, nome, motorista, telefone, placa, modelo, garagem_lat, garagem_lng, escola_ids, turnos, credenciamento, preco_padrao, vagas, avaliacao, rotas_fixas`
+const colVan = `id, nome, motorista, telefone, placa, modelo, garagem_lat, garagem_lng, escola_ids, turnos, credenciamento, preco_padrao, vagas, avaliacao, rotas_fixas, config`
 
 func scanVan(s scanner) (models.Van, error) {
 	var v models.Van
-	var esc, tur, cred, rf []byte
+	var esc, tur, cred, rf, cfg []byte
 	err := s.Scan(&v.ID, &v.Nome, &v.Motorista, &v.Telefone, &v.Placa, &v.Modelo, &v.Garagem.Lat, &v.Garagem.Lng,
-		&esc, &tur, &cred, &v.PrecoPadrao, &v.Vagas, &v.Avaliacao, &rf)
+		&esc, &tur, &cred, &v.PrecoPadrao, &v.Vagas, &v.Avaliacao, &rf, &cfg)
 	if err == nil {
+		_ = json.Unmarshal(cfg, &v.Config)
+		v.Config = v.Config.Normalizar()
 		_ = json.Unmarshal(esc, &v.EscolaIDs)
 		_ = json.Unmarshal(tur, &v.Turnos)
 		_ = json.Unmarshal(cred, &v.Credenciamento)
@@ -178,11 +180,11 @@ func (r *Repo) SalvarVan(ctx context.Context, v models.Van, demo bool) error {
 		v.RotasFixas = map[string]models.RotaFixa{}
 	}
 	_, err := r.DB.ExecContext(ctx, `
-		INSERT INTO vans (`+colVan+`, demo) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+		INSERT INTO vans (`+colVan+`, demo) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
 		ON CONFLICT (id) DO UPDATE SET nome=$2, motorista=$3, telefone=$4, placa=$5, modelo=$6, garagem_lat=$7, garagem_lng=$8,
-		  escola_ids=$9, turnos=$10, credenciamento=$11, preco_padrao=$12, vagas=$13, avaliacao=$14, rotas_fixas=$15`,
+		  escola_ids=$9, turnos=$10, credenciamento=$11, preco_padrao=$12, vagas=$13, avaliacao=$14, rotas_fixas=$15, config=$16`,
 		v.ID, v.Nome, v.Motorista, v.Telefone, v.Placa, v.Modelo, v.Garagem.Lat, v.Garagem.Lng,
-		js(v.EscolaIDs), js(v.Turnos), js(v.Credenciamento), v.PrecoPadrao, v.Vagas, v.Avaliacao, js(v.RotasFixas), demo)
+		js(v.EscolaIDs), js(v.Turnos), js(v.Credenciamento), v.PrecoPadrao, v.Vagas, v.Avaliacao, js(v.RotasFixas), js(v.Config), demo)
 	return err
 }
 
@@ -341,13 +343,13 @@ func (r *Repo) FamiliasDosAlunos(ctx context.Context, alunoIDs []string) (map[st
 
 // ---------------- pagamentos ----------------
 
-const colPag = `id, aluno_id, mes, valor, vencimento, status, pago_em, COALESCE(metodo,'')`
+const colPag = `id, aluno_id, mes, valor, vencimento, status, pago_em, COALESCE(metodo,''), informado_em`
 
 func scanPag(s scanner) (models.Pagamento, error) {
 	var p models.Pagamento
-	var pago sql.NullTime
-	err := s.Scan(&p.ID, &p.AlunoID, &p.Mes, &p.Valor, &p.Vencimento, &p.Status, &pago, &p.Metodo)
-	p.PagoEm = isoNulo(pago)
+	var pago, informado sql.NullTime
+	err := s.Scan(&p.ID, &p.AlunoID, &p.Mes, &p.Valor, &p.Vencimento, &p.Status, &pago, &p.Metodo, &informado)
+	p.PagoEm, p.InformadoEm = isoNulo(pago), isoNulo(informado)
 	return p, err
 }
 
@@ -381,13 +383,24 @@ func (r *Repo) ExistePagamento(ctx context.Context, alunoID, mes string) (bool, 
 
 func (r *Repo) SalvarPagamento(ctx context.Context, p models.Pagamento) error {
 	_, err := r.DB.ExecContext(ctx, `
-		INSERT INTO pagamentos (id, aluno_id, mes, valor, vencimento, status, pago_em, metodo) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-		ON CONFLICT (id) DO UPDATE SET valor=$4, vencimento=$5, status=$6, pago_em=$7, metodo=$8`,
-		p.ID, p.AlunoID, p.Mes, p.Valor, p.Vencimento, p.Status, nulo(p.PagoEm), nulo(p.Metodo))
+		INSERT INTO pagamentos (id, aluno_id, mes, valor, vencimento, status, pago_em, metodo, informado_em) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+		ON CONFLICT (id) DO UPDATE SET valor=$4, vencimento=$5, status=$6, pago_em=$7, metodo=$8, informado_em=$9`,
+		p.ID, p.AlunoID, p.Mes, p.Valor, p.Vencimento, p.Status, nulo(p.PagoEm), nulo(p.Metodo), nulo(p.InformadoEm))
 	return err
 }
 
 // ---------------- presenças ----------------
+
+// PresencasAgenda = combinados de hoje até 30 dias à frente (a agenda mostra os próximos dias).
+func (r *Repo) PresencasAgenda(ctx context.Context, hoje string, alunoIDs []string) ([]models.Presenca, error) {
+	ate := models.Agora().AddDate(0, 0, 31).Format("2006-01-02")
+	rows, err := r.DB.QueryContext(ctx, `SELECT id, aluno_id, data, ida, volta, motivo, avisado_em FROM presencas WHERE data >= $1 AND data <= $3 AND aluno_id = ANY($2)`,
+		hoje, pq.Array(alunoIDs), ate)
+	if err != nil {
+		return nil, err
+	}
+	return r.lerPresencas(rows)
+}
 
 func (r *Repo) PresencasDoDia(ctx context.Context, data string, alunoIDs []string) ([]models.Presenca, error) {
 	rows, err := r.DB.QueryContext(ctx, `SELECT id, aluno_id, data, ida, volta, motivo, avisado_em FROM presencas WHERE data = $1 AND aluno_id = ANY($2)`,
@@ -395,6 +408,10 @@ func (r *Repo) PresencasDoDia(ctx context.Context, data string, alunoIDs []strin
 	if err != nil {
 		return nil, err
 	}
+	return r.lerPresencas(rows)
+}
+
+func (r *Repo) lerPresencas(rows *sql.Rows) ([]models.Presenca, error) {
 	defer rows.Close()
 	l := []models.Presenca{}
 	for rows.Next() {

@@ -12,7 +12,9 @@ export function useDadosVan(vanId: string) {
   const van = useLiveQuery(() => db.vans.get(vanId), [vanId]);
   const alunosR = useLiveQuery(() => db.alunos.where('vanId').equals(vanId).toArray(), [vanId]);
   const viagensR = useLiveQuery(() => db.viagens.where('data').equals(hoje()).filter((v) => v.vanId === vanId).toArray(), [vanId]);
-  const presencasR = useLiveQuery(() => db.presencas.where('data').equals(hoje()).toArray());
+  // hoje e os próximos dias (a agenda mostra os combinados já marcados)
+  const agendaR = useLiveQuery(() => db.presencas.where('data').aboveOrEqual(hoje()).toArray());
+  const presencasR = agendaR?.filter((p) => p.data === hoje());
   const pagamentosR = useLiveQuery(() => db.pagamentos.where('mes').equals(mesAtual()).toArray());
   const escolasR = useLiveQuery(() => db.escolas.toArray());
   const carregando = [van, alunosR, viagensR, presencasR, pagamentosR, escolasR].some((x) => x === undefined);
@@ -28,6 +30,10 @@ export function useDadosVan(vanId: string) {
   const plano = (alunoId: string): Plano => planoDe(presencaPorAluno.get(alunoId));
   const avisos = presencas.filter((p) => idsAtivos.has(p.alunoId) && planoDe(p) !== 'ambos');
   return {
+    agenda: agendaR ?? [],
+    /** configurações com os padrões preenchidos */
+    cfg: { diaVencimento: 10, folgaMin: 5, avisoParadas: 1, ...van?.config },
+    gamificacao: !van?.config?.semGamificacao,
     van, alunos, ativos, ativa, ultima, concluidas, viagensHoje, presencas, presencaPorAluno, plano, avisos, escolas, carregando,
     mapaEscolas: new Map(escolas.map((e) => [e.id, e])),
     mapaAlunos: new Map(alunos.map((a) => [a.id, a])),

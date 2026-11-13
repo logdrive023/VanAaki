@@ -18,6 +18,10 @@ func (ct *Controller) AtualizarVan(w http.ResponseWriter, r *http.Request) {
 	httpx.Acao(w, r, func(ctx context.Context, e models.Escopo, q entities.VanRequest) (any, error) { return ct.s.AtualizarVan(ctx, e, q) })
 }
 
+func (ct *Controller) Config(w http.ResponseWriter, r *http.Request) {
+	httpx.Acao(w, r, func(ctx context.Context, e models.Escopo, q entities.ConfigRequest) (any, error) { return ct.s.Configurar(ctx, e, q) })
+}
+
 func (ct *Controller) Turnos(w http.ResponseWriter, r *http.Request) {
 	httpx.Acao(w, r, func(ctx context.Context, e models.Escopo, q entities.TurnosRequest) (any, error) {
 		return ct.s.AtualizarTurnos(ctx, e, q)

@@ -101,14 +101,15 @@ func (s *Service) Restaurar(ctx context.Context) error {
 			Garagem: models.LatLng{Lat: -23.6003, Lng: -46.6263}, EscolaIDs: []string{SM, HZ, RL},
 			Credenciamento: map[string]string{SM: "credenciada", HZ: "credenciada", RL: "credenciada"},
 			Turnos:         []models.TurnoVan{{Turno: models.Manha, Ativo: true, EscolaIDs: []string{SM, HZ}}, {Turno: models.Tarde, Ativo: true, EscolaIDs: []string{SM, RL}}, {Turno: models.Noite, Ativo: true, EscolaIDs: []string{HZ}}},
-			PrecoPadrao:    42000, Vagas: 12, Avaliacao: 4.9},
+			PrecoPadrao:    42000, Vagas: 12, Avaliacao: 4.9,
+			Config: models.ConfigVan{PixTipo: "email", PixChave: "pix@demo.vanaaki.app", PixNome: "Carlos Demo", PixCidade: "Sao Paulo", DiaVencimento: 10, FolgaMin: 5, AvisoParadas: 2}},
 		{ID: "van-sandra", Nome: "Tia Sandra Escolar", Motorista: "Tia Sandra", Telefone: "11 90000-0002", Placa: "GHT-4C21", Modelo: "Master prata",
 			Garagem: models.LatLng{Lat: -23.5800, Lng: -46.6300}, EscolaIDs: []string{SM, RL}, Credenciamento: map[string]string{SM: "credenciada", RL: "credenciada"},
-			Turnos:  []models.TurnoVan{{Turno: models.Manha, Ativo: true, EscolaIDs: []string{SM, RL}}, {Turno: models.Tarde, Ativo: true, EscolaIDs: []string{SM}}, {Turno: models.Noite, Ativo: false, EscolaIDs: []string{}}},
+			Turnos:      []models.TurnoVan{{Turno: models.Manha, Ativo: true, EscolaIDs: []string{SM, RL}}, {Turno: models.Tarde, Ativo: true, EscolaIDs: []string{SM}}, {Turno: models.Noite, Ativo: false, EscolaIDs: []string{}}},
 			PrecoPadrao: 48000, Vagas: 1, Avaliacao: 5},
 		{ID: "van-coop", Nome: "Coopervan Zona Sul", Motorista: "Cooperativa", Telefone: "11 90000-0003", Placa: "BRA-7E55", Modelo: "14 vans",
 			Garagem: models.LatLng{Lat: -23.6100, Lng: -46.6400}, EscolaIDs: []string{SM, HZ, RL}, Credenciamento: map[string]string{SM: "pendente", HZ: "credenciada", RL: "credenciada"},
-			Turnos:  []models.TurnoVan{{Turno: models.Manha, Ativo: true, EscolaIDs: []string{SM, HZ, RL}}, {Turno: models.Tarde, Ativo: true, EscolaIDs: []string{SM, HZ, RL}}, {Turno: models.Noite, Ativo: true, EscolaIDs: []string{HZ}}},
+			Turnos:      []models.TurnoVan{{Turno: models.Manha, Ativo: true, EscolaIDs: []string{SM, HZ, RL}}, {Turno: models.Tarde, Ativo: true, EscolaIDs: []string{SM, HZ, RL}}, {Turno: models.Noite, Ativo: true, EscolaIDs: []string{HZ}}},
 			PrecoPadrao: 39000, Vagas: 8, Avaliacao: 4.7},
 	}
 	for _, v := range vans {
@@ -157,7 +158,7 @@ func (s *Service) Restaurar(ctx context.Context) error {
 		p.Status, p.PagoEm, p.Metodo = "pago", mesPassado+"-08T10:00:00.000Z", "pix"
 		_ = s.repo.SalvarPagamento(ctx, p)
 		q := vansvc.NovaCobranca(a, mes)
-		if a.ID != "al-bia" && a.ID != "al-gabriel" {
+		if a.ID != "al-bia" && a.ID != "al-gabriel" && a.ID != "al-davi" {
 			q.Status, q.PagoEm, q.Metodo = "pago", mes+"-05T10:00:00.000Z", "pix"
 		}
 		_ = s.repo.SalvarPagamento(ctx, q)
@@ -170,6 +171,22 @@ func (s *Service) Restaurar(ctx context.Context) error {
 		{ID: "al-davi|" + hoje, AlunoID: "al-davi", Data: hoje, Ida: true, Volta: false, Motivo: "Vou buscar para o futebol", AvisadoEm: models.AgoraIso()},
 	} {
 		_ = s.repo.SalvarPresenca(ctx, p)
+	}
+	// combinados dos próximos dias (aparecem na agenda)
+	for k, x := range []struct {
+		aluno, motivo string
+		ida, volta    bool
+		dias          int
+	}{
+		{AlunoPadrao, "Feira de ciências: eu levo", false, true, 1}, {"al-sofia", "Viagem com a família", false, false, 2}, {"al-pedro", "Futebol depois da aula", true, false, 3},
+	} {
+		d := models.Agora().AddDate(0, 0, x.dias)
+		for d.Weekday() == time.Saturday || d.Weekday() == time.Sunday {
+			d = d.AddDate(0, 0, 1)
+		}
+		data := d.Format("2006-01-02")
+		_ = s.repo.SalvarPresenca(ctx, models.Presenca{ID: x.aluno + "|" + data, AlunoID: x.aluno, Data: data, Ida: x.ida, Volta: x.volta, Motivo: x.motivo, AvisadoEm: models.AgoraIso()})
+		_ = k
 	}
 
 	// histórico de pontos (últimas 4 semanas úteis)

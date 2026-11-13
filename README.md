@@ -69,7 +69,8 @@ com `compartilhado/{repositorio,regras,avisos,transmissao}`, `middleware`, `real
 | `PUT /api/presencas` · `POST /api/mensagens` · `POST /api/pagamentos/{id}/pagar` | família e motorista |
 | `POST /api/viagens/pronto`, `/api/resgates` | aluno e família |
 | `PUT /api/escola/confirma-entrada`, `/escola/credenciar` · `POST /api/viagens/{id}/entrada` | escola |
-| `POST /api/viagens/{id}/posicoes` (posições guardadas sem internet) | motorista |
+| `POST /api/viagens/{id}/posicoes` (posições guardadas sem internet) · `PUT /api/van/config` | motorista |
+| `PUT /api/presencas` com `data` (hoje até 30 dias) | família e motorista |
 | `GET /api/conformidade`, `/conformidade/historico`, `/conformidade/historico.csv`, `/conformidade/viagens/{id}/trajeto` · `POST /api/conformidade/acessos` · `DELETE /api/conformidade/acessos/{token}` | motorista |
 | `GET /api/publico/fiscal/{token}`, `/publico/fiscal/{token}/viagens/{id}/trajeto` | público (link de fiscalização) |
 
@@ -97,6 +98,22 @@ não tira nem renova a autorização (180 dias para adequar depois de publicada 
 | Relatórios | Tela "Fiscalização" do motorista: checklist, histórico com mapa do trajeto, planilha CSV e impressão |
 
 A demonstração cria 3 semanas de trajetos passados para o relatório já abrir com dados.
+
+## Feito para o tio que só dirige (mobile first)
+
+O tio não vai usar o app do jeito "certo" todo dia. Então o essencial funciona quase sem toque, e o resto é extra:
+
+- **Embarque pelo GPS:** a van parou na casa (45 m) e saiu (90 m) → a parada é confirmada sozinha e a família é avisada.
+  Dá para desligar em Configurações (aí só pelo botão).
+- **Aviso antecipado:** a família é avisada quando faltam 1, 2 ou 3 paradas (o tio escolhe), para a criança já estar no portão.
+- **Agenda:** o tio escolhe o dia, vê os turnos e, ao tocar, o caminho do trecho com horário de cada parada, **quem vai e quem não vai**,
+  e muda o combinado ali mesmo. A família marca dias futuros ("sexta não vai") e o aluno vê a semana.
+- **Pix de verdade:** o tio cadastra a chave; a família paga pelo QR Code / copia e cola (BR Code com o valor) direto na conta dele
+  e toca em "Já paguei"; o tio confirma no Financeiro. Sem intermediário e sem taxa.
+- **Configurações:** Pix, confirmação pelo GPS, antecedência do aviso, folga na hora de sair, dia de vencimento padrão e
+  conduta/pontos/prêmios **opcionais** (desligados, somem para o tio, a família e o aluno).
+- **Navegação do celular:** Hoje · Agenda · Rota · Alunos · Mais. A tela "Hoje" mostra a próxima rota com a hora de sair e um botão "Começar";
+  conta nova vê os primeiros passos.
 
 ## Regras principais
 

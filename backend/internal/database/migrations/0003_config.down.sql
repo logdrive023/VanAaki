@@ -1,0 +1,2 @@
+ALTER TABLE pagamentos DROP COLUMN IF EXISTS informado_em;
+ALTER TABLE vans DROP COLUMN IF EXISTS config;

@@ -8,17 +8,22 @@ import { saldoDe, sequencia } from '../lib/gamificacao';
 import { haQuanto } from '../lib/util';
 import { resgatar } from '../services/pontos';
 import { idxAluno, marcarPronto } from '../services/viagem';
+import { AgendaFamilia } from './familiaAgenda';
 import { MapaFamilia, SeletorAluno, textoStatus, useAlunoPerfil, useFamilia } from './familia';
 
 export default function Aluno({ aba = 'inicio' }: { aba?: string }) {
   const [alunoId, setAlunoId] = useAlunoPerfil();
   const f = useFamilia(alunoId);
-  if (f.carregando || !f.aluno || !f.visao) return <div className="vazio">Carregando…</div>;
+  if (f.carregando || !f.aluno || !f.visao) return <div className="carregando"><div className="giro" /></div>;
+  const jogo = !f.van?.config?.semGamificacao;
   const menu: ItemMenu[] = [
     { id: 'inicio', ic: 'casa', nome: 'Início' },
-    { id: 'missoes', ic: 'alvo', nome: 'Missões' },
-    { id: 'ranking', ic: 'trofeu', nome: 'Ranking' },
-    { id: 'loja', ic: 'premio', nome: 'Loja' },
+    { id: 'agenda', ic: 'calendario', nome: 'Agenda' },
+    ...(jogo ? [
+      { id: 'missoes', ic: 'alvo', nome: 'Missões' },
+      { id: 'ranking', ic: 'trofeu', nome: 'Ranking' },
+      { id: 'loja', ic: 'premio', nome: 'Loja' },
+    ] as ItemMenu[] : []),
   ];
   const topo = (
     <div className="linha" style={{ flex: 1, flexWrap: 'nowrap', minWidth: 0 }}>
@@ -28,7 +33,8 @@ export default function Aluno({ aba = 'inicio' }: { aba?: string }) {
   );
   return (
     <ShellFone base="aluno" classe="aluno" menu={menu} atual={aba} topo={topo} filtro={{ para: 'aluno', alunoId }}>
-      {aba === 'inicio' && <Inicio f={f} />}
+      {aba === 'inicio' && <Inicio f={f} jogo={jogo} />}
+      {aba === 'agenda' && <AgendaFamilia aluno={f.aluno} escola={f.escola} podeMudar={false} />}
       {aba === 'missoes' && <MissoesAba alunoId={alunoId} />}
       {aba === 'ranking' && <RankingAba alunoId={alunoId} vanId={f.aluno.vanId} />}
       {aba === 'loja' && <Loja alunoId={alunoId} vanId={f.aluno.vanId} />}
@@ -38,7 +44,7 @@ export default function Aluno({ aba = 'inicio' }: { aba?: string }) {
 
 type F = ReturnType<typeof useFamilia>;
 
-function Inicio({ f }: { f: F }) {
+function Inicio({ f, jogo }: { f: F; jogo: boolean }) {
   const a = f.aluno!, v = f.visao!;
   const ev = usePontosAluno(a.id);
   const resgates = useLiveQuery(() => db.resgates.where('alunoId').equals(a.id).toArray(), [a.id]) ?? [];
@@ -56,18 +62,18 @@ function Inicio({ f }: { f: F }) {
       {podePronto && (
         <div className="checkin">
           {parada!.prontoEm ? (
-            <><span className="entrar-ic" style={{ background: 'var(--verde-suave)', color: 'var(--verde)' }}><I n="check" /></span><strong style={{ fontSize: 17, marginTop: 8 }}>O tio sabe que você está no portão!</strong><p className="muted small">Quando embarcar você ganha +10 pontos</p></>
+            <><span className="entrar-ic" style={{ background: 'var(--verde-suave)', color: 'var(--verde)' }}><I n="check" /></span><strong style={{ fontSize: 17, marginTop: 8 }}>O tio sabe que você está no portão!</strong>{jogo && <p className="muted small">Quando embarcar você ganha +10 pontos</p>}</>
           ) : (
             <>
               <strong style={{ fontSize: 16 }}>Já está no portão com a mochila?</strong>
               <button className="btn-gigante" onClick={() => void marcarPronto(a.id)}><div><I n="mao" />Tô no portão!</div></button>
-              <span className="muted small">Vale +10 pontos se for antes da van chegar</span>
+              <span className="muted small">{jogo ? 'Vale +10 pontos se for antes da van chegar' : 'Assim o tio já sabe que pode buscar'}</span>
             </>
           )}
         </div>
       )}
       {v.mostrarMapa && f.viagem && <div className="m-card" style={{ padding: 8 }}><MapaFamilia v={v} aluno={a} escola={f.escola} viagem={f.viagem} altura={260} /></div>}
-      <NivelCard ev={ev} saldo={saldoDe(ev, resgates)} sequencia={sequencia(ev)} />
+      {jogo && <NivelCard ev={ev} saldo={saldoDe(ev, resgates)} sequencia={sequencia(ev)} />}
       <div className="carteirinha">
         <div className="qr" />
         <div style={{ position: 'relative' }}>
@@ -77,7 +83,7 @@ function Inicio({ f }: { f: F }) {
           <small>Van: {f.van?.motorista} · {f.van?.placa}</small>
         </div>
       </div>
-      <div className="m-card"><h4>Últimos pontos</h4><Feed ev={ev} limite={5} /></div>
+      {jogo && <div className="m-card"><h4>Últimos pontos</h4><Feed ev={ev} limite={5} /></div>}
     </>
   );
 }

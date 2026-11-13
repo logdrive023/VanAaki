@@ -580,7 +580,7 @@ button.tag { cursor: pointer; }
   .tabs-mobile a.ativo { color: var(--texto); }
   .tabs-mobile a.ativo::before { content: ''; position: absolute; top: -9px; width: 22px; height: 3px; border-radius: 0 0 3px 3px; background: var(--amarelo); }
   .rota-grid, .grade2, .grade3, .mensagens { grid-template-columns: minmax(0, 1fr); }
-  .rota-grid > .pilha { display: contents; }
+  .rota-grid > .pilha:not(.card) { display: contents; }
   .rota-grid .alvo-card { order: -1; }
   .card { padding: 16px; }
   .mensagens .painel-conversa { display: none; }

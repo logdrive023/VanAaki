@@ -22,7 +22,7 @@ export function Financeiro({ d }: { d: DadosVan }) {
   const pags = useLiveQuery(() => db.pagamentos.where('mes').equals(mes).toArray(), [mes]) ?? [];
   const daVan = pags.filter((p) => d.mapaAlunos.has(p.alunoId));
   const lista = daVan.filter((p) => filtro === 'todos' || (filtro === 'pagos' ? p.status === 'pago' : p.status === 'pendente'))
-    .sort((a, b) => Number(a.status === 'pago') - Number(b.status === 'pago') || a.vencimento.localeCompare(b.vencimento));
+    .sort((a, b) => Number(a.status === 'pago') - Number(b.status === 'pago') || Number(!a.informadoEm) - Number(!b.informadoEm) || a.vencimento.localeCompare(b.vencimento));
   const total = daVan.reduce((s, p) => s + p.valor, 0);
   const recebido = daVan.filter((p) => p.status === 'pago').reduce((s, p) => s + p.valor, 0);
   const pct = total ? Math.round((recebido / total) * 100) : 0;
@@ -60,13 +60,13 @@ export function Financeiro({ d }: { d: DadosVan }) {
                     <td><div className="aluno-cel"><Avatar aluno={a} tam={36} /><div><strong>{a.nome}</strong><span className="muted small">{a.responsavel}</span></div></div></td>
                     <td data-rot="Vencimento">{p.vencimento.split('-').reverse().join('/')}</td>
                     <td data-rot="Valor"><strong>{reais(p.valor)}</strong></td>
-                    <td data-rot="Situação">{p.status === 'pago' ? <span className="tag tag-verde">Pago{p.metodo ? ` · ${p.metodo}` : ''}</span> : atrasado(p) ? <span className="tag tag-vermelho">Atrasado</span> : <span className="tag tag-laranja">Pendente</span>}</td>
+                    <td data-rot="Situação">{p.status === 'pago' ? <span className="tag tag-verde">Pago{p.metodo ? ` · ${p.metodo}` : ''}</span> : p.informadoEm ? <span className="tag tag-amarelo"><I n="dinheiro" />Família pagou · confira</span> : atrasado(p) ? <span className="tag tag-vermelho">Atrasado</span> : <span className="tag tag-laranja">Pendente</span>}</td>
                     <td className="td-acoes" style={{ textAlign: 'right' }}>
                       {p.status === 'pago'
-                        ? <button className="btn btn-claro btn-sm" onClick={() => void desfazerPagamento(p.id)}>Desfazer</button>
+                        ? <button className="btn btn-fantasma btn-sm" onClick={() => void desfazerPagamento(p.id)}>Desfazer</button>
                         : <div className="linha" style={{ justifyContent: 'flex-end' }}>
-                            <a className="btn btn-claro btn-sm" href={cobrar(p, a)} target="_blank" rel="noreferrer"><I n="enviar" />Cobrar</a>
-                            <button className="btn btn-escuro btn-sm" onClick={() => void pagar(p.id, 'dinheiro', 'motorista')}><I n="check" />Recebi</button>
+                            {!p.informadoEm && <a className="btn btn-claro btn-sm" href={cobrar(p, a)} target="_blank" rel="noreferrer"><I n="enviar" />Cobrar</a>}
+                            <button className={`btn ${p.informadoEm ? 'btn-primario' : 'btn-escuro'} btn-sm`} onClick={() => void pagar(p.id, p.informadoEm ? 'pix' : 'dinheiro', 'motorista')}><I n="check" />{p.informadoEm ? 'Confirmar' : 'Recebi'}</button>
                           </div>}
                     </td>
                   </tr>

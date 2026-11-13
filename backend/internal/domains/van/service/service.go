@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/google/uuid"
@@ -24,6 +25,7 @@ var cores = []string{"#6C5CE7", "#00B894", "#E17055", "#0984E3", "#D63384", "#F2
 type Service interface {
 	AtualizarVan(ctx context.Context, e models.Escopo, req entities.VanRequest) (models.Van, error)
 	AtualizarTurnos(ctx context.Context, e models.Escopo, req entities.TurnosRequest) (models.Van, error)
+	Configurar(ctx context.Context, e models.Escopo, c entities.ConfigRequest) (models.Van, error)
 	RotaFixa(ctx context.Context, e models.Escopo, req entities.RotaFixaRequest) error
 	SalvarAluno(ctx context.Context, e models.Escopo, a models.Aluno) (models.Aluno, error)
 	Arquivar(ctx context.Context, e models.Escopo, alunoID string, ativo bool) error
@@ -67,6 +69,34 @@ func (s *service) AtualizarVan(ctx context.Context, e models.Escopo, req entitie
 	if req.Vagas >= 0 {
 		v.Vagas = req.Vagas
 	}
+	if err := s.repo.SalvarVan(ctx, v, false); err != nil {
+		return v, err
+	}
+	s.tx.Van(ctx, v.ID)
+	return v, nil
+}
+
+// Configurar salva as configurações da van (Pix, cobrança, avisos, folga).
+func (s *service) Configurar(ctx context.Context, e models.Escopo, c entities.ConfigRequest) (models.Van, error) {
+	v, err := s.minhaVan(ctx, e)
+	if err != nil {
+		return v, err
+	}
+	c.PixChave, c.PixNome, c.PixCidade = strings.TrimSpace(c.PixChave), strings.TrimSpace(c.PixNome), strings.TrimSpace(c.PixCidade)
+	if c.PixChave != "" {
+		if c.PixNome == "" || c.PixCidade == "" {
+			return v, core.Invalido("Para o Pix, informe também o nome do titular e a cidade.")
+		}
+		switch c.PixTipo {
+		case "cpf", "cnpj", "celular", "email", "aleatoria":
+		default:
+			return v, core.Invalido("Escolha o tipo da chave Pix.")
+		}
+		if len(c.PixChave) > 77 {
+			return v, core.Invalido("Chave Pix grande demais.")
+		}
+	}
+	v.Config = c.Normalizar()
 	if err := s.repo.SalvarVan(ctx, v, false); err != nil {
 		return v, err
 	}
@@ -261,6 +291,18 @@ func (s *service) DefinirPresenca(ctx context.Context, e models.Escopo, req enti
 		return core.ErrProibido
 	}
 	data := models.Hoje()
+	if req.Data != "" && req.Data != data {
+		d, err := time.ParseInLocation("2006-01-02", req.Data, models.Fuso)
+		if err != nil || req.Data < data || d.After(models.Agora().AddDate(0, 0, 31)) {
+			return core.Invalido("Escolha um dia entre hoje e os próximos 30 dias.")
+		}
+		data = req.Data
+	}
+	quando := "hoje"
+	if data != models.Hoje() {
+		t, _ := time.ParseInLocation("2006-01-02", data, models.Fuso)
+		quando = "em " + diasSemana[t.Weekday()] + ", " + t.Format("02/01")
+	}
 	antes, _ := s.repo.Presenca(ctx, a.ID, data)
 	if regras.PlanoDe(antes) == req.Plano {
 		return nil
@@ -276,20 +318,24 @@ func (s *service) DefinirPresenca(ctx context.Context, e models.Escopo, req enti
 	nome := regras.PrimeiroNome(a.Nome)
 	ic, np, desc := regras.IconePlano[req.Plano], regras.NomePlano[req.Plano], regras.DescPlano[req.Plano]
 	if porTio {
-		_ = s.av.Pais(ctx, a.ID, ic, "O tio marcou: "+strings.ToLower(np)+" hoje", desc)
+		_ = s.av.Pais(ctx, a.ID, ic, "O tio marcou: "+strings.ToLower(np)+" "+quando, desc)
 	} else {
 		txt := desc
 		if motivo != "" {
 			txt += " · " + motivo
 		}
-		_ = s.av.Motorista(ctx, a.VanID, ic, nome+": "+strings.ToLower(np)+" hoje", txt)
+		_ = s.av.Motorista(ctx, a.VanID, ic, nome+": "+strings.ToLower(np)+" "+quando, txt)
 	}
 	if req.Plano != "ambos" {
 		_ = s.av.DarPontos(ctx, a, "aviso_ausencia", "sistema", "", "aviso|"+a.ID+"|"+data)
 	}
-	if err := s.viagens.AjustarPorPresenca(ctx, a.ID); err != nil {
-		return err
+	if data == models.Hoje() {
+		if err := s.viagens.AjustarPorPresenca(ctx, a.ID); err != nil {
+			return err
+		}
 	}
 	s.tx.Van(ctx, a.VanID)
 	return nil
 }
+
+var diasSemana = [...]string{"domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"}

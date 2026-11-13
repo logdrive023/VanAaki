@@ -16,6 +16,7 @@ func (rt *Router) Register(api *mux.Router) {
 	tio.Use(middleware.Perfis(models.PerfilMotorista))
 	tio.HandleFunc("/van", rt.ct.AtualizarVan).Methods("PUT")
 	tio.HandleFunc("/van/turnos", rt.ct.Turnos).Methods("PUT")
+	tio.HandleFunc("/van/config", rt.ct.Config).Methods("PUT")
 	tio.HandleFunc("/van/rota-fixa", rt.ct.RotaFixa).Methods("PUT")
 	tio.HandleFunc("/alunos", rt.ct.SalvarAluno).Methods("POST")
 	tio.HandleFunc("/alunos/{id}", rt.ct.SalvarAluno).Methods("PUT")

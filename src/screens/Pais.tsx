@@ -2,33 +2,34 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useState } from 'react';
 import { calcularRanking, Feed, NivelCard, Selos, usePontosAluno, usePontosVan } from '../components/gamificacao';
 import { ShellFone, type ItemMenu } from '../components/Shell';
-import { Avatar, ir, Modal, useNotificacoes, Vazio } from '../components/ui';
+import { Avatar, ir, useNotificacoes, Vazio } from '../components/ui';
 import { I } from '../components/Icone';
 import { db } from '../db/db';
 import type { Pagamento } from '../db/types';
 import { saldoDe, sequencia, tipoEvento } from '../lib/gamificacao';
 import { haQuanto, nomeMes, primeiroNome, reais } from '../lib/util';
-import { atrasado, definirPresenca, pagar, vincularFilho } from '../services/acoes';
+import { atrasado, definirPresenca, vincularFilho } from '../services/acoes';
 import { useEu } from '../api/sync';
 import { PainelTeste } from '../components/ui';
 import { Chat } from './motorista/Gestao';
 import { EscolhaPlano } from '../components/presenca';
 import { NOME_TURNO } from '../lib/turnos';
+import { AgendaFamilia, PagarPix } from './familiaAgenda';
 import { LinhaTempo, MapaFamilia, SeletorAluno, textoStatus, useAlunoPerfil, useFamilia } from './familia';
 
 export default function Pais({ aba = 'inicio' }: { aba?: string }) {
   const [alunoId, setAlunoId] = useAlunoPerfil();
   const f = useFamilia(alunoId);
   const msgs = useLiveQuery(() => db.mensagens.where('alunoId').equals(alunoId).filter((m) => m.de === 'motorista' && !m.lida).count(), [alunoId]) ?? 0;
-  const pend = useLiveQuery(() => db.pagamentos.where('alunoId').equals(alunoId).filter((p) => p.status === 'pendente').count(), [alunoId]) ?? 0;
+  const pend = useLiveQuery(() => db.pagamentos.where('alunoId').equals(alunoId).filter((p) => p.status === 'pendente' && !p.informadoEm).count(), [alunoId]) ?? 0;
   const eu = useEu();
   if (eu && !eu.alunoIds.length) return <SemFilho />;
-  if (f.carregando || !f.aluno || !f.visao) return <div className="vazio">Carregando…</div>;
+  if (f.carregando || !f.aluno || !f.visao) return <div className="carregando"><div className="giro" /></div>;
   const menu: ItemMenu[] = [
     { id: 'inicio', ic: 'casa', nome: 'Início' },
+    { id: 'agenda', ic: 'calendario', nome: 'Agenda' },
     { id: 'rastreio', ic: 'pin', nome: 'Rastreio', badge: f.visao.mostrarMapa ? 1 : 0 },
-    { id: 'pagamentos', ic: 'financeiro', nome: 'Pagamentos', badge: pend },
-    { id: 'conduta', ic: 'estrela', nome: 'Conduta' },
+    { id: 'pagamentos', ic: 'financeiro', nome: 'Pagar', badge: pend },
     { id: 'chat', ic: 'mensagem', nome: 'Tio', badge: msgs },
   ];
   const topo = (
@@ -44,7 +45,8 @@ export default function Pais({ aba = 'inicio' }: { aba?: string }) {
     <ShellFone base="pais" menu={menu} atual={aba} topo={topo} filtro={{ para: 'pais', alunoId }}>
       {aba === 'inicio' && <Inicio f={f} />}
       {aba === 'rastreio' && <Rastreio f={f} />}
-      {aba === 'pagamentos' && <Pagamentos alunoId={alunoId} />}
+      {aba === 'pagamentos' && <Pagamentos f={f} />}
+      {aba === 'agenda' && <AgendaFamilia aluno={f.aluno} escola={f.escola} />}
       {aba === 'conduta' && <CondutaPais f={f} />}
       {aba === 'chat' && <div className="m-card"><Chat alunoId={alunoId} eu="pais" titulo={`Conversa com ${f.van?.motorista}`} /></div>}
     </ShellFone>
@@ -92,6 +94,13 @@ function Inicio({ f }: { f: F }) {
           <div className="acoes"><button className="icone-btn" onClick={() => ir('pais/chat')} aria-label="Mensagem"><I n="mensagem" /></button><a className="icone-btn verde" href={`tel:${f.van?.telefone}`} aria-label="Ligar"><I n="telefone" /></a></div>
         </div>
       </div>
+      {!f.van?.config?.semGamificacao && (
+        <button type="button" className="m-card mais-item" style={{ padding: 14 }} onClick={() => ir('pais/conduta')}>
+          <span className="mi-ic"><I n="estrela" /></span>
+          <span className="mi-txt">Conduta de {primeiroNome(a.nome)}<small>Pontos, elogios e ocorrências do tio</small></span>
+          <I n="chevron" />
+        </button>
+      )}
       <AcessoAluno f={f} />
       <div className="m-card">
         <h4>Últimos avisos</h4>
@@ -124,11 +133,12 @@ function Rastreio({ f }: { f: F }) {
   );
 }
 
-function Pagamentos({ alunoId }: { alunoId: string }) {
+function Pagamentos({ f }: { f: F }) {
+  const alunoId = f.aluno!.id;
   const pags = useLiveQuery(() => db.pagamentos.where('alunoId').equals(alunoId).toArray(), [alunoId]) ?? [];
   const [pix, setPix] = useState<Pagamento | null>(null);
   const lista = [...pags].sort((a, b) => b.mes.localeCompare(a.mes));
-  const aberto = lista.filter((p) => p.status === 'pendente');
+  const aberto = lista.filter((p) => p.status === 'pendente' && !p.informadoEm);
   return (
     <>
       <div className={`status-card ${aberto.length ? 'destaque' : ''}`}>
@@ -141,21 +151,13 @@ function Pagamentos({ alunoId }: { alunoId: string }) {
         {lista.map((p) => (
           <div key={p.id} className="linha-item">
             <div><strong>{nomeMes(p.mes)} {p.mes.slice(0, 4)}</strong><span className="muted small">{p.status === 'pago' ? `Pago em ${p.pagoEm?.slice(0, 10).split('-').reverse().join('/')} · ${p.metodo}` : `Vence ${p.vencimento.split('-').reverse().join('/')} · ${reais(p.valor)}`}</span></div>
-            {p.status === 'pago' ? <span className="tag tag-verde"><I n="check" />Pago</span> : <button className="btn btn-primario btn-sm" onClick={() => setPix(p)}>Pagar com Pix</button>}
+            {p.status === 'pago' ? <span className="tag tag-verde"><I n="check" />Pago</span>
+              : p.informadoEm ? <span className="tag tag-amarelo"><I n="relogio" />Tio vai confirmar</span>
+              : <button className="btn btn-primario btn-sm" onClick={() => setPix(p)}>Pagar com Pix</button>}
           </div>
         ))}
       </div>
-      {pix && (
-        <Modal titulo={`Pix · ${nomeMes(pix.mes)}`} onFechar={() => setPix(null)}>
-          <div className="pilha">
-            <div className="big" style={{ textAlign: 'center' }}>{reais(pix.valor)}</div>
-            <div className="qr" style={{ width: 170, height: 170, margin: '0 auto', border: '10px solid #fff', boxShadow: '0 0 0 1px var(--borda)' }} />
-            <div className="pix-codigo">00020126580014BR.GOV.BCB.PIX0136{pix.id.slice(0, 32)}5204000053039865406{(pix.valor / 100).toFixed(2)}5802BR5925VANAAKI TESTE6009SAO PAULO</div>
-            <small className="muted">Código fictício, só para validar o fluxo. Nenhum dinheiro é movimentado.</small>
-            <button className="btn btn-escuro btn-bloco" onClick={async () => { await pagar(pix.id, 'pix', 'pais'); setPix(null); }}><I n="check" />Simular pagamento confirmado</button>
-          </div>
-        </Modal>
-      )}
+      {pix && <PagarPix p={pix} aluno={f.aluno!} van={f.van} onFechar={() => setPix(null)} />}
     </>
   );
 }

@@ -82,12 +82,12 @@ export interface PlanoHorario {
  * volta: a van precisa estar na 1ª escola na saída dela; nas seguintes, chega e espera a saída se for cedo.
  * `etaAte(i)` = minutos do início da rota até a parada i (com as paradas no meio).
  */
-export function planejarHorario(tipo: TipoViagem, turno: Turno, paradas: { tipo: string; escolaId: string }[], escolas: Map<string, Escola>, etaAte: (i: number) => number, etaTotal: number, agora = new Date()): PlanoHorario {
+export function planejarHorario(tipo: TipoViagem, turno: Turno, paradas: { tipo: string; escolaId: string }[], escolas: Map<string, Escola>, etaAte: (i: number) => number, etaTotal: number, agora = new Date(), folga = FOLGA_MIN): PlanoHorario {
   const idx = paradas.map((p, i) => (p.tipo === 'escola' ? i : -1)).filter((i) => i >= 0);
   const agoraMin = agora.getHours() * 60 + agora.getMinutes();
   const janela = (d: number) => (Math.abs(d) > 180 ? null : d);
   if (tipo === 'ida') {
-    const limites = idx.map((i) => { const h = horarioAlvo(escolas.get(paradas[i].escolaId), turno, 'ida'); return h ? minutos(h) - etaAte(i) - FOLGA_MIN : Infinity; });
+    const limites = idx.map((i) => { const h = horarioAlvo(escolas.get(paradas[i].escolaId), turno, 'ida'); return h ? minutos(h) - etaAte(i) - folga : Infinity; });
     const sair = Math.min(...limites);
     const base = Number.isFinite(sair) ? sair : agoraMin;
     const lista = idx.map((i) => {

@@ -1,0 +1,155 @@
+/* =========================================================
+   VanAaki — agenda, configurações, "mais" e painel (mobile first)
+   ========================================================= */
+
+/* ---------- agenda do tio ---------- */
+.dias { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 2px 16px 4px; scroll-snap-type: x proximity; }
+.dias::-webkit-scrollbar { display: none; }
+.dia { flex: 0 0 auto; width: 54px; padding: 8px 0 7px; border-radius: 14px; background: var(--superficie); border: 1px solid var(--borda); display: flex; flex-direction: column; align-items: center; gap: 1px; scroll-snap-align: start; }
+.dia small { font-size: 11px; font-weight: 550; color: var(--texto-2); text-transform: capitalize; }
+.dia strong { font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.dia-marca { font-style: normal; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; background: var(--laranja); color: #fff; font-size: 10px; font-weight: 700; display: grid; place-items: center; }
+.dia-vazio { height: 16px; }
+.dia.ativo { background: var(--tinta); border-color: var(--tinta); color: #fff; }
+.dia.ativo small { color: #A9ADB6; }
+
+.turno-agenda { padding: 0; overflow: hidden; }
+.ta-cab { display: flex; align-items: center; gap: 10px; width: 100%; padding: 14px 16px 10px; text-align: left; }
+.ta-cab .turno-titulo { font-size: 16px; }
+.ta-cab .muted { margin-left: auto; }
+.ta-seta { color: var(--texto-3); transition: transform .2s; }
+.turno-agenda.aberto .ta-seta { transform: rotate(90deg); }
+.trechos-resumo { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 12px 12px; }
+.trecho-resumo { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; column-gap: 10px; align-items: center; text-align: left; padding: 10px; border-radius: 12px; background: var(--papel); border: 1px solid transparent; }
+.trecho-resumo .tag { grid-column: 1 / -1; justify-self: start; margin-top: 6px; }
+.trecho-resumo.ativo { border-color: var(--tinta); background: var(--superficie); }
+.tr-ic { width: 30px; height: 30px; border-radius: 9px; background: var(--superficie); display: grid; place-items: center; }
+.tr-ic svg { width: 15px; height: 15px; }
+.trecho-resumo.ativo .tr-ic { background: var(--amarelo); }
+.tr-txt { min-width: 0; }
+.tr-txt strong { display: block; font-size: 14px; }
+.tr-txt small { display: block; font-size: 11px; color: var(--texto-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tr-num { font-size: 12px; color: var(--texto-2); font-variant-numeric: tabular-nums; }
+.tr-num b { font-size: 18px; color: var(--texto); }
+
+.detalhe-trecho { border-top: 1px solid var(--borda); padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 14px; animation: subir .2s ease-out; }
+.caminho { list-style: none; display: grid; }
+.caminho li { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 7px 0; position: relative; }
+.caminho li:not(:last-child)::before { content: ""; position: absolute; left: 13px; top: 34px; bottom: -7px; width: 2px; background: var(--borda); }
+.cm-b { width: 28px; height: 28px; border-radius: 50%; background: var(--azul-claro); color: var(--texto-2); display: grid; place-items: center; font-size: 12px; font-weight: 650; z-index: 1; }
+.cm-b svg { width: 14px; height: 14px; }
+.cm-ponta .cm-b { background: var(--tinta); color: var(--amarelo); }
+.cm-escola .cm-b { background: var(--azul); color: #fff; }
+.caminho strong { display: block; font-size: 14px; font-weight: 600; }
+.caminho small { display: block; font-size: 12px; color: var(--texto-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.caminho time { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--texto-2); }
+.cm-ponta time { color: var(--texto); }
+.cm-aluno { display: flex; gap: 10px; align-items: center; min-width: 0; }
+.cm-aluno > span { min-width: 0; }
+.cm-vazio { grid-template-columns: 1fr !important; }
+
+.quem { display: grid; grid-template-columns: 1fr; gap: 14px; }
+.quem-rot { display: flex; gap: 8px; align-items: center; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.bolinha-status { width: 8px; height: 8px; border-radius: 50%; }
+.bolinha-status.ok { background: var(--verde); }
+.bolinha-status.fora { background: var(--vermelho); }
+.quem-lista { display: grid; gap: 6px; }
+.quem-item { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 12px; border: 1px solid var(--borda); }
+.quem-item .qi-nome { flex: 1; min-width: 0; font-size: 14px; font-weight: 550; }
+.quem-item .qi-nome small { display: block; font-size: 12px; font-weight: 500; color: var(--vermelho-texto); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.quem-item.fora { background: var(--vermelho-suave); border-color: transparent; }
+.quem-item.fora .avatar { filter: grayscale(1); opacity: .6; }
+
+/* ---------- agenda da família ---------- */
+.semana { display: grid; gap: 8px; }
+.semana-dia { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px; background: var(--superficie); border: 1px solid var(--borda); border-radius: 14px; text-align: left; width: 100%; }
+.semana-dia .sd-data { text-align: center; }
+.semana-dia .sd-data small { display: block; font-size: 11px; color: var(--texto-2); text-transform: capitalize; }
+.semana-dia .sd-data strong { font-size: 20px; font-variant-numeric: tabular-nums; }
+.semana-dia .sd-info { min-width: 0; }
+.semana-dia .sd-info strong { display: block; font-size: 14px; }
+.semana-dia .sd-info small { display: block; font-size: 12px; color: var(--texto-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.semana-dia > svg { color: var(--texto-3); }
+.semana-dia.diferente { border-color: var(--laranja); background: var(--laranja-suave); }
+.semana-dia.diferente .sd-info small { color: var(--laranja-texto); }
+.semana-dia.hoje .sd-data strong { background: var(--amarelo); border-radius: 8px; padding: 0 6px; }
+
+/* ---------- "mais" (menu do celular) ---------- */
+.mais-lista { display: grid; gap: 2px; padding: 6px; }
+.mais-item { display: flex; align-items: center; gap: 14px; width: 100%; padding: 12px 10px; border-radius: 12px; text-align: left; font-size: 15px; font-weight: 550; }
+.mais-item:hover { background: var(--papel); }
+.mais-item .mi-ic { width: 38px; height: 38px; border-radius: 11px; background: var(--azul-claro); display: grid; place-items: center; flex-shrink: 0; }
+.mais-item .mi-ic svg { width: 18px; height: 18px; }
+.mais-item .mi-txt { flex: 1; min-width: 0; }
+.mais-item small { display: block; font-size: 12px; font-weight: 500; color: var(--texto-2); }
+.mais-item .cont { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--tinta); color: #fff; font-size: 11px; font-weight: 600; display: grid; place-items: center; }
+.mais-item > svg:last-child { color: var(--texto-3); }
+.mais-rot { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--texto-3); padding: 12px 10px 4px; }
+
+/* ---------- configurações ---------- */
+.config-sec { display: grid; gap: 14px; }
+.config-sec h3 { display: flex; gap: 8px; align-items: center; }
+.config-sec h3 svg { width: 18px; height: 18px; color: var(--texto-2); }
+.config-sec > p { margin-top: -8px; }
+.opcao-linha { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 4px 0; }
+.opcao-linha strong { display: block; font-size: 14px; font-weight: 600; }
+.opcao-linha small { display: block; font-size: 13px; color: var(--texto-2); }
+.escolha { display: flex; gap: 6px; flex-wrap: wrap; }
+.escolha button { height: 34px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--borda-forte); font-size: 13px; font-weight: 550; background: var(--superficie); }
+.escolha button.ativo { background: var(--tinta); border-color: var(--tinta); color: #fff; }
+.salvar-barra { position: sticky; bottom: 84px; z-index: 20; display: flex; gap: 10px; align-items: center; justify-content: space-between; padding: 10px 10px 10px 16px; background: var(--tinta); color: #fff; border-radius: 14px; box-shadow: var(--sombra-forte); animation: subir .2s ease-out; font-size: 14px; }
+.grade-config { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
+
+/* ---------- painel: próxima rota e primeiros passos ---------- */
+.proxima { background: var(--tinta); color: #fff; border-radius: var(--raio-xl); padding: 18px 18px 22px; display: grid; gap: 14px; position: relative; overflow: hidden; }
+.proxima::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: repeating-linear-gradient(90deg, var(--amarelo) 0 28px, var(--tinta) 28px 34px); }
+.proxima .px-rot { font: 600 11px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--amarelo); }
+.proxima h2 { font-size: 20px; font-weight: 700; margin-top: 6px; }
+.proxima .px-hora { font-size: 46px; font-weight: 700; letter-spacing: -.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+.proxima .px-hora small { font-size: 14px; font-weight: 500; color: #A9ADB6; letter-spacing: 0; margin-left: 6px; }
+.proxima .px-info { display: flex; gap: 6px; flex-wrap: wrap; }
+.proxima .tag { background: rgba(255, 255, 255, .1); color: #E4E5E8; }
+.proxima .tag.atraso { background: rgba(217, 54, 54, .3); color: #FFC4C4; }
+.proxima .px-acoes { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.proxima .btn-claro { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .16); color: #fff; }
+.proxima-fim { display: flex; gap: 12px; align-items: center; }
+.onb-item { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 11px 0; }
+.onb-item + .onb-item { border-top: 1px solid var(--borda); }
+.onb-n { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--borda-forte); display: grid; place-items: center; font-size: 12px; font-weight: 700; color: var(--texto-2); }
+.onb-n svg { width: 14px; height: 14px; }
+.onb-item.ok .onb-n { background: var(--verde); border-color: var(--verde); color: #fff; }
+.onb-item.ok strong { color: var(--texto-2); }
+.onb-item strong { display: block; font-size: 14px; font-weight: 600; }
+.onb-item small { display: block; font-size: 13px; color: var(--texto-2); }
+.barra-onb { height: 6px; border-radius: 999px; background: var(--azul-claro); overflow: hidden; margin: 6px 0 4px; }
+.barra-onb i { display: block; height: 100%; background: var(--verde); border-radius: 999px; transition: width .4s; }
+
+/* rota: resumo no topo e opções recolhidas */
+.rota-topo { display: grid; gap: 12px; }
+.opcoes { border: 1px solid var(--borda); border-radius: 12px; }
+.opcoes > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 12px 14px; font-weight: 600; font-size: 14px; }
+.opcoes > summary::-webkit-details-marker { display: none; }
+.opcoes > summary svg:last-child { margin-left: auto; color: var(--texto-3); transition: transform .2s; }
+.opcoes[open] > summary svg:last-child { transform: rotate(90deg); }
+.opcoes > div { padding: 0 14px 14px; display: grid; gap: 14px; }
+.dica-gps { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--texto-2); }
+.dica-gps svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px; color: var(--verde); }
+
+/* menu da conta no topo do painel (celular) */
+.main-topo { position: relative; }
+.main-topo .demo-painel.pos-topo { top: 52px; right: 0; }
+.main-topo .so-celular { display: none; }
+@media (max-width: 1000px) {
+  .main-topo .so-celular { display: inline-flex; }
+  /* celular: primeiro o resumo e o botão de começar, depois o mapa */
+  .rota-grid > .rota-lado { order: -1; }
+}
+@media (min-width: 761px) {
+  .quem { grid-template-columns: 1fr 1fr; }
+  .dias { margin: 0; padding: 2px 0 4px; }
+  .grade-config { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+@media (min-width: 1001px) {
+  .salvar-barra { bottom: 16px; }
+  .proxima { grid-template-columns: 1fr auto; align-items: end; }
+}

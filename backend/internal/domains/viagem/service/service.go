@@ -33,6 +33,9 @@ const esperaAuto = 2500 * time.Millisecond
 // Distância (m) do GPS até a parada para considerar que chegou.
 const raioChegada = 45.0
 
+// Distância (m) da parada para considerar que a van saiu dela (confirmação automática pelo GPS).
+const raioSaida = 90.0
+
 type Service interface {
 	Iniciar(ctx context.Context, e models.Escopo, req entities.IniciarRequest) (models.Viagem, error)
 	MarcarParada(ctx context.Context, e models.Escopo, viagemID, status string) error
@@ -428,12 +431,51 @@ func (s *service) avisarProximo(ctx context.Context, v *models.Viagem, L locais)
 		}
 		return
 	}
-	if models.Contem(v.Avisados, p.AlunoID) {
+	// o tio escolhe com quantas paradas de antecedência a família é avisada (1 = quando é o próximo)
+	antecedencia := 1
+	if van, err := s.repo.Van(ctx, v.VanID); err == nil {
+		antecedencia = van.Config.Normalizar().AvisoParadas
+	}
+	faltam := 0
+	for i := v.Alvo; i < len(v.Paradas) && faltam < antecedencia; i++ {
+		q := v.Paradas[i]
+		if q.Status != "pendente" {
+			continue
+		}
+		if q.Tipo != "aluno" {
+			if v.Tipo == "ida" {
+				break // depois das casas vêm as escolas
+			}
+			continue
+		}
+		if !models.Contem(v.Avisados, q.AlunoID) {
+			s.avisarFamilia(ctx, v, L, q.AlunoID, faltam)
+		}
+		faltam++
+	}
+}
+
+// avisarFamilia: "é o próximo" (antes = 0) ou "faltam N paradas" (aviso antecipado).
+func (s *service) avisarFamilia(ctx context.Context, v *models.Viagem, L locais, alunoID string, antes int) {
+	if antes == 0 {
+		v.Avisados = append(v.Avisados, alunoID)
+	}
+	a := L.Alunos[alunoID]
+	nome := regras.PrimeiroNome(a.Nome)
+	if antes > 0 {
+		chave := fmt.Sprintf("pre:%s:%d", alunoID, antes)
+		if models.Contem(v.Avisados, chave) {
+			return
+		}
+		v.Avisados = append(v.Avisados, chave)
+		if v.Tipo == "ida" {
+			_ = s.av.Pais(ctx, a.ID, "⏳", fmt.Sprintf("A van está a %s de %s", plural(antes, "parada"), nome), "Pode ir se preparando. Avisamos quando for o próximo.")
+			_ = s.av.Aluno(ctx, a.ID, "🎒", "A van já está vindo", fmt.Sprintf("Faltam %s até você. Arruma a mochila!", plural(antes, "parada")))
+		} else {
+			_ = s.av.Familia(ctx, a.ID, "⏳", fmt.Sprintf("%s chega em casa daqui a %s", nome, plural(antes, "parada")), "Avisamos quando for o próximo.", true)
+		}
 		return
 	}
-	v.Avisados = append(v.Avisados, p.AlunoID)
-	a := L.Alunos[p.AlunoID]
-	nome := regras.PrimeiroNome(a.Nome)
 	if v.Tipo == "ida" {
 		_ = s.av.Pais(ctx, a.ID, "🔔", nome+" é o próximo a ser buscado!", "Agora você pode ver a van chegando no mapa.")
 		_ = s.av.Aluno(ctx, a.ID, "🎒", "Você é o próximo!", "Pega a mochila e vai pro portão ⏰ (+10 pontos se estiver lá antes da van)")
@@ -857,7 +899,7 @@ func (s *service) Posicao(ctx context.Context, e models.Escopo, viagemID string,
 	if len(v.Rastro) > 1500 {
 		v.Rastro = append(v.Rastro[:1], v.Rastro[len(v.Rastro)-1499:]...)
 	}
-	mudou := false
+	mudou, retracar := false, false
 	if !v.NaParada {
 		v.Caminho = geo.Aparar(pos, v.Caminho)
 		alvo := v.Destino
@@ -866,6 +908,14 @@ func (s *service) Posicao(ctx context.Context, e models.Escopo, viagemID string,
 		}
 		if geo.DistM(pos, alvo) < raioChegada {
 			s.chegou(ctx, &v, s.tx.Locais(ctx, &v))
+			mudou = true
+		}
+	} else if v.Alvo < len(v.Paradas) {
+		// o tio só dirige: parou na parada e saiu dela → o GPS confirma o embarque/entrega sozinho
+		// (ele ainda pode marcar "não estava" antes de sair, ou desligar isso em Configurações)
+		L := s.tx.Locais(ctx, &v)
+		if van, e2 := s.repo.Van(ctx, v.VanID); e2 == nil && !van.Config.ConfirmarManual && geo.DistM(pos, localDe(v.Paradas[v.Alvo], L)) > raioSaida {
+			retracar = s.concluirParada(ctx, &v, L, "feito")
 			mudou = true
 		}
 	}
@@ -878,6 +928,9 @@ func (s *service) Posicao(ctx context.Context, e models.Escopo, viagemID string,
 			s.tx.Van(ctx, v.VanID)
 		}
 		s.tx.Viagem(ctx, v, !mudou)
+		if retracar {
+			go s.retracar(context.Background(), v.ID)
+		}
 	}
 	return err
 }

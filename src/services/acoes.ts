@@ -1,5 +1,5 @@
 import { post, put } from '../api/cliente';
-import type { Aluno, Escola, Horario, LatLng, Pagamento, Recompensa, RotaFixa, TipoViagem, Turno, TurnoVan, Van } from '../db/types';
+import type { Aluno, ConfigVan, Escola, Horario, LatLng, Pagamento, Recompensa, RotaFixa, TipoViagem, Turno, TurnoVan, Van } from '../db/types';
 import type { Plano } from '../lib/turnos';
 import { hoje } from '../lib/util';
 
@@ -11,8 +11,8 @@ import { hoje } from '../lib/util';
 // ---------------- presença (por trecho) ----------------
 
 /** O combinado do dia. Pais e tio podem mudar; se a rota já está andando, ela é reotimizada. */
-export const definirPresenca = (alunoId: string, plano: Plano, motivo?: string, _porQuem?: 'pais' | 'motorista') =>
-  put('/presencas', { alunoId, plano, motivo: motivo ?? '' });
+export const definirPresenca = (alunoId: string, plano: Plano, motivo?: string, _porQuem?: 'pais' | 'motorista', data?: string) =>
+  put('/presencas', { alunoId, plano, motivo: motivo ?? '', data: data ?? '' });
 
 // ---------------- pagamentos ----------------
 
@@ -25,6 +25,7 @@ export const atrasado = (p: Pagamento) => p.status === 'pendente' && p.venciment
 
 export const salvarAluno = (a: Aluno, novo: boolean) => (novo ? post<Aluno>('/alunos', a) : put<Aluno>(`/alunos/${a.id}`, a));
 export const arquivarAluno = (id: string, ativo: boolean) => put(`/alunos/${id}/ativo`, { ativo });
+export const salvarConfig = (c: ConfigVan) => put<Van>('/van/config', c);
 export const salvarTurnos = (turnos: TurnoVan[]) => put<Van>('/van/turnos', { turnos });
 export const salvarVan = (v: Pick<Van, 'nome' | 'motorista' | 'telefone' | 'placa' | 'modelo' | 'garagem' | 'precoPadrao' | 'vagas'>) => put<Van>('/van', v);
 

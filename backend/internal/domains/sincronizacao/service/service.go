@@ -60,7 +60,16 @@ func ids(al []models.Aluno) []string {
 // vanPublica tira o que é só do tio (endereço da garagem, rota fixa).
 func vanPublica(v models.Van) models.Van {
 	v.Garagem, v.RotasFixas = models.LatLng{}, nil
+	v.Config = models.ConfigVan{}
 	return v
+}
+
+// vanFamilia = vanPublica + os dados do Pix (a família paga a mensalidade direto para o tio).
+func vanFamilia(v models.Van) models.Van {
+	c := v.Config
+	p := vanPublica(v)
+	p.Config = models.ConfigVan{PixTipo: c.PixTipo, PixChave: c.PixChave, PixNome: c.PixNome, PixCidade: c.PixCidade, SemGamificacao: c.SemGamificacao}
+	return p
 }
 
 // colega = só o que o ranking precisa.
@@ -111,7 +120,7 @@ func (s *service) motorista(ctx context.Context, e models.Escopo, p *Pacote) err
 	if p.Pagamentos, err = s.repo.PagamentosDosAlunos(ctx, al); err != nil {
 		return err
 	}
-	if p.Presencas, err = s.repo.PresencasDoDia(ctx, p.Hoje, al); err != nil {
+	if p.Presencas, err = s.repo.PresencasAgenda(ctx, p.Hoje, al); err != nil {
 		return err
 	}
 	if p.Viagens, err = s.repo.ViagensDoDia(ctx, e.VanIDs, p.Hoje); err != nil {
@@ -139,7 +148,7 @@ func (s *service) familia(ctx context.Context, e models.Escopo, p *Pacote) error
 		return err
 	}
 	for _, v := range vans {
-		p.Vans = append(p.Vans, vanPublica(v))
+		p.Vans = append(p.Vans, vanFamilia(v))
 	}
 	daVan, err := s.repo.AlunosDasVans(ctx, e.VanIDs)
 	if err != nil {
@@ -171,7 +180,7 @@ func (s *service) familia(ctx context.Context, e models.Escopo, p *Pacote) error
 			return err
 		}
 	}
-	if p.Presencas, err = s.repo.PresencasDoDia(ctx, p.Hoje, e.AlunoIDs); err != nil {
+	if p.Presencas, err = s.repo.PresencasAgenda(ctx, p.Hoje, e.AlunoIDs); err != nil {
 		return err
 	}
 	viagens, err := s.repo.ViagensDoDia(ctx, e.VanIDs, p.Hoje)
@@ -228,7 +237,7 @@ func (s *service) escola(ctx context.Context, e models.Escopo, p *Pacote) error 
 			Serie: a.Serie, Turno: a.Turno, Ativo: a.Ativo, CriadoEm: a.CriadoEm, Completo: true})
 	}
 	al := ids(alunos)
-	if p.Presencas, err = s.repo.PresencasDoDia(ctx, p.Hoje, al); err != nil {
+	if p.Presencas, err = s.repo.PresencasAgenda(ctx, p.Hoje, al); err != nil {
 		return err
 	}
 	viagens, err := s.repo.ViagensDoDia(ctx, vanIDs, p.Hoje)

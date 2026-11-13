@@ -4,6 +4,7 @@ import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import './styles/tokens.css';
 import './styles/app.css';
+import './styles/telas.css';
 
 registerSW({ immediate: true });
 
