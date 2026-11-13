@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { abrirNavegacao, BarraNavegacao, lerNav } from '../../components/navegacao';
 import { ehDemoLocal } from '../../api/demoLocal';
 import { CuidadosLinha } from '../../components/cuidados';
 import { useEu } from '../../api/sync';
@@ -7,7 +8,7 @@ import Mapa3D, { type Linha, type Marcador } from '../../components/Mapa3D';
 import { SeletorPlano } from '../../components/presenca';
 import { Avatar, Toggle } from '../../components/ui';
 import { I } from '../../components/Icone';
-import { TURNOS, type Escola, type Parada, type TipoViagem, type Turno, type Viagem } from '../../db/types';
+import { TURNOS, type Escola, type LatLng, type Parada, type TipoViagem, type Turno, type Viagem } from '../../db/types';
 import { compCaminho, etaMin } from '../../lib/geo';
 import { caminhoAte, etaAte } from '../../lib/privacidade';
 import { atrasoPrevisto, horarioAlvo, NOME_TURNO, ordenarEscolas, planejarHorario, turnoAgora, vaiNoTrecho } from '../../lib/turnos';
@@ -94,7 +95,12 @@ function PrepararRota({ d, turnoInicial }: { d: DadosVan; turnoInicial?: Turno }
   ];
   const sair = async () => {
     setErro(''); setSaindo(true);
-    try { await iniciarViagem(van.id, turno, tipo, { otimizar, automatico: simulado && automatico, velocidade, simulado }); } catch (e) { setErro((e as Error).message); }
+    try {
+      const v = await iniciarViagem(van.id, turno, tipo, { otimizar, automatico: simulado && automatico, velocidade, simulado });
+      // "abrir sozinho": a mesma tocada em Começar já abre o Waze/Maps na primeira parada
+      const p = v.paradas[0];
+      if (lerNav().auto && p) abrirNavegacao(p.tipo === 'aluno' ? d.mapaAlunos.get(p.alunoId)?.local : d.mapaEscolas.get(p.escolaId)?.local);
+    } catch (e) { setErro((e as Error).message); }
     setSaindo(false);
   };
   const feitaHoje = d.concluidas.filter((v) => v.turno === turno && v.tipo === tipo);
@@ -264,6 +270,16 @@ function RotaAoVivo({ d, v }: { d: DadosVan; v: Viagem }) {
   const feitos = casas.filter((p) => p.status === 'feito').length;
   const nomeEsc = (id: string) => d.mapaEscolas.get(id)?.nome ?? 'escola';
   /** alunos desta escola que descem (ida) ou sobem (volta) aqui */
+  // navegação: onde é cada parada, a próxima depois desta e as seguintes (para o Maps com várias paradas)
+  const localDe = (p: Parada) => (p.tipo === 'aluno' ? d.mapaAlunos.get(p.alunoId)?.local : d.mapaEscolas.get(p.escolaId)?.local);
+  const pendentesDepois = v.paradas.map((p, i) => ({ p, i })).filter(({ p, i }) => i > v.alvo && p.status === 'pendente').map(({ p }) => localDe(p)).filter((x): x is LatLng => !!x);
+  const destinoAgora = atual ? localDe(atual) : v.destino;
+  const seguintes = atual ? [...pendentesDepois, v.destino] : [];
+  /** Embarcou / Não estava / Entregue / Desceram: o mesmo toque abre a próxima parada no Waze ou no Maps. */
+  const confirmar = (status: 'feito' | 'ausente') => {
+    if (lerNav().auto) abrirNavegacao(seguintes[0]);
+    void marcarParada(v.id, status);
+  };
   const daEscola = (id: string) => casas.filter((p) => p.escolaId === id && (v.tipo === 'ida' ? p.status === 'feito' : p.status === 'pendente'));
 
   const marcadores: Marcador[] = [
@@ -297,7 +313,6 @@ function RotaAoVivo({ d, v }: { d: DadosVan; v: Viagem }) {
       </section>
       <section className="pilha">
         <div className="alvo-card">
-          <Navegar destino={atual ? (atual.tipo === 'aluno' ? d.mapaAlunos.get(atual.alunoId)?.local : d.mapaEscolas.get(atual.escolaId)?.local) : v.destino} />
           {atual?.tipo === 'aluno' ? (() => {
             const a = d.mapaAlunos.get(atual.alunoId)!;
             return (
@@ -312,8 +327,8 @@ function RotaAoVivo({ d, v }: { d: DadosVan; v: Viagem }) {
                 </div>
                 <CuidadosLinha a={a} />
                 <div className="botoes">
-                  <button className="btn btn-primario" onClick={() => void marcarParada(v.id, 'feito')}><I n="check" />{v.tipo === 'ida' ? 'Embarcou' : 'Entregue'}</button>
-                  {v.tipo === 'ida' ? <button className="btn btn-claro" onClick={() => void marcarParada(v.id, 'ausente')}><I n="fechar" />Não estava</button>
+                  <button className="btn btn-primario" onClick={() => confirmar('feito')}><I n="check" />{v.tipo === 'ida' ? 'Embarcou' : 'Entregue'}</button>
+                  {v.tipo === 'ida' ? <button className="btn btn-claro" onClick={() => confirmar('ausente')}><I n="fechar" />Não estava</button>
                     : <a className="btn btn-claro" href={`tel:${a.telefoneResp}`}><I n="telefone" />Ligar</a>}
                 </div>
                 {!v.simulado && !d.van?.config?.confirmarManual && <small className="muted" style={{ display: 'block', marginTop: 10 }}>Pode seguir: ao sair daqui o GPS confirma {v.tipo === 'ida' ? 'o embarque' : 'a entrega'} sozinho.</small>}
@@ -331,7 +346,7 @@ function RotaAoVivo({ d, v }: { d: DadosVan; v: Viagem }) {
                 <div className="nome-alvo" style={{ marginTop: 10 }}>{e.nome}</div>
                 <span className="muted small">{v.tipo === 'ida' ? `Descem ${lista.length}` : `Sobem ${lista.length}`}: {lista.map((p) => primeiroNome(d.mapaAlunos.get(p.alunoId)?.nome ?? '')).join(', ') || '—'}</span>
                 <div className="botoes" style={{ gridTemplateColumns: '1fr' }}>
-                  <button className="btn btn-primario" onClick={() => void marcarParada(v.id, 'feito')}><I n="checks" />{v.tipo === 'ida' ? `Desceram ${lista.length}` : `Embarcaram ${lista.length}`}</button>
+                  <button className="btn btn-primario" onClick={() => confirmar('feito')}><I n="checks" />{v.tipo === 'ida' ? `Desceram ${lista.length}` : `Embarcaram ${lista.length}`}</button>
                 </div>
                 {v.tipo === 'volta' && <small className="muted" style={{ display: 'block', marginTop: 8 }}>Algum aluno não veio? Use "Fora" na lista abaixo antes de confirmar.</small>}
               </>
@@ -342,6 +357,7 @@ function RotaAoVivo({ d, v }: { d: DadosVan; v: Viagem }) {
               <div className="nome-alvo" style={{ marginTop: 10 }}>Indo para {v.destinoNome}</div>
             </>
           )}
+          <BarraNavegacao destino={destinoAgora} seguintes={seguintes} />
         </div>
 
         <div className="card">
@@ -393,13 +409,3 @@ function RotaAoVivo({ d, v }: { d: DadosVan; v: Viagem }) {
 }
 
 /** Abre a parada atual no Waze ou no Google Maps do celular (link grátis, sem API paga). */
-function Navegar({ destino }: { destino?: { lat: number; lng: number } }) {
-  if (!destino) return null;
-  const ll = `${destino.lat},${destino.lng}`;
-  return (
-    <div className="navegar">
-      <a className="btn btn-sm" href={`https://waze.com/ul?ll=${ll}&navigate=yes`} target="_blank" rel="noreferrer"><I n="navegar" />Waze</a>
-      <a className="btn btn-sm" href={`https://www.google.com/maps/dir/?api=1&destination=${ll}&travelmode=driving`} target="_blank" rel="noreferrer"><I n="mapa" />Maps</a>
-    </div>
-  );
-}

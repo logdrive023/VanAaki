@@ -440,8 +440,6 @@ button.tag { cursor: pointer; }
 .alvo-card .botoes .btn { height: 50px; font-size: calc(15px * var(--esc, 1)); }
 .alvo-card .btn-claro { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .16); color: #fff; }
 .alvo-card .tag-verde { background: rgba(126, 226, 168, .14); color: #7EE2A8; }
-.navegar { display: flex; gap: 6px; justify-content: flex-end; margin-bottom: 10px; }
-.navegar .btn { background: rgba(255, 255, 255, .08); color: #fff; border: 1px solid rgba(255, 255, 255, .16); }
 .rota-lista { list-style: none; display: grid; }
 .rota-lista li { display: flex; gap: 12px; align-items: center; padding: 9px 0; position: relative; }
 .rota-lista li:not(:last-child)::before { content: ''; position: absolute; left: 13px; top: 37px; bottom: -9px; width: 2px; background: var(--borda); }
