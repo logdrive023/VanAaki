@@ -222,6 +222,11 @@ async function aplicarLocal(o: OpFila) {
       await db.presencas.put(p);
       return;
     }
+    case 'cuidados': {
+      const a = await db.alunos.get(c.alunoId as string);
+      if (a) await db.alunos.put({ ...a, cuidados: c.cuidados as string, contatoExtra: c.contatoExtra as string, telefoneExtra: c.telefoneExtra as string });
+      return;
+    }
     case 'pagar': {
       const id = o.caminho.split('/')[2];
       const p = await db.pagamentos.get(id);

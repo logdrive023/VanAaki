@@ -96,6 +96,11 @@ export interface Aluno {
   diaVencimento: number;
   ativo: boolean;
   criadoEm: string;
+  /** alergias, remédios, o que o tio precisa saber (só tio e família) */
+  cuidados?: string;
+  /** 2º contato de emergência (avó, tio…) */
+  contatoExtra?: string;
+  telefoneExtra?: string;
   /** convite da família (o tio manda pelo WhatsApp) */
   codigoFamilia?: string;
   /** o aluno entra no app só com este código */
@@ -307,7 +312,7 @@ export interface Eu { usuario: Usuario; vanIds: string[]; alunoIds: string[]; es
 
 // ---------------- offline-first ----------------
 
-export type TipoOp = 'iniciar' | 'parada' | 'posicoes' | 'encerrar' | 'presenca' | 'pagar' | 'mensagem' | 'recado' | 'pronto';
+export type TipoOp = 'iniciar' | 'parada' | 'posicoes' | 'encerrar' | 'presenca' | 'pagar' | 'mensagem' | 'recado' | 'pronto' | 'cuidados';
 
 /** Uma ação guardada no aparelho até o servidor confirmar. `id` vira a Idempotency-Key. */
 export interface OpFila {

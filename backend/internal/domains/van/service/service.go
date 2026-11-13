@@ -30,6 +30,7 @@ type Service interface {
 	SalvarAluno(ctx context.Context, e models.Escopo, a models.Aluno) (models.Aluno, error)
 	Arquivar(ctx context.Context, e models.Escopo, alunoID string, ativo bool) error
 	DefinirPresenca(ctx context.Context, e models.Escopo, req entities.PresencaRequest) error
+	Cuidados(ctx context.Context, e models.Escopo, req entities.CuidadosRequest) error
 }
 
 type service struct {
@@ -225,6 +226,8 @@ func (s *service) SalvarAluno(ctx context.Context, e models.Escopo, a models.Alu
 			}
 			novo = false
 			a.CodigoFamilia, a.CodigoAluno, a.CriadoEm, a.Ativo = antigo.CodigoFamilia, antigo.CodigoAluno, antigo.CriadoEm, antigo.Ativo
+			// cuidados mudam só pela rota própria (a família costuma preencher): o formulário do tio não apaga
+			a.Cuidados, a.ContatoExtra, a.TelefoneExtra = antigo.Cuidados, antigo.ContatoExtra, antigo.TelefoneExtra
 		}
 	}
 	if novo {
@@ -277,6 +280,34 @@ func (s *service) Arquivar(ctx context.Context, e models.Escopo, alunoID string,
 
 // DefinirPresenca: o combinado do dia (ida e volta, só ida, só volta, não vai). Pais e tio podem mudar.
 // Se a rota já está andando, o aluno sai dela e a rota é reotimizada.
+// Cuidados: quem sabe da criança é a família; o tio também pode anotar. A escola e os colegas nunca recebem.
+func (s *service) Cuidados(ctx context.Context, e models.Escopo, req entities.CuidadosRequest) error {
+	a, err := s.repo.Aluno(ctx, req.AlunoID)
+	if err != nil {
+		return err
+	}
+	porTio := e.Usuario.Perfil == models.PerfilMotorista
+	if !(porTio && e.TemVan(a.VanID)) && !(e.Usuario.Perfil == models.PerfilPais && e.TemAluno(a.ID)) {
+		return core.ErrProibido
+	}
+	cuidados, nome, tel := strings.TrimSpace(req.Cuidados), strings.TrimSpace(req.ContatoExtra), strings.TrimSpace(req.TelefoneExtra)
+	if utf8.RuneCountInString(cuidados) > 500 || utf8.RuneCountInString(nome) > 80 || utf8.RuneCountInString(tel) > 30 {
+		return core.Invalido("Texto muito grande.")
+	}
+	if a.Cuidados == cuidados && a.ContatoExtra == nome && a.TelefoneExtra == tel {
+		return nil
+	}
+	a.Cuidados, a.ContatoExtra, a.TelefoneExtra = cuidados, nome, tel
+	if err := s.repo.SalvarAluno(ctx, a); err != nil {
+		return err
+	}
+	if !porTio {
+		_ = s.av.Motorista(ctx, a.VanID, "🩺", "Cuidados atualizados", "A família de "+regras.PrimeiroNome(a.Nome)+" atualizou alergias, cuidados ou o contato de emergência.")
+	}
+	s.tx.Van(ctx, a.VanID)
+	return nil
+}
+
 func (s *service) DefinirPresenca(ctx context.Context, e models.Escopo, req entities.PresencaRequest) error {
 	trechos, ok := regras.Planos[req.Plano]
 	if !ok {

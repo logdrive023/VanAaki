@@ -26,4 +26,5 @@ func (rt *Router) Register(api *mux.Router) {
 	ambos := api.NewRoute().Subrouter()
 	ambos.Use(middleware.Perfis(models.PerfilMotorista, models.PerfilPais))
 	ambos.HandleFunc("/presencas", rt.ct.Presenca).Methods("PUT")
+	ambos.HandleFunc("/alunos/{id}/cuidados", rt.ct.Cuidados).Methods("PUT")
 }

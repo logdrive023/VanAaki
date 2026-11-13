@@ -193,6 +193,10 @@ type Aluno struct {
 	FamiliaConectada bool `json:"familiaConectada,omitempty"`
 	// false = só o apelido (ranking); a família recebe os colegas assim
 	Completo bool `json:"completo"`
+	// cuidados (alergia, remédio…) e um 2º contato de emergência: só o tio e a família
+	Cuidados      string `json:"cuidados,omitempty"`
+	ContatoExtra  string `json:"contatoExtra,omitempty"`
+	TelefoneExtra string `json:"telefoneExtra,omitempty"`
 }
 
 type Pagamento struct {

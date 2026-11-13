@@ -10,11 +10,12 @@ import { saldoDe, sequencia, tipoEvento } from '../lib/gamificacao';
 import { nomeMes, primeiroNome, reais } from '../lib/util';
 import { atrasado, vincularFilho } from '../services/acoes';
 import { useEu } from '../api/sync';
+import { CuidadosCard } from '../components/cuidados';
 import { PainelTeste } from '../components/ui';
 import { Chat } from './motorista/Gestao';
 import { EscolhaPlano } from '../components/presenca';
 import { NOME_TURNO } from '../lib/turnos';
-import { AgendaFamilia, MudarDia, PagarPix } from './familiaAgenda';
+import { AgendaFamilia, MudarDia, PagarPix, Recibo } from './familiaAgenda';
 import type { Plano } from '../lib/turnos';
 import { hoje } from '../lib/util';
 import { LinhaTempo, MapaFamilia, SeletorAluno, textoStatus, useAlunoPerfil, useFamilia } from './familia';
@@ -148,6 +149,8 @@ function Inicio({ f }: { f: F }) {
         </div>
       </div>
 
+      <CuidadosCard a={a} />
+
       {!f.van?.config?.semGamificacao && (
         <button type="button" className="m-card mais-item" style={{ padding: 14 }} onClick={() => ir('pais/conduta')}>
           <span className="mi-ic"><I n="estrela" /></span>
@@ -186,6 +189,7 @@ function Pagamentos({ f }: { f: F }) {
   const alunoId = f.aluno!.id;
   const pags = useLiveQuery(() => db.pagamentos.where('alunoId').equals(alunoId).toArray(), [alunoId]) ?? [];
   const [pix, setPix] = useState<Pagamento | null>(null);
+  const [recibo, setRecibo] = useState<Pagamento | null>(null);
   const lista = [...pags].sort((a, b) => b.mes.localeCompare(a.mes));
   const aberto = lista.filter((p) => p.status === 'pendente' && !p.informadoEm);
   return (
@@ -200,13 +204,14 @@ function Pagamentos({ f }: { f: F }) {
         {lista.map((p) => (
           <div key={p.id} className="linha-item">
             <div><strong>{nomeMes(p.mes)} {p.mes.slice(0, 4)}</strong><span className="muted small">{p.status === 'pago' ? `Pago em ${p.pagoEm?.slice(0, 10).split('-').reverse().join('/')} · ${p.metodo}` : `Vence ${p.vencimento.split('-').reverse().join('/')} · ${reais(p.valor)}`}</span></div>
-            {p.status === 'pago' ? <span className="tag tag-verde"><I n="check" />Pago</span>
+            {p.status === 'pago' ? <button className="btn btn-claro btn-sm" onClick={() => setRecibo(p)}><I n="check" />Recibo</button>
               : p.informadoEm ? <span className="tag tag-amarelo"><I n="relogio" />Tio vai confirmar</span>
               : <button className="btn btn-primario btn-sm" onClick={() => setPix(p)}>Pagar com Pix</button>}
           </div>
         ))}
       </div>
       {pix && <PagarPix p={pix} aluno={f.aluno!} van={f.van} onFechar={() => setPix(null)} />}
+      {recibo && <Recibo p={recibo} aluno={f.aluno!} van={f.van} onFechar={() => setRecibo(null)} />}
     </>
   );
 }

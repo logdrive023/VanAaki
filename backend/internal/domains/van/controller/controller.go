@@ -47,6 +47,10 @@ func (ct *Controller) Arquivar(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (ct *Controller) Cuidados(w http.ResponseWriter, r *http.Request) {
+	httpx.Acao(w, r, func(ctx context.Context, e models.Escopo, q entities.CuidadosRequest) (any, error) { return nil, ct.s.Cuidados(ctx, e, q) })
+}
+
 func (ct *Controller) Presenca(w http.ResponseWriter, r *http.Request) {
 	httpx.Acao(w, r, func(ctx context.Context, e models.Escopo, q entities.PresencaRequest) (any, error) { return nil, ct.s.DefinirPresenca(ctx, e, q) })
 }

@@ -31,6 +31,12 @@ class Protecao extends Component<{ children: ReactNode }, { erro?: Error }> {
 
 const PERFIS: Perfil[] = ['motorista', 'pais', 'aluno', 'escola'];
 const NOMES: Record<Perfil, string> = { motorista: 'Motorista', pais: 'Família', aluno: 'Aluno', escola: 'Escola' };
+const ABAS: Record<Perfil, string[]> = {
+  motorista: ['painel', 'agenda', 'mais', 'configuracoes', 'rota', 'alunos', 'financeiro', 'conduta', 'premios', 'mensagens', 'conformidade', 'economia'],
+  pais: ['inicio', 'rastreio', 'pagamentos', 'agenda', 'conduta', 'chat'],
+  aluno: ['inicio', 'agenda', 'missoes', 'ranking', 'loja'],
+  escola: ['chegadas', 'vans', 'alunos', 'ocorrencias', 'recados'],
+};
 
 function Carregando({ texto = 'Carregando…' }: { texto?: string }) {
   return <div className="carregando"><div className="giro" /><span className="muted">{texto}</span></div>;
@@ -62,6 +68,8 @@ function Conectado({ perfil, aba, extra }: { perfil: Perfil; aba?: string; extra
       </div>
     );
   }
+  // endereço antigo, digitado errado ou "#/motorista/demo" já logado → abre a tela inicial em vez de uma tela em branco
+  if (aba && !ABAS[perfil].includes(aba)) aba = undefined;
   const tela = perfil === 'motorista' ? <Motorista aba={aba} extra={extra} />
     : perfil === 'pais' ? <Pais aba={aba} />
     : perfil === 'aluno' ? <Aluno aba={aba} />

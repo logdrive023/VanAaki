@@ -30,6 +30,14 @@ type ArquivarRequest struct {
 	Ativo bool `json:"ativo"`
 }
 
+// CuidadosRequest: a família (ou o tio) atualiza alergias, cuidados e o 2º contato.
+type CuidadosRequest struct {
+	AlunoID       string `json:"alunoId"`
+	Cuidados      string `json:"cuidados"`
+	ContatoExtra  string `json:"contatoExtra"`
+	TelefoneExtra string `json:"telefoneExtra"`
+}
+
 type PresencaRequest struct {
 	AlunoID string `json:"alunoId"`
 	Plano   string `json:"plano"` // ambos | so_ida | so_volta | nao_vai

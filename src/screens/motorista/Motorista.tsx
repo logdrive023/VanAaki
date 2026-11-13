@@ -1,4 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
+import { CuidadosLinha, EditarCuidados } from '../../components/cuidados';
 import { useState } from 'react';
 import Mapa3D from '../../components/Mapa3D';
 import { MenuMais, ShellPainel, type ItemMenu } from '../../components/Shell';
@@ -266,6 +267,7 @@ function Alunos({ d }: { d: DadosVan }) {
   const [busca, setBusca] = useState('');
   const [editando, setEditando] = useState<Aluno | null>(null);
   const [novoAberto, setNovo] = useState(false);
+  const [cuidados, setCuidados] = useState<Aluno | null>(null);
   const [verArquivados, setVerArquivados] = useState(false);
   const [turno, setTurno] = useState<Turno | 'todos'>('todos');
   const pagMap = new Map(d.pagamentosMes.map((p) => [p.alunoId, p]));
@@ -294,7 +296,7 @@ function Alunos({ d }: { d: DadosVan }) {
               const p = pagMap.get(a.id);
               return (
                 <tr key={a.id}>
-                  <td><div className="aluno-cel"><Avatar aluno={a} /><div><strong>{a.nome}</strong><span className="muted small">{a.responsavel} · {a.familiaConectada ? <span className="verde">família no app</span> : <a href={convite(a, d.van!.motorista)} target="_blank" rel="noreferrer" style={{ textDecoration: 'underline' }}>convidar família</a>}</span></div></div></td>
+                  <td><div className="aluno-cel"><Avatar aluno={a} /><div style={{ minWidth: 0 }}><strong>{a.nome}</strong><span className="muted small">{a.responsavel} · {a.familiaConectada ? <span className="verde">família no app</span> : <a href={convite(a, d.van!.motorista)} target="_blank" rel="noreferrer" style={{ textDecoration: 'underline' }}>convidar família</a>}</span><CuidadosLinha a={a} onEditar={() => setCuidados(a)} /></div></div></td>
                   <td data-rot="Escola / turno">{d.escolas.find((e) => e.id === a.escolaId)?.nome}<br /><span className="muted small">{NOME_TURNO[a.turno]} · {a.serie} · entra {horarioAlvo(d.mapaEscolas.get(a.escolaId), a.turno, 'ida') ?? '—'}</span></td>
                   <td className="small td-largo" data-rot="Endereço">{a.endereco}</td>
                   <td data-rot="Mensalidade">{reais(a.mensalidade)}<br />{p && <span className={`tag ${p.status === 'pago' ? 'tag-verde' : atrasado(p) ? 'tag-vermelho' : 'tag-laranja'}`}>{p.status === 'pago' ? 'Pago' : atrasado(p) ? 'Atrasado' : 'Pendente'}</span>}</td>
@@ -307,6 +309,7 @@ function Alunos({ d }: { d: DadosVan }) {
         </table>
         {lista.length === 0 && <Vazio ic="alunos">Nenhum aluno {verArquivados ? 'arquivado' : 'encontrado'}</Vazio>}
       </div>
+      {cuidados && <EditarCuidados a={cuidados} porTio onFechar={() => setCuidados(null)} />}
       {editando && <FormAluno inicial={editando} d={d} onFechar={() => setEditando(null)} />}
       {novoAberto && <AssistenteAluno d={d} onFechar={() => setNovo(false)} />}
     </section>

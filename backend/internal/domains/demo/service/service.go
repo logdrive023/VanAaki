@@ -129,6 +129,9 @@ func (s *Service) Restaurar(ctx context.Context) error {
 		if a.ID == AlunoPadrao {
 			a.CodigoFamilia, a.CodigoAluno = "LUCAS1", "LUQUI1"
 		}
+		if a.ID == "al-helena" {
+			a.Cuidados, a.ContatoExtra, a.TelefoneExtra = "Alergia a amendoim. Bombinha de asma no bolso da frente da mochila.", "Vó Cida", "11 98888-1234"
+		}
 		if err := s.repo.SalvarAluno(ctx, a); err != nil {
 			return err
 		}

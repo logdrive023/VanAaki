@@ -192,6 +192,7 @@ func (r *Repo) SalvarVan(ctx context.Context, v models.Van, demo bool) error {
 
 const colAluno = `a.id, a.van_id, a.escola_id, a.nome, a.apelido, a.cor, a.serie, a.turno, a.responsavel, a.telefone_resp, a.endereco,
 	a.lat, a.lng, a.mensalidade, a.dia_vencimento, a.ativo, a.criado_em, a.codigo_familia, a.codigo_aluno,
+	a.cuidados, a.contato_extra, a.telefone_extra,
 	EXISTS (SELECT 1 FROM familia_alunos f WHERE f.aluno_id = a.id)`
 
 func scanAluno(s scanner) (models.Aluno, error) {
@@ -199,7 +200,7 @@ func scanAluno(s scanner) (models.Aluno, error) {
 	var criado time.Time
 	err := s.Scan(&a.ID, &a.VanID, &a.EscolaID, &a.Nome, &a.Apelido, &a.Cor, &a.Serie, &a.Turno, &a.Responsavel, &a.TelefoneResp,
 		&a.Endereco, &a.Local.Lat, &a.Local.Lng, &a.Mensalidade, &a.DiaVencimento, &a.Ativo, &criado, &a.CodigoFamilia, &a.CodigoAluno,
-		&a.FamiliaConectada)
+		&a.Cuidados, &a.ContatoExtra, &a.TelefoneExtra, &a.FamiliaConectada)
 	a.CriadoEm = models.Iso(criado)
 	a.Completo = true
 	return a, err
@@ -263,12 +264,13 @@ func (r *Repo) SalvarAluno(ctx context.Context, a models.Aluno) error {
 	}
 	_, err := r.DB.ExecContext(ctx, `
 		INSERT INTO alunos (id, van_id, escola_id, nome, apelido, cor, serie, turno, responsavel, telefone_resp, endereco, lat, lng,
-		  mensalidade, dia_vencimento, ativo, codigo_familia, codigo_aluno, criado_em)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+		  mensalidade, dia_vencimento, ativo, codigo_familia, codigo_aluno, criado_em, cuidados, contato_extra, telefone_extra)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
 		ON CONFLICT (id) DO UPDATE SET escola_id=$3, nome=$4, apelido=$5, cor=$6, serie=$7, turno=$8, responsavel=$9, telefone_resp=$10,
-		  endereco=$11, lat=$12, lng=$13, mensalidade=$14, dia_vencimento=$15, ativo=$16`,
+		  endereco=$11, lat=$12, lng=$13, mensalidade=$14, dia_vencimento=$15, ativo=$16,
+		  cuidados=$20, contato_extra=$21, telefone_extra=$22`,
 		a.ID, a.VanID, a.EscolaID, a.Nome, a.Apelido, a.Cor, a.Serie, a.Turno, a.Responsavel, a.TelefoneResp, a.Endereco,
-		a.Local.Lat, a.Local.Lng, a.Mensalidade, a.DiaVencimento, a.Ativo, a.CodigoFamilia, a.CodigoAluno, criado)
+		a.Local.Lat, a.Local.Lng, a.Mensalidade, a.DiaVencimento, a.Ativo, a.CodigoFamilia, a.CodigoAluno, criado, a.Cuidados, a.ContatoExtra, a.TelefoneExtra)
 	return err
 }
 

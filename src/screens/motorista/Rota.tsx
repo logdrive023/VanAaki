@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { CuidadosLinha } from '../../components/cuidados';
 import { useEu } from '../../api/sync';
 import { useFila } from '../../api/fila';
 import Mapa3D, { type Linha, type Marcador } from '../../components/Mapa3D';
@@ -308,6 +309,7 @@ function RotaAoVivo({ d, v }: { d: DadosVan; v: Viagem }) {
                   <Avatar aluno={a} tam={48} />
                   <div style={{ minWidth: 0 }}><div className="nome-alvo">{a.nome}</div><span className="muted small">{a.endereco} · {nomeEsc(a.escolaId)}</span></div>
                 </div>
+                <CuidadosLinha a={a} />
                 <div className="botoes">
                   <button className="btn btn-primario" onClick={() => void marcarParada(v.id, 'feito')}><I n="check" />{v.tipo === 'ida' ? 'Embarcou' : 'Entregue'}</button>
                   {v.tipo === 'ida' ? <button className="btn btn-claro" onClick={() => void marcarParada(v.id, 'ausente')}><I n="fechar" />Não estava</button>

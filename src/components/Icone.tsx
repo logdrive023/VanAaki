@@ -2,7 +2,7 @@ import {
   AlarmClock, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, BadgeCheck, Bell, BellOff, Bus, CalendarDays, Check, CheckCheck, ChevronRight,
   CircleAlert, CircleDollarSign, ClipboardList, Clock, Copy, Download, ExternalLink, FileText, Flag, FlaskConical, Fuel, Gift, GraduationCap,
   Hand, History, House, Inbox, Landmark, LayoutDashboard, Lock, Mail, Link2, ListChecks, Loader2, LogOut, MapPin, Map as MapaIc, MessageCircle,
-  Moon, Navigation, Phone, Plus, Printer, RefreshCcw, Route, Satellite, School, Search, Send, Settings2, ShieldCheck, Smartphone, Sparkles,
+  HeartPulse, Moon, Navigation, Phone, Plus, Printer, RefreshCcw, Route, Satellite, School, Search, Send, Settings2, ShieldCheck, Smartphone, Sparkles,
   Square, Star, Sun, Sunset, Target, ThumbsUp, Timer, Trash2, TrafficCone, Trophy, User, UserRound, Users, Wallet, Wifi, WifiOff, X, Zap,
   type LucideProps,
 } from 'lucide-react';
@@ -12,7 +12,7 @@ const ICONES = {
   painel: LayoutDashboard, rota: Route, mapa: MapaIc, alunos: Users, aluno: UserRound, usuario: User, financeiro: Wallet, dinheiro: CircleDollarSign,
   estrela: Star, premio: Gift, mensagem: MessageCircle, escola: School, formatura: GraduationCap, van: Bus, casa: House, pin: MapPin,
   sino: Bell, semSino: BellOff, check: Check, checks: CheckCheck, mais: Plus, fechar: X, busca: Search, enviar: Send, telefone: Phone,
-  navegar: Navigation, relogio: Clock, alarme: AlarmClock, cronometro: Timer, calendario: CalendarDays, alerta: CircleAlert, escudo: ShieldCheck,
+  saude: HeartPulse, navegar: Navigation, relogio: Clock, alarme: AlarmClock, cronometro: Timer, calendario: CalendarDays, alerta: CircleAlert, escudo: ShieldCheck,
   selo: BadgeCheck, lista: ClipboardList, checklist: ListChecks, historico: History, baixar: Download, imprimir: Printer, link: Link2, copiar: Copy,
   externo: ExternalLink, documento: FileText, governo: Landmark, sair: LogOut, recomecar: RefreshCcw, config: Settings2, celular: Smartphone,
   satelite: Satellite, teste: FlaskConical, raio: Zap, alvo: Target, trofeu: Trophy, joinha: ThumbsUp, mao: Hand, brilho: Sparkles, bandeira: Flag,

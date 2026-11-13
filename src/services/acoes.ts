@@ -15,6 +15,10 @@ import { hoje } from '../lib/util';
 export const definirPresenca = (alunoId: string, plano: Plano, motivo?: string, _porQuem?: 'pais' | 'motorista', data?: string) =>
   enfileirar({ tipo: 'presenca', caminho: '/presencas', metodo: 'PUT', corpo: { alunoId, plano, motivo: motivo ?? '', data: data ?? '' } });
 
+/** Alergias, cuidados e 2º contato: vale sem sinal (vai pela fila). */
+export const salvarCuidados = (alunoId: string, cuidados: string, contatoExtra: string, telefoneExtra: string) =>
+  enfileirar({ tipo: 'cuidados', caminho: `/alunos/${alunoId}/cuidados`, metodo: 'PUT', corpo: { alunoId, cuidados, contatoExtra, telefoneExtra } });
+
 // ---------------- pagamentos ----------------
 
 export const pagar = (pagamentoId: string, metodo: Pagamento['metodo'], porQuem?: 'pais' | 'motorista') =>

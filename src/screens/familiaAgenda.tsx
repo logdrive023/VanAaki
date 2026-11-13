@@ -115,3 +115,48 @@ export function PagarPix({ p, aluno, van, onFechar }: { p: Pagamento; aluno: Alu
     </Modal>
   );
 }
+
+/** Recibo de uma mensalidade paga: a família compartilha no WhatsApp ou salva em PDF (pela impressão do celular). */
+export function Recibo({ p, aluno, van, onFechar }: { p: Pagamento; aluno: Aluno; van?: Van; onFechar: () => void }) {
+  const recebedor = van?.config?.pixNome || van?.motorista || 'Motorista';
+  const data = (p.pagoEm ?? '').slice(0, 10).split('-').reverse().join('/');
+  const ref = `${nomeMes(p.mes)} de ${p.mes.slice(0, 4)}`;
+  const codigo = p.id.replace(/-/g, '').slice(0, 8).toUpperCase();
+  const linhas: [string, string][] = [
+    ['Aluno', aluno.nome],
+    ['Referente a', `transporte escolar · ${ref}`],
+    ['Pago em', `${data}${p.metodo ? ` · ${p.metodo === 'pix' ? 'Pix' : p.metodo}` : ''}`],
+    ['Recebido por', recebedor],
+    ...(van ? [['Veículo', `${van.modelo} · ${van.placa.replace('-', '‑')}`] as [string, string]] : []),
+    ['Código', codigo],
+  ];
+  const texto = `Recibo de transporte escolar\n${reais(p.valor)} · ${ref}\n${linhas.map(([k, v]) => `${k}: ${v}`).join('\n')}\nGerado pelo VanAaki`;
+  const [copiado, setCopiado] = useState(false);
+  const compartilhar = async () => {
+    try { if (navigator.share) { await navigator.share({ title: 'Recibo', text: texto }); return; } } catch { return; }
+    void navigator.clipboard?.writeText(texto); setCopiado(true); setTimeout(() => setCopiado(false), 2000);
+  };
+  const imprimir = () => {
+    const w = window.open('', '_blank');
+    if (!w) return;
+    const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
+    w.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Recibo ${esc(ref)}</title>
+<style>body{font-family:system-ui,sans-serif;color:#111318;max-width:520px;margin:32px auto;padding:0 20px}h1{font-size:20px;margin:0 0 4px}.v{font-size:34px;font-weight:800;margin:18px 0}table{width:100%;border-collapse:collapse}td{padding:10px 0;border-bottom:1px solid #e5e5e0;font-size:14px}td:first-child{color:#5b5f68;width:40%}.faixa{height:8px;background:repeating-linear-gradient(90deg,#FFC20E 0 24px,#111318 24px 30px);margin-bottom:24px}p{font-size:12px;color:#5b5f68;margin-top:28px}.ass{margin-top:56px;border-top:1px solid #111318;padding-top:6px;font-size:13px;width:70%}</style></head>
+<body><div class="faixa"></div><h1>Recibo de transporte escolar</h1><div class="v">${esc(reais(p.valor))}</div><table>${linhas.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('')}</table>
+<div class="ass">${esc(recebedor)}</div><p>Recibo gerado pelo VanAaki a partir do pagamento confirmado pelo motorista.</p><script>window.onload=()=>setTimeout(()=>print(),200)<\/script></body></html>`);
+    w.document.close();
+  };
+  return (
+    <Modal titulo="Recibo" onFechar={onFechar}>
+      <div className="pilha" style={{ gap: 14 }}>
+        <div className="recibo">
+          <span className="muted small">Transporte escolar · {ref}</span>
+          <div className="big">{reais(p.valor)}</div>
+          <dl>{linhas.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
+        </div>
+        <button className="btn btn-primario btn-bloco btn-grande" onClick={() => void compartilhar()}><I n={copiado ? 'check' : 'enviar'} />{copiado ? 'Recibo copiado' : 'Compartilhar recibo'}</button>
+        <button className="btn btn-claro btn-bloco" onClick={imprimir}><I n="baixar" />Salvar em PDF ou imprimir</button>
+      </div>
+    </Modal>
+  );
+}

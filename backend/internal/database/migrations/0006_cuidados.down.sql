@@ -1,0 +1,1 @@
+ALTER TABLE alunos DROP COLUMN IF EXISTS cuidados, DROP COLUMN IF EXISTS contato_extra, DROP COLUMN IF EXISTS telefone_extra;
