@@ -40,7 +40,7 @@ export default function Fiscal({ token }: { token: string }) {
         <Logo />
         <div className="entrar-card" style={{ textAlign: 'center', alignItems: 'center' }}>
           <span className="entrar-ic" style={{ background: 'var(--vermelho-suave)', color: 'var(--vermelho-texto)' }}><I n="alerta" /></span>
-          <h1 style={{ fontSize: 20 }}>Link indisponível</h1>
+          <h1 style={{ fontSize: 'calc(20px * var(--esc, 1))' }}>Link indisponível</h1>
           <p className="muted">{erro}</p>
         </div>
       </div>
@@ -69,7 +69,7 @@ export default function Fiscal({ token }: { token: string }) {
           <p className="muted" style={{ marginTop: 4 }}>Motorista: {f.van.motorista} · {f.van.telefone}</p>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <span className="placa" style={{ fontSize: 18, padding: '4px 12px' }}>{f.van.placa}</span>
+          <span className="placa" style={{ fontSize: 'calc(18px * var(--esc, 1))', padding: '4px 12px' }}>{f.van.placa}</span>
           <p className="muted small" style={{ marginTop: 8 }}>{f.van.modelo}</p>
         </div>
       </section>

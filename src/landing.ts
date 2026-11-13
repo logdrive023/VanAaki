@@ -4,6 +4,7 @@ import {
   AlarmClock, ArrowDown, ArrowRight, Bell, Bus, CalendarDays, Check, CheckCheck, ChevronDown, ChevronRight, createIcons, House,
   MessageCircle, Navigation, Play, QrCode, Route, School, ShieldCheck, Star, UserRound, Wallet, WifiOff,
 } from 'lucide';
+import { aplicar, lerPrefs, salvarPrefs, TAMANHOS } from './lib/acessibilidade';
 
 createIcons({
   icons: { AlarmClock, ArrowDown, ArrowRight, Bell, Bus, CalendarDays, Check, CheckCheck, ChevronDown, ChevronRight, House, MessageCircle, Navigation, Play, QrCode, Route, School, ShieldCheck, Star, UserRound, Wallet, WifiOff },
@@ -70,3 +71,26 @@ function calcular() {
 }
 ['c-alunos', 'c-mens'].forEach((id) => $(id)?.addEventListener('input', calcular));
 calcular();
+
+// ---------- faixa de acessibilidade (como nos sites do governo) ----------
+{
+  const niveis = TAMANHOS.map((t) => t.v);
+  const marcar = () => {
+    const p = lerPrefs();
+    document.querySelectorAll<HTMLButtonElement>('[data-acess]').forEach((b) => b.setAttribute('aria-pressed', String(!!p[b.dataset.acess as 'contraste' | 'libras'])));
+  };
+  document.querySelectorAll<HTMLButtonElement>('[data-letra]').forEach((b) => b.addEventListener('click', () => {
+    const p = lerPrefs();
+    const d = Number(b.dataset.letra);
+    const i = Math.max(0, niveis.indexOf(p.texto));
+    salvarPrefs({ ...p, texto: d === 0 ? 1 : niveis[Math.min(niveis.length - 1, Math.max(0, i + d))] });
+  }));
+  document.querySelectorAll<HTMLButtonElement>('[data-acess]').forEach((b) => b.addEventListener('click', () => {
+    const k = b.dataset.acess as 'contraste' | 'libras';
+    const p = lerPrefs();
+    salvarPrefs({ ...p, [k]: !p[k] });
+    marcar();
+  }));
+  aplicar(lerPrefs());
+  marcar();
+}

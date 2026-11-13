@@ -176,7 +176,7 @@ function Rastreio({ f }: { f: F }) {
         : (['aguardando', 'a_bordo', 'volta_outra_escola'].includes(v.fase) || (v.fase === 'sem_viagem' && f.plano === 'ambos')) && (
           <div className="m-card vazio" style={{ padding: 26 }}>
             <span className="ic"><I n="escudo" /></span>
-            <strong style={{ fontSize: 16 }}>O mapa aparece quando for a sua vez</strong>
+            <strong style={{ fontSize: 'calc(16px * var(--esc, 1))' }}>O mapa aparece quando for a sua vez</strong>
             <p className="muted small">Para a segurança de todas as crianças, a van aparece quando o próximo destino for a sua casa ou a escola de {primeiroNome(a.nome)}, e durante todo o tempo em que {primeiroNome(a.nome)} estiver a bordo.{v.paradasAntes > 0 ? ` Agora faltam ${v.paradasAntes} parada(s) antes.` : ''}</p>
           </div>
         )}

@@ -61,10 +61,10 @@ function Inicio({ f, jogo }: { f: F; jogo: boolean }) {
       {podePronto && (
         <div className="checkin">
           {parada!.prontoEm ? (
-            <><span className="entrar-ic" style={{ background: 'var(--verde-suave)', color: 'var(--verde)' }}><I n="check" /></span><strong style={{ fontSize: 17, marginTop: 8 }}>O tio sabe que você está no portão!</strong>{jogo && <p className="muted small">Quando embarcar você ganha +10 pontos</p>}</>
+            <><span className="entrar-ic" style={{ background: 'var(--verde-suave)', color: 'var(--verde)' }}><I n="check" /></span><strong style={{ fontSize: 'calc(17px * var(--esc, 1))', marginTop: 8 }}>O tio sabe que você está no portão!</strong>{jogo && <p className="muted small">Quando embarcar você ganha +10 pontos</p>}</>
           ) : (
             <>
-              <strong style={{ fontSize: 16 }}>Já está no portão com a mochila?</strong>
+              <strong style={{ fontSize: 'calc(16px * var(--esc, 1))' }}>Já está no portão com a mochila?</strong>
               <button className="btn-gigante" onClick={() => void marcarPronto(a.id)}><div><I n="mao" />Tô no portão!</div></button>
               <span className="muted small">{jogo ? 'Vale +10 pontos se for antes da van chegar' : 'Assim o tio já sabe que pode buscar'}</span>
             </>
@@ -160,7 +160,7 @@ function MissoesMini({ ev }: { ev: Parameters<typeof xpDe>[0] }) {
   const ms = missoesDe(ev).slice(0, 3);
   return (
     <section className="m-card">
-      <h4>Missões da semana <a className="ver-tudo" onClick={() => ir('aluno/missoes')}>ver todas</a></h4>
+      <h4>Missões da semana <button type="button" className="ver-tudo" onClick={() => ir('aluno/missoes')}>ver todas</button></h4>
       {ms.map((m) => {
         const ok = m.atual >= m.meta;
         return (

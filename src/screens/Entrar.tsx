@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { BotaoAcessibilidade } from '../components/Acessibilidade';
 import { api, API_URL, salvarSessao, type Sessao } from '../api/cliente';
 import { I, Marca, type NomeIcone } from '../components/Icone';
 import type { Perfil } from '../db/types';
@@ -134,7 +135,7 @@ export default function Entrar({ perfil, autoDemo, convite }: { perfil: Perfil; 
       <aside className="login-marca">
         <div className="lm-topo">
           <a href="./index.html" className="lm-logo"><Marca tam={34} /><span>Van<b>Aaki</b></span></a>
-          <a href="./index.html" className="lm-voltar"><I n="voltar" tam={16} /><span>Site</span></a>
+          <span className="lm-acoes"><BotaoAcessibilidade rotulo /><a href="./index.html" className="lm-voltar"><I n="voltar" tam={16} /><span>Site</span></a></span>
         </div>
         <div className="lm-texto">
           <span className="faixa">{info.nome}</span>

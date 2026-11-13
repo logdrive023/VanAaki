@@ -47,7 +47,7 @@ export function Financeiro({ d }: { d: DadosVan }) {
             <select className="inp" style={{ width: 'auto' }} value={mes} onChange={(e) => setMes(e.target.value)}>{(meses.includes(mes) ? meses : [mes, ...meses]).map((m) => <option key={m} value={m}>{nomeMes(m)} {m.slice(0, 4)}</option>)}</select>
             <div className="prog" style={{ width: 160 }}><i style={{ width: `${pct}%` }} /></div><strong>{pct}%</strong>
           </div>
-          <div className="abas">{(['todos', 'pendentes', 'pagos'] as const).map((f) => <a key={f} className={filtro === f ? 'ativo' : ''} onClick={() => setFiltro(f)}>{f[0].toUpperCase() + f.slice(1)}</a>)}</div>
+          <div className="abas">{(['todos', 'pendentes', 'pagos'] as const).map((f) => <button type="button" key={f} className={filtro === f ? 'ativo' : ''} onClick={() => setFiltro(f)}>{f[0].toUpperCase() + f.slice(1)}</button>)}</div>
         </div>
         <div className="tabela-wrap">
           <table className="tabela">

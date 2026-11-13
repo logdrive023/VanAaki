@@ -2,20 +2,34 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="text-scale" content="scale" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#FFC20E">
   <meta name="description" content="O app do tio da van escolar: você dirige e o resto é automático. Embarque confirmado pelo GPS, agenda, Pix e rastreio seguro para os pais. Funciona até sem internet.">
   <meta property="og:title" content="VanAaki — Bom dia, tio. Pode dirigir que o resto é com a gente.">
   <meta property="og:description" content="Embarque pelo GPS, agenda, Pix e rastreio seguro para os pais. Só com o celular que você já tem.">
   <link rel="icon" type="image/svg+xml" href="./icon.svg">
   <title>VanAaki — O app do tio da van escolar</title>
+    <script src="./acessibilidade.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&display=swap">
   <link rel="stylesheet" href="/src/styles/tokens.css">
   <link rel="stylesheet" href="/src/styles/landing.css">
+  <link rel="stylesheet" href="/src/styles/acessibilidade.css">
 </head>
 <body>
 
+  <div class="acess-faixa" role="region" aria-label="Acessibilidade">
+    <div class="container acess-faixa-linha">
+      <a class="pular-site" href="#conteudo">Ir para o conteúdo</a>
+      <span class="af-rot">Acessibilidade</span>
+      <button type="button" data-letra="-1" aria-label="Diminuir a letra">A&minus;</button>
+      <button type="button" data-letra="0" aria-label="Letra no tamanho normal">A</button>
+      <button type="button" data-letra="1" aria-label="Aumentar a letra">A+</button>
+      <button type="button" data-acess="contraste" aria-pressed="false">Alto contraste</button>
+      <button type="button" data-acess="libras" aria-pressed="false">Libras</button>
+    </div>
+  </div>
   <header class="topo" id="topo">
     <div class="container topo-linha">
       <a href="./index.html" class="logo" aria-label="VanAaki">
@@ -35,7 +49,7 @@
     </div>
   </header>
 
-  <main>
+  <main id="conteudo" tabindex="-1">
     <!-- ================= HERO ================= -->
     <section class="hero">
       <div class="container hero-grade">

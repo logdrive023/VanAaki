@@ -163,8 +163,8 @@ function Acessos({ acessos, onMudou }: { acessos: AcessoFiscal[]; onMudou: () =>
               </div>
               {ativo ? (
                 <div className="linha" style={{ gap: 6 }}>
-                  <button className="btn btn-claro btn-sm btn-ic" title="Copiar link" onClick={() => copiar(a.token)}><I n={copiado === a.token ? 'check' : 'copiar'} /></button>
-                  <button className="btn btn-claro btn-sm btn-ic" title="Cancelar acesso" onClick={async () => { if (confirm(`Cancelar o acesso de ${a.nome}? O link para de funcionar na hora.`)) { await api(`/conformidade/acessos/${a.token}`, { metodo: 'DELETE' }); onMudou(); } }}><I n="lixo" /></button>
+                  <button className="btn btn-claro btn-sm btn-ic" title="Copiar link" aria-label="Copiar link" onClick={() => copiar(a.token)}><I n={copiado === a.token ? 'check' : 'copiar'} /></button>
+                  <button className="btn btn-claro btn-sm btn-ic" title="Cancelar acesso" aria-label="Cancelar acesso" onClick={async () => { if (confirm(`Cancelar o acesso de ${a.nome}? O link para de funcionar na hora.`)) { await api(`/conformidade/acessos/${a.token}`, { metodo: 'DELETE' }); onMudou(); } }}><I n="lixo" /></button>
                 </div>
               ) : <span className="tag">inativo</span>}
             </div>

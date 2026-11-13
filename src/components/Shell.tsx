@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { I, Logo, type NomeIcone } from './Icone';
 import { ir, PainelTeste, Sino, Toasts, type FiltroNotif } from './ui';
+import { BotaoAcessibilidade } from './Acessibilidade';
 
 /** `curto`: nome usado nas abas de baixo do celular (onde cabem ~7 palavras curtas). */
 export interface ItemMenu { id: string; ic: NomeIcone; nome: string; curto?: string; badge?: number; grupo?: string; desc?: string
@@ -53,7 +54,7 @@ export function ShellPainel({ base, menu, atual, perfil, filtro, titulo, sub, ac
             return (
               <span key={m.id} style={{ display: 'contents' }}>
                 {rot && <span className="side-rotulo">{rot}</span>}
-                <a className={atual === m.id ? 'ativo' : ''} onClick={() => ir(`${base}/${m.id}`)}>
+                <a className={atual === m.id ? 'ativo' : ''} href={`#/${base}/${m.id}`} aria-current={atual === m.id ? 'page' : undefined}>
                   <I n={m.ic} />{m.nome}{!!m.badge && <span className="cont">{m.badge}</span>}
                 </a>
               </span>
@@ -65,18 +66,18 @@ export function ShellPainel({ base, menu, atual, perfil, filtro, titulo, sub, ac
       <main className="main">
         <div className="main-topo">
           <div style={{ minWidth: 0 }}>{sub && <span className="muted small">{sub}</span>}<h1>{titulo}</h1></div>
-          <div className="acoes">{acoes}<Sino filtro={filtro} /><span className="so-celular"><PainelTeste compacto /></span></div>
+          <div className="acoes">{acoes}<BotaoAcessibilidade /><Sino filtro={filtro} /><span className="so-celular"><PainelTeste compacto /></span></div>
         </div>
         {children}
       </main>
       <nav className="tabs-mobile">
         {(temMais ? menu.filter((m) => m.principal) : menu).map((m) => (
-          <a key={m.id} className={atual === m.id ? 'ativo' : ''} onClick={() => ir(`${base}/${m.id}`)}>
+          <a key={m.id} className={atual === m.id ? 'ativo' : ''} href={`#/${base}/${m.id}`} aria-current={atual === m.id ? 'page' : undefined}>
             <I n={m.ic} /><span className="rot">{m.curto ?? m.nome}</span>{!!m.badge && <span className="bolinha">{m.badge}</span>}
           </a>
         ))}
         {temMais && (
-          <a className={atual === 'mais' || !menu.find((m) => m.id === atual)?.principal ? 'ativo' : ''} onClick={() => ir(`${base}/mais`)}>
+          <a className={atual === 'mais' || !menu.find((m) => m.id === atual)?.principal ? 'ativo' : ''} href={`#/${base}/mais`}>
             <I n="lista" /><span className="rot">Mais</span>{badgeMais > 0 && <span className="bolinha">{badgeMais}</span>}
           </a>
         )}
@@ -92,12 +93,13 @@ export function ShellFone({ base, menu, atual, classe, topo, filtro, children }:
 }) {
   return (
     <div className={`fone-shell ${classe ?? ''}`}>
+      <a className="pular" href="#conteudo" onClick={(e) => { e.preventDefault(); document.getElementById('conteudo')?.focus(); }}>Pular para o conteúdo</a>
       <div className="fone-app">
-        <div className="fone-topo">{topo}<PainelTeste compacto /><Sino filtro={filtro} /></div>
-        <div className="fone-corpo">{children}</div>
-        <nav className="tab-bar">
+        <div className="fone-topo">{topo}<PainelTeste compacto /><BotaoAcessibilidade /><Sino filtro={filtro} /></div>
+        <main className="fone-corpo" id="conteudo" tabIndex={-1}>{children}</main>
+        <nav className="tab-bar" aria-label="Menu principal">
           {menu.map((m) => (
-            <a key={m.id} className={atual === m.id ? 'ativo' : ''} onClick={() => ir(`${base}/${m.id}`)}>
+            <a key={m.id} className={atual === m.id ? 'ativo' : ''} href={`#/${base}/${m.id}`} aria-current={atual === m.id ? 'page' : undefined}>
               <I n={m.ic} />{m.nome}{!!m.badge && <span className="bolinha">{m.badge}</span>}
             </a>
           ))}

@@ -1,0 +1,103 @@
+/* =========================================================
+   VanAaki — acessibilidade
+   Letra que cresce (--esc), alto contraste, menos animação, foco visível.
+   Pensado para avós que cuidam dos netos e para quem enxerga pouco.
+   ========================================================= */
+
+/* foco visível para teclado e leitores de tela */
+:focus-visible { outline: 3px solid var(--tinta); outline-offset: 2px; border-radius: 6px; }
+.btn-primario:focus-visible, .estrada-card :focus-visible { outline-color: #2563EB; }
+
+/* pular para o conteúdo */
+.pular { position: absolute; left: 8px; top: -60px; z-index: 9999; background: var(--tinta); color: #fff; padding: 10px 14px; border-radius: 10px; font-weight: 700; }
+.pular:focus { top: 8px; }
+
+/* ---------- painel ---------- */
+.acess h4 { font-size: calc(15px * var(--esc, 1)); margin-bottom: 10px; }
+.acess-tamanhos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.acess-tamanhos button { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; min-height: 76px; padding: 8px 4px; border-radius: 14px; border: 1.5px solid var(--borda-forte); background: var(--superficie); color: var(--texto); }
+.acess-tamanhos button span { font-family: var(--display); font-weight: 800; line-height: 1; }
+.acess-tamanhos button small { font-size: 12px; font-weight: 600; color: var(--texto-2); }
+.acess-tamanhos button.ativo { border-color: var(--tinta); background: var(--amarelo); box-shadow: 3px 3px 0 var(--tinta); }
+.acess-tamanhos button.ativo small { color: var(--tinta); }
+.acess-amostra { margin-top: 12px; padding: 12px 14px; border-radius: 14px; background: var(--papel); border: 1px dashed var(--borda-forte); }
+.acess-amostra strong { display: block; font-size: calc(17px * var(--esc, 1)); }
+.acess-amostra span { display: block; font-size: calc(14px * var(--esc, 1)); color: var(--texto-2); margin-top: 2px; }
+.acess-chave { display: grid; grid-template-columns: 42px minmax(0, 1fr) 52px; gap: 12px; align-items: center; width: 100%; text-align: left; padding: 12px; border-radius: 14px; border: 1px solid var(--borda); background: var(--superficie); color: var(--texto); }
+.ac-ic { width: 42px; height: 42px; border-radius: 12px; background: var(--azul-claro); display: grid; place-items: center; }
+.ac-ic svg { width: 20px; height: 20px; }
+.ac-txt strong { display: block; font-size: calc(15px * var(--esc, 1)); }
+.ac-txt small { display: block; font-size: calc(13px * var(--esc, 1)); color: var(--texto-2); }
+.ac-switch { width: 52px; height: 30px; border-radius: 99px; background: var(--borda-forte); position: relative; transition: background .15s; }
+.ac-switch i { position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: left .15s; }
+.acess-chave.ligado .ac-switch { background: var(--verde); }
+.acess-chave.ligado .ac-switch i { left: 25px; }
+.acess-btn svg { width: 19px; height: 19px; }
+.vw-escondido { display: none !important; }
+
+/* ---------- letra grande: o layout se reorganiza em vez de espremer ---------- */
+[data-texto=grande] .btn { white-space: normal; line-height: 1.2; text-align: center; }
+[data-texto=grande] .acoes-rapidas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+[data-texto=grande] .acao-rapida { flex-direction: row; justify-content: flex-start; text-align: left; padding: 12px; }
+[data-texto=grande] .valor-grade { grid-template-columns: 1fr; }
+[data-texto=grande] .jogo-dupla { grid-template-columns: 1fr; }
+[data-texto=grande] .dupla, [data-texto=grande] .form .dupla { grid-template-columns: 1fr; }
+[data-texto=grande] .recibo dl div { grid-template-columns: 1fr; gap: 2px; }
+[data-texto=grande] .hoje-lista li { grid-template-columns: 58px 22px minmax(0, 1fr); }
+[data-texto=grande] .hoje-lista li:not(:last-child)::before { left: 78px; }
+
+/* ---------- alto contraste ---------- */
+[data-contraste] {
+  --texto: #000;
+  --texto-2: #1A1C21;
+  --texto-3: #2E3138;
+  --borda: #3A3D46;
+  --borda-forte: #000;
+  --papel: #FFFFFF;
+  --superficie: #FFFFFF;
+}
+[data-contraste] body { background: #fff; }
+[data-contraste] .m-card, [data-contraste] .card, [data-contraste] .kpi { border: 1.5px solid #000 !important; box-shadow: none; }
+[data-contraste] a:not(.btn) { text-decoration: underline; }
+[data-contraste] .muted { color: #1A1C21 !important; }
+[data-contraste] .tag { border: 1px solid currentColor; }
+[data-contraste] .estrada-card p, [data-contraste] .jp-txt span, [data-contraste] .jp-txt small { color: #fff; }
+
+/* ---------- menos animação (escolha no app ou do sistema) ---------- */
+[data-movimento=reduzido] *, [data-movimento=reduzido] *::before, [data-movimento=reduzido] *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+
+/* ---------- site: faixa de acessibilidade no alto ---------- */
+.acess-faixa { background: var(--tinta); color: #fff; font-size: calc(13px * var(--esc, 1)); }
+.acess-faixa-linha { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding-top: 6px; padding-bottom: 6px; }
+.af-rot { font-weight: 700; margin-right: 4px; color: var(--amarelo); }
+.acess-faixa button { min-height: 32px; min-width: 36px; padding: 4px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,.25); background: transparent; color: #fff; font: 700 calc(13px * var(--esc, 1)) var(--fonte); cursor: pointer; }
+.acess-faixa button[aria-pressed=true] { background: var(--amarelo); color: var(--tinta); border-color: var(--amarelo); }
+.acess-faixa button:hover { border-color: #fff; }
+.pular-site { position: absolute; left: -9999px; }
+.pular-site:focus { position: static; color: var(--amarelo); font-weight: 700; margin-right: 8px; }
+@media (max-width: 420px) { .af-rot { display: none; } .acess-faixa button { padding: 4px 8px; } }
+[data-texto=grande] .respostas-rapidas { flex-wrap: wrap; overflow: visible; }
+[data-texto=grande] .abas, [data-texto=grande] .seg { display: flex; flex-wrap: wrap; }
+[data-texto=grande] .abas > *, [data-texto=grande] .seg > * { flex: 1 1 auto; }
+/* nome no topo: quebra a linha em vez de cortar com "…" */
+[data-texto=grande] .fone-topo .nome-perfil, [data-texto=grande] .fone-topo select { white-space: normal; text-overflow: clip; overflow: visible; height: auto; }
+/* letra grande: informação (horário, endereço, motivo) quebra a linha em vez de sumir no "…" */
+[data-texto=grande] .tr-txt small, [data-texto=grande] .caminho small, [data-texto=grande] .quem-item .qi-nome small,
+[data-texto=grande] .semana-dia .sd-info small, [data-texto=grande] .opcao-grande small,
+[data-texto=grande] .rota-lista .info .muted, [data-texto=grande] .viagem-linha .oque small { white-space: normal; overflow: visible; text-overflow: clip; }
+[data-texto=grande] .entre, [data-texto=grande] .linha { flex-wrap: wrap; }
+[data-texto=grande] .tag { white-space: normal; }
+/* rótulos do menu de baixo: crescem até 120% (mais que isso não cabe; o ícone já identifica) */
+.tabs-mobile a .rot, .tab-bar a { font-size: calc(10.5px * min(var(--esc, 1), 1.2)); }
+[data-texto=grande] .tabs-mobile a .rot { white-space: normal; text-overflow: clip; line-height: 1.1; text-align: center; hyphens: manual; }
+.modal:focus { outline: none; }
+[data-contraste] .tabs-mobile a, [data-contraste] .tab-bar a { text-decoration: none; }
+.fone-topo .seletor-perfil { max-width: 100%; text-overflow: ellipsis; }
+[data-contraste] a.logo, [data-contraste] a.lm-logo, [data-contraste] .menu a, [data-contraste] .tabs-mobile a, [data-contraste] .tab-bar a { text-decoration: none; }
+/* site com letra grande: o botão do topo vira só "Demo" para caber ao lado da marca */
+[data-texto=grande] .topo-acoes .btn { padding: 6px 12px; line-height: 1.1; }
+.lm-topo { flex-wrap: wrap; row-gap: 8px; }
+[data-contraste] .login-perfis a, [data-contraste] .login-perfis button { text-decoration: none; }

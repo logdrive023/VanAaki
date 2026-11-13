@@ -24,7 +24,7 @@
   --borda-forte: #D6D5CF;
   --texto: #111318;
   --texto-2: #5E626D;
-  --texto-3: #9A9DA6;
+  --texto-3: #767A84; /* 4,5:1 no branco (WCAG AA) */
 
   /* estados */
   --verde: #12924A;
@@ -67,7 +67,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { -webkit-text-size-adjust: 100%; }
 body {
-  font-family: var(--fonte); font-size: 15px; line-height: 1.5; color: var(--texto); background: var(--papel);
+  font-family: var(--fonte); font-size: calc(15px * var(--esc, 1)); line-height: 1.5; color: var(--texto); background: var(--papel);
   -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; font-feature-settings: 'ss01', 'cv11';
 }
 a { color: inherit; text-decoration: none; }
@@ -79,7 +79,7 @@ button { cursor: pointer; border: 0; background: none; }
 h1, h2, h3, h4 { font-weight: 650; letter-spacing: -.015em; line-height: 1.2; }
 
 /* marca */
-.logo { display: inline-flex; align-items: center; gap: 9px; font-weight: 700; font-size: 18px; letter-spacing: -.02em; color: var(--texto); }
+.logo { display: inline-flex; align-items: center; gap: 9px; font-weight: 700; font-size: calc(18px * var(--esc, 1)); letter-spacing: -.02em; color: var(--texto); }
 .logo-marca { width: 30px; height: 30px; flex-shrink: 0; }
 .logo b { font-weight: 800; }
-.faixa { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; background: var(--amarelo); color: var(--tinta); font: 700 11px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; border-radius: 4px; }
+.faixa { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; background: var(--amarelo); color: var(--tinta); font: 700 calc(11px * var(--esc, 1))/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; border-radius: 4px; }

@@ -27,7 +27,7 @@ export function SeletorPeriodo({ valor, onChange }: { valor: Periodo; onChange: 
   return (
     <div className="abas">
       {(['semana', 'mes', 'geral'] as Periodo[]).map((p) => (
-        <a key={p} className={valor === p ? 'ativo' : ''} onClick={() => onChange(p)} style={{ cursor: 'pointer' }}>{p === 'semana' ? 'Semana' : p === 'mes' ? 'Mês' : 'Geral'}</a>
+        <button type="button" key={p} className={valor === p ? 'ativo' : ''} onClick={() => onChange(p)} style={{ cursor: 'pointer' }}>{p === 'semana' ? 'Semana' : p === 'mes' ? 'Mês' : 'Geral'}</button>
       ))}
     </div>
   );
@@ -46,7 +46,7 @@ export function Ranking({ alunos, ev, eu, nomesReais = false }: { alunos: Aluno[
         <div className="podio">
           {[top[1], top[0], top[2]].map((l) => (
             <div key={l.aluno.id} className={`p${l.pos}`}>
-              <div style={{ fontSize: 22 }}>{l.pos === 1 ? '👑' : l.pos === 2 ? '🥈' : '🥉'}</div>
+              <div style={{ fontSize: 'calc(22px * var(--esc, 1))' }}>{l.pos === 1 ? '👑' : l.pos === 2 ? '🥈' : '🥉'}</div>
               <Avatar nome={nome(l.aluno)} cor={l.aluno.cor} />
               <div className="small" style={{ fontWeight: 650 }}>{nome(l.aluno)}{l.aluno.id === eu ? ' (você)' : ''}</div>
               <div className="deg">{l.pontos} ⭐</div>
@@ -60,7 +60,7 @@ export function Ranking({ alunos, ev, eu, nomesReais = false }: { alunos: Aluno[
             <span className="pos">{l.pos}º</span>
             <Avatar nome={nome(l.aluno)} cor={l.aluno.cor} tam={36} />
             <strong>{nome(l.aluno)}{l.aluno.id === eu ? ' · você' : ''}</strong>
-            <span className="pontos-pill" style={{ fontSize: 13 }}>{l.pontos} ⭐</span>
+            <span className="pontos-pill" style={{ fontSize: 'calc(13px * var(--esc, 1))' }}>{l.pontos} ⭐</span>
           </div>
         ))}
       </div>
@@ -77,11 +77,11 @@ export function NivelCard({ ev, saldo, sequencia }: { ev: EventoPontos[]; saldo:
       <div className="entre">
         <div>
           <small>Seu nível</small>
-          <div style={{ fontSize: 20, fontWeight: 700, marginTop: 2 }}>{n.atual.icone} {n.atual.nome}</div>
+          <div style={{ fontSize: 'calc(20px * var(--esc, 1))', fontWeight: 700, marginTop: 2 }}>{n.atual.icone} {n.atual.nome}</div>
         </div>
         <div style={{ textAlign: 'right' }}>
           <small>Saldo</small>
-          <div style={{ fontSize: 20, fontWeight: 700, marginTop: 2, color: 'var(--amarelo)' }}>{saldo} ⭐</div>
+          <div style={{ fontSize: 'calc(20px * var(--esc, 1))', fontWeight: 700, marginTop: 2, color: 'var(--amarelo)' }}>{saldo} ⭐</div>
         </div>
       </div>
       <div className="barra-xp"><i style={{ width: `${n.pct}%` }} /></div>
@@ -114,7 +114,7 @@ export function Missoes({ ev }: { ev: EventoPontos[] }) {
           <div key={m.id} className={`missao ${ok ? 'feita' : ''}`}>
             <div className="ic">{ok ? '✅' : m.icone}</div>
             <div>
-              <strong style={{ fontSize: 14 }}>{m.nome}</strong>
+              <strong style={{ fontSize: 'calc(14px * var(--esc, 1))' }}>{m.nome}</strong>
               <div className="prog"><i style={{ width: `${Math.min(100, (m.atual / m.meta) * 100)}%` }} /></div>
             </div>
             <span className={`tag ${ok ? 'tag-verde' : 'tag-amarelo'}`}>{Math.min(m.atual, m.meta)}/{m.meta} · +{m.premio}</span>
@@ -138,7 +138,7 @@ export function Feed({ ev, limite = 15, alunos }: { ev: EventoPontos[]; limite?:
           <div key={e.id} className={`feed-item ${e.pontos < 0 ? 'neg' : ''}`}>
             <div className="ic">{t?.icone ?? '⭐'}</div>
             <div>
-              <strong style={{ fontSize: 14 }}>{a ? `${a.nome.split(' ')[0]} · ` : ''}{e.descricao}</strong>
+              <strong style={{ fontSize: 'calc(14px * var(--esc, 1))' }}>{a ? `${a.nome.split(' ')[0]} · ` : ''}{e.descricao}</strong>
               <div className="small muted">{e.observacao ? `"${e.observacao}" · ` : ''}{e.data === hoje() ? haQuanto(e.criadoEm) : dataCurta(e.data)}{e.autor === 'motorista' ? ' · pelo tio' : ''}</div>
             </div>
             <strong className={e.pontos < 0 ? 'vermelho' : 'verde'}>{e.pontos > 0 ? '+' : ''}{e.pontos}</strong>

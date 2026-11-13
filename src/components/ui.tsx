@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { db } from '../db/db';
 import type { Aluno, Notificacao, Perfil } from '../db/types';
 import { api, perfilDaAba, sair } from '../api/cliente';
@@ -34,18 +35,27 @@ export function Avatar({ aluno, nome, cor, tam }: { aluno?: Aluno; nome?: string
 }
 
 export function Modal({ titulo, onFechar, children }: { titulo: string; onFechar: () => void; children: ReactNode }) {
+  const caixa = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const f = (e: KeyboardEvent) => { if (e.key === 'Escape') onFechar(); };
     window.addEventListener('keydown', f);
     return () => window.removeEventListener('keydown', f);
   }, [onFechar]);
-  return (
+  // leitor de tela e teclado: o foco entra na janela e volta para onde estava ao fechar
+  useEffect(() => {
+    const antes = document.activeElement as HTMLElement | null;
+    caixa.current?.focus();
+    return () => antes?.focus?.();
+  }, []);
+  // no corpo da página: um topo com desfoque (backdrop-filter) prenderia a janela dentro dele
+  return createPortal(
     <div className="modal-fundo" onMouseDown={(e) => { if (e.target === e.currentTarget) onFechar(); }}>
-      <div className="modal" role="dialog" aria-label={titulo}>
+      <div className="modal" role="dialog" aria-modal="true" aria-label={titulo} tabIndex={-1} ref={caixa}>
         <div className="modal-topo"><h3>{titulo}</h3><button className="btn btn-fantasma btn-sm btn-ic" onClick={onFechar} aria-label="Fechar"><I n="fechar" /></button></div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

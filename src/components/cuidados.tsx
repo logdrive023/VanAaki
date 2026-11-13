@@ -62,7 +62,7 @@ export function EditarCuidados({ a, onFechar, porTio }: { a: Aluno; onFechar: ()
         <label className="fld"><span>{porTio ? 'O que precisa saber' : `O que o tio precisa saber sobre ${nome}`}</span>
           <textarea rows={3} maxLength={500} value={cuidados} onChange={(e) => setCuidados(e.target.value)} placeholder="Ex.: alergia a amendoim · usa bombinha de asma na mochila · tem medo de cachorro" />
         </label>
-        <strong style={{ fontSize: 14 }}>Se {porTio ? 'a família' : 'você'} não atender, chamar</strong>
+        <strong style={{ fontSize: 'calc(14px * var(--esc, 1))' }}>Se {porTio ? 'a família' : 'você'} não atender, chamar</strong>
         <label className="fld"><span>Nome</span><input value={contato} maxLength={80} onChange={(e) => setContato(e.target.value)} placeholder="Ex.: Vó Maria" /></label>
         <label className="fld"><span>Telefone</span><input value={tel} maxLength={30} inputMode="tel" onChange={(e) => setTel(e.target.value)} placeholder="11 90000-0000" /></label>
         <span className="muted small">Só o tio da van e a família veem. Funciona mesmo sem internet: envia quando voltar.</span>

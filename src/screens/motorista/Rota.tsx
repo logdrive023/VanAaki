@@ -107,8 +107,8 @@ function PrepararRota({ d, turnoInicial }: { d: DadosVan; turnoInicial?: Turno }
           ))}
         </div>
         <div className="abas" style={{ alignSelf: 'start' }}>
-          <a className={tipo === 'ida' ? 'ativo' : ''} onClick={() => setTipo('ida')}><I n="escola" />Ida · casa → escola</a>
-          <a className={tipo === 'volta' ? 'ativo' : ''} onClick={() => setTipo('volta')}><I n="casa" />Volta · escola → casa</a>
+          <button type="button" className={tipo === 'ida' ? 'ativo' : ''} onClick={() => setTipo('ida')}><I n="escola" />Ida · casa → escola</button>
+          <button type="button" className={tipo === 'volta' ? 'ativo' : ''} onClick={() => setTipo('volta')}><I n="casa" />Volta · escola → casa</button>
         </div>
         {feitaHoje.length > 0 && <div className="alerta-otim" style={{ margin: 0 }}><I n="bandeira" /><span>A {tipo} da {NOME_TURNO[turno].toLowerCase()} já foi feita hoje às {hora(feitaHoje[feitaHoje.length - 1].concluidaEm)}.</span></div>}
       </div>
@@ -186,8 +186,8 @@ function PrepararRota({ d, turnoInicial }: { d: DadosVan; turnoInicial?: Turno }
           <div className="pilha" style={{ gap: 6 }}>
             <strong className="small">Ordem das casas</strong>
             <div className="abas modo-rota">
-              <a className={!fixa ? 'ativo' : ''} onClick={() => usarFixa(false)}><I n="raio" />Otimizada</a>
-              <a className={fixa ? 'ativo' : ''} onClick={() => usarFixa(true)}><I n="pin" />Rota fixa</a>
+              <button type="button" className={!fixa ? 'ativo' : ''} onClick={() => usarFixa(false)}><I n="raio" />Otimizada</button>
+              <button type="button" className={fixa ? 'ativo' : ''} onClick={() => usarFixa(true)}><I n="pin" />Rota fixa</button>
             </div>
             <small className="muted">{fixa
               ? `Você define a ordem com ↑ ↓ e ela fica salva (ex.: o semestre todo). Quem não vai no dia é só pulado.${rf?.atualizadaEm ? ` Atualizada em ${new Date(rf.atualizadaEm).toLocaleDateString('pt-BR')}.` : ''}`
@@ -196,8 +196,8 @@ function PrepararRota({ d, turnoInicial }: { d: DadosVan; turnoInicial?: Turno }
           <div className="pilha" style={{ gap: 6 }}>
             <strong className="small">Posição da van</strong>
             <div className="abas modo-rota">
-              <a className={!simulado ? 'ativo' : ''} onClick={() => setSimulado(false)}><I n="celular" />GPS do celular</a>
-              <a className={simulado ? 'ativo' : ''} onClick={() => setSimulado(true)}><I n="teste" />Simulação</a>
+              <button type="button" className={!simulado ? 'ativo' : ''} onClick={() => setSimulado(false)}><I n="celular" />GPS do celular</button>
+              <button type="button" className={simulado ? 'ativo' : ''} onClick={() => setSimulado(true)}><I n="teste" />Simulação</button>
             </div>
             <small className="muted">{simulado ? 'A van anda sozinha pelas ruas (para testar e mostrar o app).' : 'Deixe esta tela aberta durante a rota: o app usa o GPS do celular e as famílias acompanham.'}</small>
           </div>

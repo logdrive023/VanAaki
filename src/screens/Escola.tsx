@@ -44,7 +44,7 @@ export default function Escola({ aba = 'chegadas' }: { aba?: string }) {
     { id: 'vans', ic: 'van', nome: 'Vans', badge: pendCred },
     { id: 'alunos', ic: 'alunos', nome: 'Alunos' },
     { id: 'recados', ic: 'mensagem', nome: 'Recados', badge: recadosNovos },
-    { id: 'ocorrencias', ic: 'lista', nome: 'Ocorrências' },
+    { id: 'ocorrencias', ic: 'lista', nome: 'Ocorrências', curto: 'Ocorrên­cias' },
   ];
   const titulos: Record<string, string> = { chegadas: 'Portaria', vans: 'Vans credenciadas', alunos: 'Alunos que usam van', ocorrencias: 'Ocorrências nas vans', recados: 'Recados com as vans' };
   const perfil = (

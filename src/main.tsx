@@ -7,8 +7,12 @@ import './styles/app.css';
 import './styles/telas.css';
 import './styles/login.css';
 import './styles/jogo.css';
+import './styles/acessibilidade.css';
+
+import { iniciarAcessibilidade } from './lib/acessibilidade';
 
 registerSW({ immediate: true });
+iniciarAcessibilidade();
 
 /** Qualquer ação que falhar no servidor aparece num aviso rápido (em vez de sumir em silêncio). */
 window.addEventListener('unhandledrejection', (e) => {

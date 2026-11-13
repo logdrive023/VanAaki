@@ -110,7 +110,7 @@ function Painel({ d, pedidos, onMinhaVan, onTurnos }: { d: DadosVan; pedidos: nu
           <div className="card-topo"><h3>Turnos de hoje</h3><button className="btn btn-fantasma btn-sm" onClick={() => ir('motorista/agenda')}><I n="calendario" />Agenda</button></div>
           <div className="pilha">
             {d.van!.turnos.filter((t) => t.ativo).map((t) => <CartaoTurno key={t.turno} d={d} t={t} />)}
-            {!d.van!.turnos.some((t) => t.ativo && t.escolaIds.length) && <span className="muted small">Nenhum turno configurado. <a style={{ textDecoration: 'underline', cursor: 'pointer' }} onClick={() => setEditarTurnos(true)}>Adicionar escola</a></span>}
+            {!d.van!.turnos.some((t) => t.ativo && t.escolaIds.length) && <span className="muted small">Nenhum turno configurado. <button type="button" style={{ textDecoration: 'underline', cursor: 'pointer' }} onClick={() => setEditarTurnos(true)}>Adicionar escola</button></span>}
           </div>
           <hr className="sep" style={{ margin: '16px 0' }} />
           <h3 style={{ marginBottom: 8 }}>Combinados de hoje</h3>
@@ -277,7 +277,7 @@ function Alunos({ d }: { d: DadosVan }) {
       <div className="card-topo">
         <label className="busca-mini"><I n="busca" /><input placeholder="Buscar aluno, responsável, endereço…" value={busca} onChange={(e) => setBusca(e.target.value)} /></label>
         <div className="linha">
-          <div className="abas"><a className={!verArquivados ? 'ativo' : ''} onClick={() => setVerArquivados(false)}>Ativos</a><a className={verArquivados ? 'ativo' : ''} onClick={() => setVerArquivados(true)}>Arquivados</a></div>
+          <div className="abas"><button type="button" className={!verArquivados ? 'ativo' : ''} onClick={() => setVerArquivados(false)}>Ativos</button><button type="button" className={verArquivados ? 'ativo' : ''} onClick={() => setVerArquivados(true)}>Arquivados</button></div>
           <button className="btn btn-primario btn-sm" onClick={() => setNovo(true)}><I n="mais" />Novo aluno</button>
         </div>
       </div>
