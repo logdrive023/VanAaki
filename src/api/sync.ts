@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useState } from 'react';
 import { db } from '../db/db';
-import type { Aluno, Escola, Eu, EventoPontos, LatLng, Mensagem, Notificacao, Pagamento, Presenca, Recado, Recompensa, Resgate, Van, Viagem } from '../db/types';
+import type { Aluno, Documento, Escola, Eu, EventoPontos, LatLng, Mensagem, Notificacao, Pagamento, Presenca, Recado, Recompensa, Resgate, Van, Viagem } from '../db/types';
 import { api, API_URL, lerSessao } from './cliente';
 import { aplicarRecebida, reaplicar } from './fila';
 import { ehDemoLocal, ligarDemoLocal } from './demoLocal';
@@ -10,6 +10,7 @@ interface Pacote {
   eu: Eu; hoje: string;
   escolas: Escola[]; vans: Van[]; alunos: Aluno[]; pagamentos: Pagamento[]; presencas: Presenca[]; viagens: Viagem[];
   notificacoes: Notificacao[]; mensagens: Mensagem[]; recados?: Recado[]; pontos: EventoPontos[]; recompensas: Recompensa[]; resgates: Resgate[];
+  documentos?: Documento[];
 }
 
 /** Baixa tudo o que este perfil pode ver e troca a cópia local (numa transação: a tela redesenha uma vez). */
@@ -31,6 +32,7 @@ export async function sincronizar() {
     await trocar(db.pontos, p.pontos);
     await trocar(db.recompensas, p.recompensas);
     await trocar(db.resgates, p.resgates);
+    await trocar(db.documentos, p.documentos ?? []);
     await db.config.put({ id: 'eu', valor: p.eu });
     await db.config.put({ id: 'hoje', valor: p.hoje });
   });

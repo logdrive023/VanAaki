@@ -1,6 +1,6 @@
 import { liveQuery } from 'dexie';
 import { db } from '../db/db';
-import type { LatLng, OpFila, Usuario, Viagem } from '../db/types';
+import type { Documento, Eu, LatLng, OpFila, Usuario, Viagem } from '../db/types';
 import { distM } from '../lib/geo';
 import { ErroApi, lerSessao, perfilDaAba, type OpcoesApi, type Sessao } from './cliente';
 
@@ -64,14 +64,38 @@ export async function responderDemo<T>(caminho: string, op: OpcoesApi, perfil: s
   const metodo = op.metodo ?? (op.corpo === undefined ? 'GET' : 'POST');
   if (caminho === '/sync') return d.perfis[perfil].sync as T;
   if (metodo === 'GET' && caminho in d.rotas) return d.rotas[caminho] as T;
+  const local = await responderLocal(caminho, metodo, op.corpo as Record<string, string> | undefined, perfil);
+  if (local !== NAO) return local as T;
   throw new ErroApi(metodo === 'GET'
     ? 'Esta parte precisa do servidor. Na demonstração do site ela fica desligada.'
     : 'Na demonstração do site, cadastros e alterações como esta não são salvos.', 400);
 }
 
+const NAO = Symbol('não é daqui');
+
+/** O que a demonstração faz no próprio aparelho: documentos, aceite da política e "meus dados". */
+async function responderLocal(caminho: string, metodo: string, corpo: Record<string, string> | undefined, perfil: string): Promise<unknown> {
+  const eu = (await db.config.get('eu'))?.valor as Eu | undefined;
+  if (caminho === '/privacidade/consentimento') return null; // a tela grava o aceite na cópia local
+  if (caminho === '/privacidade/conta') throw new ErroApi('Na demonstração não dá para excluir a conta.', 400);
+  if (caminho === '/privacidade/meus-dados') {
+    const tabelas = Object.fromEntries(await Promise.all(db.todas.filter((t) => t.name !== 'config').map(async (t) => [t.name, await t.toArray()] as const)));
+    return { geradoEm: new Date().toISOString(), versaoPolitica: eu?.consentimento?.versao, conta: eu?.usuario, consentimentos: eu?.consentimento ? [eu.consentimento] : [], dados: tabelas, aviso: 'Demonstração: dados de exemplo.' };
+  }
+  const doc = caminho.match(/^\/van\/documentos(?:\/(\w+))?$/);
+  if (doc && perfil === 'motorista' && eu) {
+    const vanId = eu.vanIds[0];
+    if (metodo === 'PUT' && corpo) await db.documentos.put({ id: `${vanId}-${corpo.tipo}`, vanId, tipo: corpo.tipo as Documento['tipo'], numero: corpo.numero, validade: corpo.validade, atualizadoEm: new Date().toISOString() });
+    if (metodo === 'DELETE' && doc[1]) await db.documentos.where({ vanId, tipo: doc[1] }).delete();
+    canal?.postMessage({ tipo: 'documentos', documentos: await db.documentos.toArray() } satisfies Recado);
+    return null;
+  }
+  return NAO;
+}
+
 // ---------------- as abas da demonstração conversam ----------------
 
-type Recado = { tipo: 'op'; op: OpFila } | { tipo: 'viagens'; viagens: Viagem[] } | { tipo: 'recomecar' };
+type Recado = { tipo: 'op'; op: OpFila } | { tipo: 'viagens'; viagens: Viagem[] } | { tipo: 'documentos'; documentos: Documento[] } | { tipo: 'recomecar' };
 const canal = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('vanaaki-demo') : null;
 const VIAGEM: OpFila['tipo'][] = ['iniciar', 'parada', 'posicoes', 'encerrar'];
 
@@ -87,6 +111,11 @@ export function ligarDemoLocal(perfil: string, aplicar: (op: OpFila) => Promise<
     if (m.tipo === 'recomecar') { location.reload(); return; }
     if (m.tipo === 'viagens' && perfil !== 'motorista') void db.viagens.bulkPut(m.viagens);
     if (m.tipo === 'op') void aplicar(m.op);
+    // documentos do tio: a escola vê com número; a família, sem
+    if (m.tipo === 'documentos' && perfil !== 'motorista' && perfil !== 'aluno') {
+      const docs = m.documentos.filter((x) => perfil === 'escola' || x.vanId === m.documentos[0]?.vanId).map((x) => (perfil === 'pais' ? { ...x, numero: undefined } : x));
+      void db.transaction('rw', db.documentos, async () => { await db.documentos.where('vanId').anyOf([...new Set(docs.map((x) => x.vanId))]).delete(); await db.documentos.bulkPut(docs); });
+    }
   };
   canal?.addEventListener('message', ouvir);
   let parar = () => {};

@@ -1,4 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
+import { DocumentosTio } from '../../components/documentos';
+import { resumoDocs, textoSituacao } from '../../lib/documentos';
 import { CuidadosLinha, EditarCuidados } from '../../components/cuidados';
 import { useState } from 'react';
 import Mapa3D from '../../components/Mapa3D';
@@ -32,6 +34,7 @@ export default function Motorista({ aba = 'painel', extra }: { aba?: string; ext
   const d = useDadosVan(vanId);
   const pedidos = useLiveQuery(() => db.resgates.where('status').equals('pendente').count()) ?? 0;
   const msgs = useLiveQuery(async () => (await db.mensagens.filter((m) => m.de === 'pais' && !m.lida).count()) + (await db.recados.filter((r) => r.de === 'escola' && !r.lida).count())) ?? 0;
+  const docs = useLiveQuery(() => db.documentos.where('vanId').equals(vanId).toArray(), [vanId]) ?? [];
   const [modal, setModal] = useState<'van' | 'turnos' | null>(null);
   if (d.carregando || !d.van) return <div className="carregando"><div className="giro" /></div>;
   const pend = d.pagamentosMes.filter((p) => p.status === 'pendente' && !p.informadoEm).length;
@@ -47,6 +50,7 @@ export default function Motorista({ aba = 'painel', extra }: { aba?: string; ext
     { id: 'mensagens', ic: 'mensagem', nome: 'Mensagens', desc: 'Famílias e escolas', grupo: 'Gestão', badge: msgs },
     { id: 'economia', ic: 'combustivel', nome: 'Economia', desc: 'Combustível, km e se a rota compensa', grupo: 'Gestão' },
     { id: 'conformidade', ic: 'escudo', nome: 'Fiscalização', desc: 'Trajetos guardados e relatórios', grupo: 'Gestão' },
+    { id: 'documentos', ic: 'selo', nome: 'Documentos', desc: 'CNH, curso, vistoria, seguro e validades', grupo: 'Gestão', badge: resumoDocs(docs).vencidos + resumoDocs(docs).vencendo },
     ...(d.gamificacao ? [
       { id: 'conduta', ic: 'estrela', nome: 'Conduta', desc: 'Elogios e ocorrências', grupo: 'Extras' },
       { id: 'premios', ic: 'premio', nome: 'Prêmios', desc: 'Loja de prêmios dos alunos', grupo: 'Extras', badge: pedidos },
@@ -56,7 +60,7 @@ export default function Motorista({ aba = 'painel', extra }: { aba?: string; ext
   const titulos: Record<string, string> = {
     painel: `${saudacao()}, ${primeiroNome(d.van.motorista.replace(/^(tio|tia)\s+/i, ''))}`, agenda: 'Agenda', mais: 'Mais', configuracoes: 'Configurações', rota: d.ativa ? 'Rota em andamento' : 'Rota do dia', alunos: 'Alunos',
     financeiro: 'Financeiro', conduta: 'Conduta e ranking', premios: 'Loja de prêmios', mensagens: 'Mensagens',
-    conformidade: 'Fiscalização e trajetos', economia: 'Economia da rota',
+    conformidade: 'Fiscalização e trajetos', economia: 'Economia da rota', documentos: 'Documentos',
   };
   const perfil = (
     <div className="perfil-side">
@@ -82,6 +86,7 @@ export default function Motorista({ aba = 'painel', extra }: { aba?: string; ext
       {aba === 'mensagens' && <MensagensTio d={d} />}
       {aba === 'conformidade' && <Conformidade d={d} />}
       {aba === 'economia' && <Economia d={d} />}
+      {aba === 'documentos' && <DocumentosTio docs={docs} />}
     </ShellPainel>
   );
 }
@@ -97,6 +102,7 @@ function Painel({ d, pedidos, onMinhaVan, onTurnos }: { d: DadosVan; pedidos: nu
   return (
     <>
       {configurado ? <ProximaRota d={d} /> : <PrimeirosPassos d={d} onMinhaVan={onMinhaVan} onTurnos={onTurnos} />}
+      <AvisoDocs vanId={d.van!.id} />
       {configurado && (
       <section className="kpis">
         <Kpi ic="alunos" rot="Alunos ativos" num={d.ativos.length} sub={`${d.van!.turnos.filter((t) => t.ativo).length} turno(s) de trabalho`} />
@@ -418,5 +424,20 @@ function MinhaVan({ d, onFechar }: { d: DadosVan; onFechar: () => void }) {
         <button className="btn btn-primario btn-bloco" onClick={() => void salvar()}>Salvar</button>
       </div>
     </Modal>
+  );
+}
+
+/** No "Hoje": só aparece quando algum documento venceu, vence em 30 dias ou falta. Um toque resolve. */
+function AvisoDocs({ vanId }: { vanId: string }) {
+  const docs = useLiveQuery(() => db.documentos.where('vanId').equals(vanId).toArray(), [vanId]);
+  if (!docs) return null;
+  const r = resumoDocs(docs);
+  if (r.geral === 'ok') return null;
+  const pior = r.lista.find((x) => x.sit === r.geral)!;
+  return (
+    <button type="button" className={`docs-resumo s-${r.geral}`} style={{ width: '100%', textAlign: 'left', border: 0 }} onClick={() => ir('motorista/documentos')}>
+      <span className="dr-ic"><I n="alerta" /></span>
+      <div><strong>{pior.nome}: {textoSituacao(pior.doc).toLowerCase()}</strong><span>{r.texto} · toque para atualizar. A escola vê a situação dos documentos.</span></div>
+    </button>
   );
 }

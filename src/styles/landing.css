@@ -368,3 +368,6 @@ h1, h2, h3 { font-family: var(--display); }
   .barra-cta.visivel { transform: none; }
 }
 @media (max-width: 400px) { .hero h1 { font-size: clamp(34px, 10.4vw, 42px); } }
+
+.rodape-links { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.rodape-links a { color: inherit; text-decoration: underline; text-underline-offset: 2px; font-size: calc(14px * var(--esc, 1)); }

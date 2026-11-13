@@ -117,6 +117,26 @@ func (s *Service) Restaurar(ctx context.Context) error {
 			return err
 		}
 	}
+	// documentos: o tio Carlos tem a vistoria vencendo em 12 dias; a Tia Sandra está com o seguro vencido
+	dia0, _ := time.ParseInLocation("2006-01-02", models.Hoje(), models.Fuso)
+	em := func(dias int) string { return dia0.AddDate(0, 0, dias).Format("2006-01-02") }
+	docs := []models.Documento{
+		{VanID: VanPrincipal, Tipo: "cnh", Numero: "04718293651", Validade: em(900)},
+		{VanID: VanPrincipal, Tipo: "curso", Numero: "SP-TE-2024-118", Validade: em(1300)},
+		{VanID: VanPrincipal, Tipo: "vistoria", Numero: "VST-88213", Validade: em(12)},
+		{VanID: VanPrincipal, Tipo: "autorizacao", Numero: "DTP-5521/2025", Validade: em(240)},
+		{VanID: VanPrincipal, Tipo: "seguro", Numero: "APP 7781-22", Validade: em(150)},
+		{VanID: VanPrincipal, Tipo: "crlv", Numero: "2026", Validade: em(200)},
+		{VanID: "van-sandra", Tipo: "cnh", Numero: "08812377410", Validade: em(400)},
+		{VanID: "van-sandra", Tipo: "vistoria", Numero: "VST-90122", Validade: em(60)},
+		{VanID: "van-sandra", Tipo: "seguro", Numero: "APP 3310-09", Validade: em(-4)},
+	}
+	for _, d := range docs {
+		d.ID = d.VanID + "-" + d.Tipo
+		if err := s.repo.SalvarDocumento(ctx, d); err != nil {
+			return err
+		}
+	}
 	var lista []models.Aluno
 	for i, x := range alunos {
 		a := models.Aluno{ID: x.id, VanID: VanPrincipal, EscolaID: x.escola, Nome: x.nome, Apelido: x.apelido, Cor: cores[i%len(cores)], Serie: x.serie,

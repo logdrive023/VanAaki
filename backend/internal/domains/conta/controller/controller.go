@@ -51,7 +51,9 @@ func (ct *Controller) CadastroEscola(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ct *Controller) EntrarAluno(w http.ResponseWriter, r *http.Request) {
-	sessao(w, r, func(q entities.CodigoRequest) (entities.Sessao, error) { return ct.service.EntrarAluno(r.Context(), q.Codigo) })
+	sessao(w, r, func(q entities.CodigoRequest) (entities.Sessao, error) {
+		return ct.service.EntrarAluno(r.Context(), q.Codigo)
+	})
 }
 
 func (ct *Controller) Demo(w http.ResponseWriter, r *http.Request) {

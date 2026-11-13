@@ -7,6 +7,7 @@ import { api, perfilDaAba, sair } from '../api/cliente';
 import { sincronizar, useEu } from '../api/sync';
 import { pendentes } from '../api/fila';
 import { ehDemoLocal, recomecarDemoLocal } from '../api/demoLocal';
+import { MeusDados } from './Privacidade';
 import { marcarLidas } from '../services/notificar';
 import { haQuanto, iniciais } from '../lib/util';
 import { I, type NomeIcone } from './Icone';
@@ -160,6 +161,7 @@ window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); prom
 /** Menu da conta: sair, instalar, e (na demonstração) abrir os outros perfis e recomeçar. */
 export function PainelTeste({ lateral, compacto }: { lateral?: boolean; compacto?: boolean }) {
   const [aberto, setAberto] = useState(false);
+  const [dados, setDados] = useState(false);
   const eu = useEu();
   const perfil = perfilDaAba();
   // na demonstração, o outro perfil já abre logado ("#/pais/demo")
@@ -202,11 +204,13 @@ export function PainelTeste({ lateral, compacto }: { lateral?: boolean; compacto
               </>
             )}
             {promptInstalar && <button onClick={() => { void promptInstalar?.prompt(); promptInstalar = null; setAberto(false); }}><I n="celular" />Instalar o app</button>}
+            <button onClick={() => { setDados(true); setAberto(false); }}><I n="escudo" />Privacidade e meus dados</button>
             <a href="./index.html"><I n="externo" />Site do VanAaki</a>
             <button onClick={async () => { const n = await pendentes(); if (n && !confirm(`Ainda tem ${n} ação(ões) guardada(s) esperando internet. Se sair agora, elas se perdem. Sair mesmo assim?`)) return; sair(perfil); }}><I n="sair" />Sair</button>
           </div>
         </>
       )}
+      {dados && eu && perfil && <MeusDados perfil={perfil} eu={eu} onFechar={() => setDados(false)} />}
     </>
   );
 }

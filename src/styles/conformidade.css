@@ -1,0 +1,68 @@
+/* =========================================================
+   VanAaki — conformidade: documentos (CTB 136–138), LGPD
+   (aceite, meus dados) e as páginas de Privacidade e Termos.
+   ========================================================= */
+
+/* ---------- documentos ---------- */
+.selo-doc { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 99px; font-size: calc(12px * var(--esc, 1)); font-weight: 600; white-space: nowrap; }
+.selo-doc svg { width: 13px; height: 13px; flex-shrink: 0; }
+.selo-doc.s-ok { background: var(--verde-suave); color: var(--verde); }
+.selo-doc.s-vence { background: var(--amarelo-suave); color: var(--amarelo-texto); }
+.selo-doc.s-vencido { background: #FDE8E8; color: #B4252A; }
+.selo-doc.s-falta { background: var(--azul-claro); color: var(--texto-2); }
+.docs-resumo { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; align-items: center; padding: 14px 16px; border-radius: 18px; background: var(--verde-suave); }
+.docs-resumo.s-vence, .docs-resumo.s-falta { background: var(--amarelo-suave); }
+.docs-resumo.s-vencido { background: #FDE8E8; }
+.dr-ic { width: 44px; height: 44px; border-radius: 14px; background: var(--superficie); display: grid; place-items: center; }
+.docs-resumo strong { display: block; font-family: var(--display); font-size: calc(18px * var(--esc, 1)); font-weight: 800; }
+.docs-resumo span { display: block; font-size: calc(13px * var(--esc, 1)); color: var(--texto-2); margin-top: 2px; }
+.docs-lista { display: grid; }
+.doc-linha { display: grid; grid-template-columns: minmax(0, 1fr) auto 16px; gap: 10px; align-items: center; width: 100%; text-align: left; padding: 12px 0; border: 0; background: none; color: var(--texto); }
+.doc-linha + .doc-linha { border-top: 1px solid var(--borda); }
+.doc-linha > svg { width: 16px; height: 16px; color: var(--texto-3); }
+.dl-txt strong { display: block; font-size: calc(14px * var(--esc, 1)); font-weight: 600; }
+.dl-txt small { display: block; font-size: calc(12px * var(--esc, 1)); color: var(--texto-2); }
+.docs-van summary { cursor: pointer; list-style: none; }
+.docs-van summary::-webkit-details-marker { display: none; }
+.docs-van ul { list-style: none; display: grid; gap: 6px; margin-top: 8px; min-width: 240px; }
+.docs-van li { display: flex; justify-content: space-between; gap: 8px; align-items: center; font-size: calc(12px * var(--esc, 1)); }
+.docs-van li small { color: var(--texto-2); }
+.confianca .alerta-txt, .confianca .alerta-txt svg { color: #B4252A; }
+[data-texto=grande] .doc-linha { grid-template-columns: minmax(0, 1fr) 16px; }
+[data-texto=grande] .doc-linha .selo-doc { grid-column: 1; white-space: normal; }
+
+/* ---------- aceite da política (LGPD) ---------- */
+.consentimento { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; background: var(--papel); }
+.cs-caixa { width: min(460px, 100%); display: flex; flex-direction: column; gap: 14px; background: var(--superficie); border: 1px solid var(--borda); border-radius: 24px; padding: 24px 20px; animation: t-sobe var(--t-tela) var(--curva) both; }
+.cs-caixa h1 { font-family: var(--display); font-size: calc(26px * var(--esc, 1)); font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
+.cs-sub { color: var(--texto-2); font-size: calc(15px * var(--esc, 1)); }
+.cs-pontos { list-style: none; display: grid; gap: 10px; }
+.cs-pontos li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; font-size: calc(15px * var(--esc, 1)); line-height: 1.4; }
+.cs-pontos svg { width: 20px; height: 20px; color: var(--verde); margin-top: 1px; }
+.cs-links { font-size: calc(13px * var(--esc, 1)); color: var(--texto-2); }
+.cs-links a, .legal a { color: var(--texto); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.cs-check { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; align-items: start; padding: 12px; border-radius: 14px; background: var(--papel); border: 1.5px solid var(--borda); cursor: pointer; font-size: calc(14px * var(--esc, 1)); line-height: 1.4; }
+.cs-check:has(input:checked) { border-color: var(--tinta); background: var(--amarelo-suave); }
+.cs-check input { width: 22px; height: 22px; accent-color: var(--tinta); margin: 0; }
+
+/* ---------- privacidade e meus dados ---------- */
+.md-aceite { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; padding: 12px; border-radius: 14px; background: var(--verde-suave); font-size: calc(14px * var(--esc, 1)); }
+.md-aceite svg { width: 20px; height: 20px; color: var(--verde); }
+.btn-perigo { background: #FDE8E8; color: #B4252A; border-color: #F6C9C9; }
+.btn-perigo:hover:not(:disabled) { background: #FBD5D5; }
+
+/* ---------- páginas de Privacidade e Termos ---------- */
+.legal { min-height: 100vh; background: var(--papel); }
+.legal-topo { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; row-gap: 8px; justify-content: space-between; align-items: center; padding: 12px 16px; background: var(--tinta); color: #fff; }
+.legal-topo .lm-logo { color: #fff; }
+.legal-topo button.lm-voltar { background: none; color: inherit; font: inherit; cursor: pointer; }
+.legal-corpo { width: min(760px, 100%); margin: 0 auto; padding: 28px 16px 48px; }
+.legal-corpo h1 { font-family: var(--display); font-size: calc(32px * var(--esc, 1)); font-weight: 800; letter-spacing: -.02em; margin-top: 12px; }
+.legal-resumo { margin-top: 12px; padding: 14px 16px; border-radius: 16px; background: var(--amarelo-suave); font-size: calc(16px * var(--esc, 1)); line-height: 1.5; border-left: 4px solid var(--amarelo); }
+.legal-secao { margin-top: 24px; }
+.legal-secao h2 { display: flex; align-items: center; gap: 10px; font-size: calc(19px * var(--esc, 1)); font-weight: 700; margin-bottom: 8px; }
+.legal-secao h2 span { width: 28px; height: 28px; border-radius: 9px; background: var(--tinta); color: var(--amarelo); display: grid; place-items: center; font-size: calc(14px * var(--esc, 1)); flex-shrink: 0; }
+.legal-secao p, .legal-secao li { font-size: calc(15px * var(--esc, 1)); line-height: 1.6; color: var(--texto); }
+.legal-secao ul { padding-left: 20px; display: grid; gap: 6px; }
+.legal-links { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--borda); font-size: calc(14px * var(--esc, 1)); color: var(--texto-2); }
+.login-rodape a + a { margin-left: 0; }

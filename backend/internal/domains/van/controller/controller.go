@@ -15,11 +15,15 @@ type Controller struct{ s service.Service }
 func New(s service.Service) *Controller { return &Controller{s: s} }
 
 func (ct *Controller) AtualizarVan(w http.ResponseWriter, r *http.Request) {
-	httpx.Acao(w, r, func(ctx context.Context, e models.Escopo, q entities.VanRequest) (any, error) { return ct.s.AtualizarVan(ctx, e, q) })
+	httpx.Acao(w, r, func(ctx context.Context, e models.Escopo, q entities.VanRequest) (any, error) {
+		return ct.s.AtualizarVan(ctx, e, q)
+	})
 }
 
 func (ct *Controller) Config(w http.ResponseWriter, r *http.Request) {
-	httpx.Acao(w, r, func(ctx context.Context, e models.Escopo, q entities.ConfigRequest) (any, error) { return ct.s.Configurar(ctx, e, q) })
+	httpx.Acao(w, r, func(ctx context.Context, e models.Escopo, q entities.ConfigRequest) (any, error) {
+		return ct.s.Configurar(ctx, e, q)
+	})
 }
 
 func (ct *Controller) Turnos(w http.ResponseWriter, r *http.Request) {
@@ -29,7 +33,9 @@ func (ct *Controller) Turnos(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ct *Controller) RotaFixa(w http.ResponseWriter, r *http.Request) {
-	httpx.Acao(w, r, func(ctx context.Context, e models.Escopo, q entities.RotaFixaRequest) (any, error) { return nil, ct.s.RotaFixa(ctx, e, q) })
+	httpx.Acao(w, r, func(ctx context.Context, e models.Escopo, q entities.RotaFixaRequest) (any, error) {
+		return nil, ct.s.RotaFixa(ctx, e, q)
+	})
 }
 
 func (ct *Controller) SalvarAluno(w http.ResponseWriter, r *http.Request) {
@@ -48,9 +54,13 @@ func (ct *Controller) Arquivar(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ct *Controller) Cuidados(w http.ResponseWriter, r *http.Request) {
-	httpx.Acao(w, r, func(ctx context.Context, e models.Escopo, q entities.CuidadosRequest) (any, error) { return nil, ct.s.Cuidados(ctx, e, q) })
+	httpx.Acao(w, r, func(ctx context.Context, e models.Escopo, q entities.CuidadosRequest) (any, error) {
+		return nil, ct.s.Cuidados(ctx, e, q)
+	})
 }
 
 func (ct *Controller) Presenca(w http.ResponseWriter, r *http.Request) {
-	httpx.Acao(w, r, func(ctx context.Context, e models.Escopo, q entities.PresencaRequest) (any, error) { return nil, ct.s.DefinirPresenca(ctx, e, q) })
+	httpx.Acao(w, r, func(ctx context.Context, e models.Escopo, q entities.PresencaRequest) (any, error) {
+		return nil, ct.s.DefinirPresenca(ctx, e, q)
+	})
 }

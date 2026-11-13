@@ -462,3 +462,29 @@ func Clone[T any](v T) T {
 	_ = json.Unmarshal(b, &c)
 	return c
 }
+
+// Documento do condutor ou do veículo (CNH, curso, vistoria, seguro…) com validade.
+type Documento struct {
+	ID           string `json:"id"`
+	VanID        string `json:"vanId"`
+	Tipo         string `json:"tipo"`
+	Numero       string `json:"numero,omitempty"`
+	Validade     string `json:"validade"` // AAAA-MM-DD
+	AtualizadoEm string `json:"atualizadoEm"`
+}
+
+// TiposDocumento: o que a lei pede para o transporte escolar (CTB arts. 136 a 138) e o que as redes costumam exigir.
+var TiposDocumento = map[string]string{
+	"cnh":         "CNH categoria D",
+	"curso":       "Curso de transporte escolar",
+	"vistoria":    "Vistoria do DETRAN",
+	"autorizacao": "Autorização para transporte escolar",
+	"seguro":      "Seguro de passageiros (APP)",
+	"crlv":        "Licenciamento do veículo (CRLV)",
+}
+
+// Consentimento: versão da política de privacidade aceita e quando.
+type Consentimento struct {
+	Versao   string `json:"versao"`
+	AceitoEm string `json:"aceitoEm"`
+}

@@ -27,7 +27,9 @@ func (ct *Controller) Resumo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ct *Controller) Historico(w http.ResponseWriter, r *http.Request) {
-	httpx.Acao(w, r, func(ctx context.Context, e models.Escopo, _ httpx.Vazio) (any, error) { return ct.s.Historico(ctx, e, dias(r)) })
+	httpx.Acao(w, r, func(ctx context.Context, e models.Escopo, _ httpx.Vazio) (any, error) {
+		return ct.s.Historico(ctx, e, dias(r))
+	})
 }
 
 func (ct *Controller) Trajeto(w http.ResponseWriter, r *http.Request) {

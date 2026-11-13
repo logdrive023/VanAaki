@@ -1,4 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
+import { LinhaDocsFamilia } from '../components/documentos';
 import { useState } from 'react';
 import { calcularRanking, Feed, NivelCard, Selos, usePontosAluno, usePontosVan } from '../components/gamificacao';
 import { ShellFone, type ItemMenu } from '../components/Shell';
@@ -78,6 +79,7 @@ function Inicio({ f }: { f: F }) {
   const notifs = useNotificacoes({ para: 'pais', alunoId: a.id });
   const ev = usePontosAluno(a.id);
   const pags = useLiveQuery(() => db.pagamentos.where('alunoId').equals(a.id).toArray(), [a.id]) ?? [];
+  const docsVan = useLiveQuery(() => db.documentos.where('vanId').equals(a.vanId).toArray(), [a.vanId]) ?? [];
   const [escolha, setEscolha] = useState<Plano | null>(null);
   const nome = primeiroNome(a.nome);
   const hj = hoje();
@@ -145,6 +147,7 @@ function Inicio({ f }: { f: F }) {
         <div className="confianca">
           {credenciada && <span><I n="selo" />Credenciado pelo {f.escola!.nome}</span>}
           <span><I n="escudo" />Ninguém vê a sua casa: o mapa abre só na sua vez e com {nome} a bordo</span>
+          <LinhaDocsFamilia docs={docsVan} />
           <span><I n="historico" />Cada trajeto fica registrado com data e hora</span>
         </div>
       </div>

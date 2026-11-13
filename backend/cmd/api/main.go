@@ -40,7 +40,7 @@ func main() {
 			log.Fatalf("dados de demonstração: %v", err)
 		}
 	}
-	go c.Viagens.Simular(ctx) // anda com as vans em modo demonstração
+	go c.Viagens.Simular(ctx)  // anda com as vans em modo demonstração
 	go limparHistorico(ctx, c) // PL 1240/2026: guarda os trajetos pelo prazo e apaga o que passou
 
 	srv := server.New(c)
@@ -63,6 +63,11 @@ func limparHistorico(ctx context.Context, c *container.Container) {
 	defer tk.Stop()
 	for {
 		_, _ = c.Repo.PurgarOperacoes(ctx, time.Now().AddDate(0, 0, -7))
+		if n, err := c.Documentos.Avisar(ctx); err != nil {
+			log.Printf("avisos de documentos: %v", err)
+		} else if n > 0 {
+			log.Printf("documentos: %d aviso(s) de vencimento", n)
+		}
 		if n, err := c.Conformidade.Limpar(ctx); err != nil {
 			log.Printf("limpeza do histórico: %v", err)
 		} else if n > 0 {

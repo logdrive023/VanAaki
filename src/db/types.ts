@@ -308,7 +308,13 @@ export interface Usuario {
 }
 
 /** Quem está usando o app e o que pode ver (vem do servidor junto com os dados). */
-export interface Eu { usuario: Usuario; vanIds: string[]; alunoIds: string[]; escolaId?: string }
+/** LGPD: versão da política aceita e quando. */
+export interface Consentimento { versao: string; aceitoEm: string }
+export interface Eu { usuario: Usuario; vanIds: string[]; alunoIds: string[]; escolaId?: string; consentimento?: Consentimento }
+
+/** Documento do condutor ou do veículo (CNH, curso, vistoria…). A família recebe sem o número. */
+export interface Documento { id: string; vanId: string; tipo: TipoDocumento; numero?: string; validade: string; atualizadoEm: string }
+export type TipoDocumento = 'cnh' | 'curso' | 'vistoria' | 'autorizacao' | 'seguro' | 'crlv';
 
 // ---------------- offline-first ----------------
 

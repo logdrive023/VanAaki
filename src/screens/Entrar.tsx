@@ -259,7 +259,7 @@ export default function Entrar({ perfil, autoDemo, convite }: { perfil: Perfil; 
             {assistente && <small className="muted small" style={{ textAlign: 'center' }}>Grátis para testar com todos os seus alunos.</small>}
           </form>
         </div>
-        <footer className="login-rodape">© 2026 VanAaki · <a href="./index.html">Site</a></footer>
+        <footer className="login-rodape">© 2026 VanAaki · <a href="./index.html">Site</a> · <a href="./app.html#/privacidade">Privacidade</a> · <a href="./app.html#/termos">Termos</a></footer>
       </main>
     </div>
   );

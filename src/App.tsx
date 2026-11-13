@@ -5,6 +5,8 @@ import { useFila } from './api/fila';
 import { useHash } from './components/ui';
 import { I } from './components/Icone';
 import Fiscal from './screens/Fiscal';
+import Legal from './screens/Legal';
+import { precisaConsentir, TelaConsentimento } from './components/Privacidade';
 import type { Perfil } from './db/types';
 import Aluno from './screens/Aluno';
 import Entrar from './screens/Entrar';
@@ -32,7 +34,7 @@ class Protecao extends Component<{ children: ReactNode }, { erro?: Error }> {
 const PERFIS: Perfil[] = ['motorista', 'pais', 'aluno', 'escola'];
 const NOMES: Record<Perfil, string> = { motorista: 'Motorista', pais: 'Família', aluno: 'Aluno', escola: 'Escola' };
 const ABAS: Record<Perfil, string[]> = {
-  motorista: ['painel', 'agenda', 'mais', 'configuracoes', 'rota', 'alunos', 'financeiro', 'conduta', 'premios', 'mensagens', 'conformidade', 'economia'],
+  motorista: ['painel', 'agenda', 'mais', 'configuracoes', 'rota', 'alunos', 'financeiro', 'conduta', 'premios', 'mensagens', 'conformidade', 'economia', 'documentos'],
   pais: ['inicio', 'rastreio', 'pagamentos', 'agenda', 'conduta', 'chat'],
   aluno: ['inicio', 'agenda', 'missoes', 'ranking', 'loja'],
   escola: ['chegadas', 'vans', 'alunos', 'ocorrencias', 'recados'],
@@ -70,6 +72,8 @@ function Conectado({ perfil, aba, extra }: { perfil: Perfil; aba?: string; extra
   }
   // endereço antigo, digitado errado ou "#/motorista/demo" já logado → abre a tela inicial em vez de uma tela em branco
   if (aba && !ABAS[perfil].includes(aba)) aba = undefined;
+  // LGPD: sem o aceite desta versão da política, o app não abre (o aluno não aceita: quem consente é o responsável)
+  if (precisaConsentir(perfil, eu)) return <TelaConsentimento perfil={perfil as Exclude<Perfil, 'aluno'>} eu={eu} />;
   const tela = perfil === 'motorista' ? <Motorista aba={aba} extra={extra} />
     : perfil === 'pais' ? <Pais aba={aba} />
     : perfil === 'aluno' ? <Aluno aba={aba} />
@@ -89,6 +93,7 @@ export default function App() {
   const inicial = useRef(perfil);
   useEffect(() => {
     if (p === 'fiscal') { document.title = 'VanAaki · Fiscalização'; return; }
+    if (p === 'privacidade' || p === 'termos') { document.title = `VanAaki · ${p === 'privacidade' ? 'Política de Privacidade' : 'Termos de Uso'}`; return; }
     if (!perfil) { window.location.replace('./index.html'); return; }
     // cada perfil usa o próprio banco local: trocou de perfil na mesma aba → recarrega
     if (inicial.current !== perfil) location.reload();
@@ -96,6 +101,7 @@ export default function App() {
   }, [perfil]);
   // link de fiscalização (PL 1240/2026): página pública, sem login
   if (p === 'fiscal' && aba) return <Fiscal token={aba} />;
+  if (p === 'privacidade' || p === 'termos') return <Legal qual={p} />;
   if (!perfil) return <Carregando />;
   // link "#/motorista/demo" (botão do site): entra direto na demonstração
   // "#/pais/convite/CODIGO" (link do WhatsApp do tio): abre o primeiro acesso já preenchido

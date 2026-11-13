@@ -20,6 +20,8 @@ type Eu struct {
 	VanIDs   []string       `json:"vanIds"`
 	AlunoIDs []string       `json:"alunoIds"`
 	EscolaID string         `json:"escolaId,omitempty"`
+	// LGPD: a última versão da política aceita (o app pede o aceite quando falta ou mudou)
+	Consentimento *models.Consentimento `json:"consentimento,omitempty"`
 }
 
 type Pacote struct {
@@ -37,6 +39,7 @@ type Pacote struct {
 	Pontos       []models.EventoPontos `json:"pontos"`
 	Recompensas  []models.Recompensa   `json:"recompensas"`
 	Resgates     []models.Resgate      `json:"resgates"`
+	Documentos   []models.Documento    `json:"documentos"`
 }
 
 type Service interface {
@@ -83,7 +86,10 @@ func (s *service) Pacote(ctx context.Context, e models.Escopo) (Pacote, error) {
 		Eu:   Eu{Usuario: e.Usuario, VanIDs: e.VanIDs, AlunoIDs: e.AlunoIDs, EscolaID: e.EscolaID},
 		Hoje: models.Hoje(), Escolas: []models.Escola{}, Vans: []models.Van{}, Alunos: []models.Aluno{}, Pagamentos: []models.Pagamento{},
 		Presencas: []models.Presenca{}, Viagens: []models.Viagem{}, Notificacoes: []models.Notificacao{}, Mensagens: []models.Mensagem{}, Recados: []models.Recado{},
-		Pontos: []models.EventoPontos{}, Recompensas: []models.Recompensa{}, Resgates: []models.Resgate{},
+		Pontos: []models.EventoPontos{}, Recompensas: []models.Recompensa{}, Resgates: []models.Resgate{}, Documentos: []models.Documento{},
+	}
+	if cons, _ := s.repo.Consentimentos(ctx, e.Usuario.ID); len(cons) > 0 {
+		p.Eu.Consentimento = &cons[0]
 	}
 	var err error
 	switch e.Usuario.Perfil {
@@ -124,6 +130,9 @@ func (s *service) motorista(ctx context.Context, e models.Escopo, p *Pacote) err
 	if p.Presencas, err = s.repo.PresencasAgenda(ctx, p.Hoje, al); err != nil {
 		return err
 	}
+	if p.Documentos, err = s.repo.DocumentosDasVans(ctx, e.VanIDs); err != nil {
+		return err
+	}
 	if p.Viagens, err = s.repo.ViagensDoDia(ctx, e.VanIDs, p.Hoje); err != nil {
 		return err
 	}
@@ -153,6 +162,15 @@ func (s *service) familia(ctx context.Context, e models.Escopo, p *Pacote) error
 	}
 	for _, v := range vans {
 		p.Vans = append(p.Vans, vanFamilia(v))
+	}
+	// a família vê só tipo e validade ("documentos em dia"), sem o número
+	docs, err := s.repo.DocumentosDasVans(ctx, e.VanIDs)
+	if err != nil {
+		return err
+	}
+	for _, d := range docs {
+		d.Numero = ""
+		p.Documentos = append(p.Documentos, d)
 	}
 	daVan, err := s.repo.AlunosDasVans(ctx, e.VanIDs)
 	if err != nil {
@@ -245,6 +263,10 @@ func (s *service) escola(ctx context.Context, e models.Escopo, p *Pacote) error 
 	}
 	al := ids(alunos)
 	if p.Presencas, err = s.repo.PresencasAgenda(ctx, p.Hoje, al); err != nil {
+		return err
+	}
+	// a escola confere os documentos das vans que a atendem (para credenciar e acompanhar a validade)
+	if p.Documentos, err = s.repo.DocumentosDasVans(ctx, vanIDs); err != nil {
 		return err
 	}
 	viagens, err := s.repo.ViagensDoDia(ctx, vanIDs, p.Hoje)

@@ -1,4 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
+import { DocsDaVan } from '../components/documentos';
+import { resumoDocs } from '../lib/documentos';
 import { useState } from 'react';
 import { Feed } from '../components/gamificacao';
 import Mapa3D from '../components/Mapa3D';
@@ -180,11 +182,12 @@ function Trecho({ titulo, v, ve, escola, alunos }: { titulo: React.ReactNode; v?
 // ---------------- vans ----------------
 
 function Vans({ escola, vans, alunos }: { escola: TEscola; vans: Van[]; alunos: Aluno[] }) {
+  const docs = useLiveQuery(() => db.documentos.toArray()) ?? [];
   return (
     <section className="card">
       <div className="tabela-wrap">
         <table className="tabela">
-          <thead><tr><th>Van</th><th>Motorista</th><th>Turnos aqui</th><th>Alunos daqui</th><th>Situação</th><th style={{ textAlign: 'right' }}>Ações</th></tr></thead>
+          <thead><tr><th>Van</th><th>Motorista</th><th>Turnos aqui</th><th>Alunos daqui</th><th>Documentos</th><th>Situação</th><th style={{ textAlign: 'right' }}>Ações</th></tr></thead>
           <tbody>
             {vans.map((v) => {
               const s = v.credenciamento[escola.id];
@@ -195,9 +198,10 @@ function Vans({ escola, vans, alunos }: { escola: TEscola; vans: Van[]; alunos: 
                   <td data-rot="Motorista">{v.motorista}<br /><span className="muted small">{v.telefone}</span></td>
                   <td data-rot="Turnos aqui">{turnos || '—'}</td>
                   <td data-rot="Alunos daqui">{alunos.filter((a) => a.vanId === v.id).length}</td>
+                  <td data-rot="Documentos"><DocsDaVan docs={docs.filter((x) => x.vanId === v.id)} /></td>
                   <td data-rot="Situação"><span className={`tag ${s === 'credenciada' ? 'tag-verde' : s === 'pendente' ? 'tag-laranja' : 'tag-vermelho'}`}>{s}</span></td>
                   <td className="td-acoes" style={{ textAlign: 'right' }}>
-                    {s !== 'credenciada' && <button className="btn btn-escuro btn-sm" onClick={() => void credenciar(v.id, escola.id, 'credenciada')}>Credenciar</button>}
+                    {s !== 'credenciada' && <button className="btn btn-escuro btn-sm" onClick={() => { const r = resumoDocs(docs.filter((x) => x.vanId === v.id)); if (r.geral !== 'ok' && r.geral !== 'vence' && !confirm(`${v.nome}: ${r.texto.toLowerCase()} nos documentos. Credenciar mesmo assim?`)) return; void credenciar(v.id, escola.id, 'credenciada'); }}>Credenciar</button>}
                     {s === 'credenciada' && <button className="btn btn-claro btn-sm" onClick={() => void credenciar(v.id, escola.id, 'suspensa')}>Suspender</button>}
                   </td>
                 </tr>

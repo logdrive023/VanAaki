@@ -7,8 +7,8 @@ import (
 )
 
 type Config struct {
-	Porta     string
-	BancoURL  string
+	Porta      string
+	BancoURL   string
 	JWTSegredo string
 	// origens liberadas no CORS (vírgula); "*" libera todas
 	Origens []string

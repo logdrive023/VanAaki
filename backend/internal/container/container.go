@@ -10,16 +10,18 @@ import (
 	"github.com/logdrive023/vanaaki/backend/internal/compartilhado/repositorio"
 	"github.com/logdrive023/vanaaki/backend/internal/compartilhado/transmissao"
 	"github.com/logdrive023/vanaaki/backend/internal/config"
+	comunicacaohttp "github.com/logdrive023/vanaaki/backend/internal/domains/comunicacao/http"
+	comunicacaosvc "github.com/logdrive023/vanaaki/backend/internal/domains/comunicacao/service"
 	conformidadectl "github.com/logdrive023/vanaaki/backend/internal/domains/conformidade/controller"
 	conformidadehttp "github.com/logdrive023/vanaaki/backend/internal/domains/conformidade/http"
 	conformidadesvc "github.com/logdrive023/vanaaki/backend/internal/domains/conformidade/service"
-	comunicacaohttp "github.com/logdrive023/vanaaki/backend/internal/domains/comunicacao/http"
-	comunicacaosvc "github.com/logdrive023/vanaaki/backend/internal/domains/comunicacao/service"
 	contactl "github.com/logdrive023/vanaaki/backend/internal/domains/conta/controller"
 	contahttp "github.com/logdrive023/vanaaki/backend/internal/domains/conta/http"
 	contasvc "github.com/logdrive023/vanaaki/backend/internal/domains/conta/service"
 	demohttp "github.com/logdrive023/vanaaki/backend/internal/domains/demo/http"
 	demosvc "github.com/logdrive023/vanaaki/backend/internal/domains/demo/service"
+	documentoshttp "github.com/logdrive023/vanaaki/backend/internal/domains/documentos/http"
+	documentossvc "github.com/logdrive023/vanaaki/backend/internal/domains/documentos/service"
 	escolactl "github.com/logdrive023/vanaaki/backend/internal/domains/escola/controller"
 	escolahttp "github.com/logdrive023/vanaaki/backend/internal/domains/escola/http"
 	escolasvc "github.com/logdrive023/vanaaki/backend/internal/domains/escola/service"
@@ -27,6 +29,8 @@ import (
 	financeirosvc "github.com/logdrive023/vanaaki/backend/internal/domains/financeiro/service"
 	gamificacaohttp "github.com/logdrive023/vanaaki/backend/internal/domains/gamificacao/http"
 	gamificacaosvc "github.com/logdrive023/vanaaki/backend/internal/domains/gamificacao/service"
+	privacidadehttp "github.com/logdrive023/vanaaki/backend/internal/domains/privacidade/http"
+	privacidadesvc "github.com/logdrive023/vanaaki/backend/internal/domains/privacidade/service"
 	synchttp "github.com/logdrive023/vanaaki/backend/internal/domains/sincronizacao/http"
 	syncsvc "github.com/logdrive023/vanaaki/backend/internal/domains/sincronizacao/service"
 	vanctl "github.com/logdrive023/vanaaki/backend/internal/domains/van/controller"
@@ -51,7 +55,9 @@ type Container struct {
 	Demo    *demosvc.Service
 	// PL 1240/2026: histórico dos trajetos e link de fiscalização
 	Conformidade *conformidadesvc.Service
-	Repo         *repositorio.Repo
+	// documentos do condutor e do veículo (avisos de vencimento)
+	Documentos documentossvc.Service
+	Repo       *repositorio.Repo
 
 	FiscalRouter *conformidadehttp.Router
 
@@ -73,15 +79,19 @@ func New(cfg config.Config, db *sql.DB) *Container {
 	van := vansvc.New(repo, av, tx, viagens)
 	demo := demosvc.New(repo, tx)
 	conformidade := conformidadesvc.New(repo)
+	documentos := documentossvc.New(repo, av, tx)
+	sync := syncsvc.New(repo, tx)
 	fiscal := conformidadehttp.NewRouter(conformidadectl.New(conformidade))
 
 	return &Container{
-		Cfg: cfg, Hub: hub, Tokens: tokens, Conta: conta, Viagens: viagens, Demo: demo, Conformidade: conformidade, FiscalRouter: fiscal, Repo: repo,
+		Cfg: cfg, Hub: hub, Tokens: tokens, Conta: conta, Viagens: viagens, Demo: demo, Conformidade: conformidade, Documentos: documentos, FiscalRouter: fiscal, Repo: repo,
 		ContaRouter: contahttp.NewRouter(contactl.New(conta)),
 		DemoRouter:  demohttp.NewRouter(demo),
 		Protegidas: []Registravel{
 			contahttp.NewRouter(contactl.New(conta)),
-			synchttp.NewRouter(syncsvc.New(repo, tx), hub, cfg.Nominatim),
+			synchttp.NewRouter(sync, hub, cfg.Nominatim),
+			documentoshttp.NewRouter(documentos),
+			privacidadehttp.NewRouter(privacidadesvc.New(repo, av, sync)),
 			viagemhttp.NewRouter(viagemctl.New(viagens)),
 			vanhttp.NewRouter(vanctl.New(van)),
 			escolahttp.NewRouter(escolactl.New(escolasvc.New(repo, av, tx))),
