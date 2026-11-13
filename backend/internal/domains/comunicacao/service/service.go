@@ -19,6 +19,9 @@ type Service interface {
 	Enviar(ctx context.Context, e models.Escopo, alunoID, texto string) error
 	Ler(ctx context.Context, e models.Escopo, alunoID string) error
 	LerNotificacoes(ctx context.Context, e models.Escopo) error
+	// recados entre o tio e a escola
+	EnviarRecado(ctx context.Context, e models.Escopo, vanID, escolaID, texto string) error
+	LerRecados(ctx context.Context, e models.Escopo, vanID, escolaID string) error
 }
 
 type service struct {
@@ -112,4 +115,75 @@ func firstOr(l []string) string {
 		return l[0]
 	}
 	return ""
+}
+
+// ---------------- recados tio ↔ escola ----------------
+
+// conversaRecado confere quem está falando: o tio (com uma escola que ele atende) ou a escola (com uma van dela).
+func (s *service) conversaRecado(ctx context.Context, e models.Escopo, vanID, escolaID string) (de string, van models.Van, escola models.Escola, err error) {
+	switch e.Usuario.Perfil {
+	case models.PerfilMotorista:
+		if len(e.VanIDs) == 0 {
+			return "", van, escola, core.ErrProibido
+		}
+		vanID, de = e.VanIDs[0], "motorista"
+	case models.PerfilEscola:
+		escolaID, de = e.EscolaID, "escola"
+	default:
+		return "", van, escola, core.ErrProibido
+	}
+	if van, err = s.repo.Van(ctx, vanID); err != nil {
+		return "", van, escola, err
+	}
+	if escola, err = s.repo.Escola(ctx, escolaID); err != nil {
+		return "", van, escola, err
+	}
+	if !models.Contem(van.EscolaIDs, escolaID) {
+		return "", van, escola, core.Invalido("Esta van não atende esta escola.")
+	}
+	return de, van, escola, nil
+}
+
+func (s *service) EnviarRecado(ctx context.Context, e models.Escopo, vanID, escolaID, texto string) error {
+	t := strings.TrimSpace(texto)
+	if t == "" {
+		return core.Invalido("Escreva o recado.")
+	}
+	if utf8.RuneCountInString(t) > 600 {
+		return core.Invalido("Recado muito grande.")
+	}
+	de, van, escola, err := s.conversaRecado(ctx, e, vanID, escolaID)
+	if err != nil {
+		return err
+	}
+	if err := s.repo.InserirRecado(ctx, models.Recado{ID: uuid.NewString(), VanID: van.ID, EscolaID: escola.ID, De: de, Texto: t, CriadoEm: models.AgoraIso()}); err != nil {
+		return err
+	}
+	resumo := t
+	if utf8.RuneCountInString(resumo) > 90 {
+		resumo = string([]rune(resumo)[:90]) + "…"
+	}
+	if de == "motorista" {
+		_ = s.av.Escola(ctx, escola.ID, "💬", "Recado de "+van.Motorista, resumo)
+	} else {
+		_ = s.av.Motorista(ctx, van.ID, "🏫", "Recado de "+escola.Nome, resumo)
+	}
+	s.tx.Van(ctx, van.ID)
+	return nil
+}
+
+func (s *service) LerRecados(ctx context.Context, e models.Escopo, vanID, escolaID string) error {
+	de, van, escola, err := s.conversaRecado(ctx, e, vanID, escolaID)
+	if err != nil {
+		return err
+	}
+	outro := "escola"
+	if de == "escola" {
+		outro = "motorista"
+	}
+	if err := s.repo.LerRecados(ctx, van.ID, escola.ID, outro); err != nil {
+		return err
+	}
+	s.tx.Van(ctx, van.ID)
+	return nil
 }

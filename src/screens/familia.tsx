@@ -51,31 +51,37 @@ const paradas = (n: number) => `${n} parada${n > 1 ? 's' : ''}`;
 /** 'Falta 1 parada' / 'Faltam 3 paradas' */
 const faltam = (n: number, minuscula = false) => { const t = `${n > 1 ? 'Faltam' : 'Falta'} ${paradas(n)}`; return minuscula ? t[0].toLowerCase() + t.slice(1) : t; };
 
-/** Texto do status, igual para pais e aluno (respeitando a privacidade). */
-export function textoStatus(v: VisaoFamilia, a: Aluno, viagem: Viagem | undefined, escola: string, plano: Plano, jeitoAluno = false): { ic: NomeIcone; titulo: string; sub: string } {
+/**
+ * Texto do status, igual para pais e aluno (respeitando a privacidade).
+ * A previsão vem do MOVIMENTO REAL da van (velocidade medida pelo GPS hoje), e o texto começa pela
+ * hora de chegada: é o que a família quer saber ("chega por volta de 07:09").
+ * `chegada` = hora prevista para o próximo acontecimento desta família (para o número grande do cartão).
+ */
+export function textoStatus(v: VisaoFamilia, a: Aluno, viagem: Viagem | undefined, escola: string, plano: Plano, jeitoAluno = false): { ic: NomeIcone; titulo: string; sub: string; chegada?: string; rotuloChegada?: string } {
   const n = jeitoAluno ? 'você' : primeiroNome(a.nome);
   const N = jeitoAluno ? 'Você' : primeiroNome(a.nome);
-  const prev = `previsão ~${horaMais(v.eta ?? 0)}`;
+  const as = horaMais(v.eta ?? 0);
+  const real = (viagem?.velKmh ?? 0) > 0 ? ' · pelo trânsito de agora' : '';
   switch (v.fase) {
     case 'sem_viagem':
       if (plano === 'so_volta') return { ic: 'escola', titulo: jeitoAluno ? 'Hoje seus pais te levam' : `Hoje você leva ${n}`, sub: 'O tio traz na volta. Avisamos quando ele sair da escola.' };
       if (plano === 'so_ida') return { ic: 'van', titulo: 'Hoje só a ida de van', sub: jeitoAluno ? 'Seus pais te buscam na escola.' : `Você busca ${n} na escola.` };
       if (plano === 'nao_vai') return { ic: 'casa', titulo: jeitoAluno ? 'Hoje você não vai de van' : `${N} não vai de van hoje`, sub: 'O tio já sabe e a rota foi ajustada.' };
-      return { ic: 'van', titulo: 'A van ainda não saiu', sub: `Turno da ${NOME_TURNO[a.turno].toLowerCase()} · você recebe um aviso quando o tio iniciar a rota.` };
+      return { ic: 'van', titulo: 'A van ainda não saiu', sub: `Turno da ${NOME_TURNO[a.turno].toLowerCase()} · você recebe um aviso quando o tio sair.` };
     case 'nao_vai': return { ic: 'casa', titulo: viagem?.tipo === 'volta' ? (jeitoAluno ? 'Hoje seus pais te buscam' : `Você busca ${n} hoje`) : (jeitoAluno ? 'Hoje seus pais te levam' : `Você leva ${n} hoje`), sub: 'Combinado com o tio: a rota já foi ajustada.' };
     case 'ausente': return { ic: 'alerta', titulo: 'O tio passou e não encontrou', sub: `Às ${hora(v.horaFase)}` };
     case 'aguardando': return viagem?.tipo === 'volta'
-      ? { ic: 'van', titulo: `${N} está na van`, sub: `${v.paradasAntes ? `${faltam(v.paradasAntes)} antes ${jeitoAluno ? 'da sua casa' : 'da sua casa'}` : 'Você é o próximo'} · ${prev}` }
-      : { ic: 'escudo', titulo: 'O tio está buscando outros alunos', sub: `${v.paradasAntes ? `${faltam(v.paradasAntes)} antes ${jeitoAluno ? 'de você' : 'da sua casa'}` : 'Você é o próximo'} · ${prev}` };
-    case 'proximo': return { ic: 'sino', titulo: jeitoAluno ? 'Você é o próximo!' : `${N} é o próximo!`, sub: `A van chega ${viagem?.tipo === 'volta' ? 'na sua casa' : 'no portão'} em ~${v.eta} min` };
+      ? { ic: 'van', titulo: jeitoAluno ? 'Você está na van, indo para casa' : `${N} está na van, indo para casa`, sub: `${v.paradasAntes ? `${faltam(v.paradasAntes)} antes${real}` : `Você é o próximo${real}`}`, chegada: as, rotuloChegada: jeitoAluno ? 'você chega em casa' : 'chega em casa' }
+      : { ic: 'escudo', titulo: 'O tio está buscando outros alunos', sub: `${v.paradasAntes ? `${faltam(v.paradasAntes)} antes ${jeitoAluno ? 'de você' : 'da sua casa'}` : 'Você é o próximo'}${real}`, chegada: as, rotuloChegada: jeitoAluno ? 'a van chega para você' : 'a van chega na sua casa' };
+    case 'proximo': return { ic: 'sino', titulo: jeitoAluno ? 'Você é o próximo!' : `${N} é o próximo!`, sub: `A van chega ${viagem?.tipo === 'volta' ? 'na sua casa' : 'no portão'} em ~${v.eta} min${real}`, chegada: as, rotuloChegada: viagem?.tipo === 'volta' ? 'chega em casa' : 'chega no portão' };
     case 'na_porta': return viagem?.tipo === 'volta'
       ? { ic: 'pin', titulo: 'A van chegou na sua casa!', sub: 'Hora de descer' }
       : { ic: 'pin', titulo: 'O tio chegou no portão!', sub: 'Pode embarcar' };
-    case 'a_bordo': return { ic: 'van', titulo: jeitoAluno ? 'Você está a bordo' : `${N} está a bordo`, sub: `${faltam(v.paradasAntes)} até ${escola} · ${prev}` };
-    case 'a_bordo_final': return { ic: 'escola', titulo: `A caminho de ${escola}`, sub: `Chega em ~${v.eta} min` };
+    case 'a_bordo': return { ic: 'van', titulo: jeitoAluno ? 'Você está a bordo' : `${N} está a bordo`, sub: `${jeitoAluno ? 'Vamos chegar' : 'Chega'} em ${escola} por volta de ${as} · ${faltam(v.paradasAntes, true)}${real}`, chegada: as, rotuloChegada: jeitoAluno ? 'vamos chegar na escola' : 'chega na escola' };
+    case 'a_bordo_final': return { ic: 'escola', titulo: jeitoAluno ? `Indo para ${escola}` : `${N} está indo para ${escola}`, sub: `Chega em ~${v.eta} min${real}`, chegada: as, rotuloChegada: jeitoAluno ? 'vamos chegar na escola' : 'chega na escola' };
     case 'chegou_escola': return { ic: 'escola', titulo: jeitoAluno ? `Você chegou em ${escola}` : `${N} chegou em ${escola}`, sub: `Às ${hora(v.horaFase)}` };
-    case 'volta_outra_escola': return { ic: 'escudo', titulo: 'O tio está buscando em outra escola', sub: `Depois vem para ${escola} · ${faltam(v.paradasAntes, true)} · ${prev}` };
-    case 'volta_indo_escola': return { ic: 'escola', titulo: `O tio está indo para ${escola}`, sub: `Chega em ~${v.eta} min para buscar ${n}` };
+    case 'volta_outra_escola': return { ic: 'escudo', titulo: 'O tio está buscando em outra escola', sub: `Depois vem para ${escola} · ${faltam(v.paradasAntes, true)}${real}`, chegada: as, rotuloChegada: `o tio chega em ${escola}` };
+    case 'volta_indo_escola': return { ic: 'escola', titulo: `O tio está indo para ${escola}`, sub: `Chega em ~${v.eta} min para buscar ${n}${real}`, chegada: as, rotuloChegada: `o tio chega na escola` };
     case 'volta_na_escola': return { ic: 'pin', titulo: `O tio chegou em ${escola}`, sub: jeitoAluno ? 'Pode ir para a van' : `${N} já pode embarcar` };
     case 'entregue': return { ic: 'casa', titulo: jeitoAluno ? 'Você chegou em casa' : `${N} chegou em casa`, sub: `Às ${hora(v.horaFase)}` };
   }

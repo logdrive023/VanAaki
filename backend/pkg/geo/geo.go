@@ -44,11 +44,22 @@ func CompReal(pts []P) float64 {
 
 // EtaMin = minutos para percorrer o caminho com `paradas` paradas no meio.
 func EtaMin(pts []P, paradas int, pelasRuas bool) int {
+	return EtaMinVel(pts, paradas, pelasRuas, 0)
+}
+
+// EtaMinVel = EtaMin com a velocidade MEDIDA da van hoje (km/h, já contando paradas e trânsito).
+// velKmh <= 0 usa a média padrão de van escolar na cidade.
+func EtaMinVel(pts []P, paradas int, pelasRuas bool, velKmh float64) int {
 	m := CompCaminho(pts)
 	if pelasRuas {
 		m = CompReal(pts)
 	}
-	v := int(math.Round(m/1000/VelMediaKmh*60 + float64(paradas)*MinPorParada))
+	vel, porParada := VelMediaKmh, MinPorParada
+	if velKmh > 0 {
+		// a média medida já inclui o tempo parado: conta só meio minuto extra por parada
+		vel, porParada = math.Max(8, math.Min(60, velKmh)), MinPorParada/2
+	}
+	v := int(math.Round(m/1000/vel*60 + float64(paradas)*porParada))
 	if v < 1 {
 		return 1
 	}

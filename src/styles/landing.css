@@ -260,6 +260,67 @@ h1, h2, h3 { font-family: var(--display); }
 .rodape .logo { color: #fff; }
 .rodape-linha { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
 
+/* antes × depois */
+.contraste { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.ct-col { border-radius: 24px; padding: 26px; border: 2px solid var(--tinta); }
+.ct-col h3 { display: flex; align-items: center; gap: 10px; font-size: 24px; margin-bottom: 16px; }
+.ct-col h3 span { font-size: 28px; }
+.ct-col ul { list-style: none; display: grid; gap: 12px; }
+.ct-col li { position: relative; padding-left: 30px; font-size: 15px; line-height: 1.45; }
+.ct-col li::before { position: absolute; left: 0; top: 0; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 800; }
+.ct-col.antes { background: var(--papel); color: var(--texto-2); }
+.ct-col.antes li::before { content: "✕"; background: var(--vermelho-suave); color: var(--vermelho-texto); }
+.ct-col.depois { background: var(--amarelo); box-shadow: 6px 6px 0 var(--tinta); }
+.ct-col.depois li { font-weight: 550; }
+.ct-col.depois li::before { content: "✓"; background: var(--tinta); color: var(--amarelo); }
+
+/* calculadora */
+.calc-grade { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+.calc-grade .titulo-secao { margin-bottom: 0; }
+.calc-entradas { display: grid; gap: 22px; margin-top: 30px; }
+.calc-entradas label { display: grid; gap: 10px; }
+.calc-entradas span { display: flex; justify-content: space-between; font-weight: 600; }
+.calc-entradas b { font-family: var(--display); font-size: 22px; }
+.calc-entradas input[type=range] { width: 100%; accent-color: var(--tinta); height: 28px; }
+.calc-resultado { background: var(--tinta); color: #fff; border-radius: 26px; padding: 26px; display: grid; gap: 14px; box-shadow: 8px 8px 0 var(--amarelo); }
+.cr-linha { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, .1); color: #C9CCD2; font-size: 15px; }
+.cr-linha strong { font-family: var(--display); font-size: 24px; color: #fff; white-space: nowrap; }
+.cr-linha strong small { font-family: var(--fonte); font-size: 13px; color: #A9ADB6; }
+.cr-linha.grande strong { font-size: 34px; color: var(--amarelo); }
+.cr-destaque { background: var(--amarelo); color: var(--tinta); border-radius: 14px; padding: 14px 16px; font-size: 15px; line-height: 1.45; }
+.cr-destaque b { font-family: var(--display); font-size: 20px; }
+.cr-nota { color: #8E929B; font-size: 12px; }
+.calc-resultado .btn-escuro { background: var(--amarelo); color: var(--tinta); box-shadow: 0 3px 0 var(--amarelo-forte); }
+
+/* PL: etapas e urgência */
+.pl-etapas { list-style: none; display: flex; align-items: flex-start; gap: 4px; margin-top: 26px; }
+.pl-etapas li { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; font-size: 11px; color: #8E929B; position: relative; }
+.pl-etapas li:not(:last-child)::after { content: ""; position: absolute; top: 15px; left: calc(50% + 18px); right: calc(-50% + 18px); height: 2px; background: rgba(255, 255, 255, .15); }
+.pl-etapas b { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-family: var(--display); font-size: 14px; border: 2px solid rgba(255, 255, 255, .25); color: #fff; }
+.pl-etapas li.feito b { background: #fff; color: var(--tinta); border-color: #fff; }
+.pl-etapas li.agora b { background: var(--amarelo); color: var(--tinta); border-color: var(--amarelo); box-shadow: 0 0 0 5px rgba(255, 194, 14, .25); }
+.pl-etapas li.agora span { color: var(--amarelo); font-weight: 650; }
+.pl-etapas li.prazo b { width: auto; padding: 0 8px; border-radius: 99px; border-color: var(--amarelo); color: var(--amarelo); font-size: 12px; }
+.pl-texto .pl-urgencia { color: #fff; font-weight: 550; font-size: 15px; margin-top: 18px; }
+
+/* risco zero */
+.risco-zero { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 26px; margin-top: 30px; font-weight: 600; font-size: 14px; }
+.risco-zero span { display: inline-flex; align-items: center; gap: 8px; }
+.risco-zero .lucide { width: 18px; height: 18px; padding: 2px; border-radius: 50%; background: var(--verde); color: #fff; }
+
+@media (max-width: 1000px) {
+  .contraste, .calc-grade { grid-template-columns: 1fr; gap: 28px; }
+  .ct-col.depois { box-shadow: 4px 4px 0 var(--tinta); }
+}
+@media (max-width: 600px) {
+  .ct-col { padding: 20px; }
+  .ct-col h3 { font-size: 20px; }
+  .calc-resultado { padding: 20px; box-shadow: 5px 5px 0 var(--amarelo); }
+  .cr-linha.grande strong { font-size: 28px; }
+  .risco-zero { justify-content: flex-start; flex-direction: column; }
+  .pl-etapas li span { font-size: 10px; }
+}
+
 /* barra fixa no celular */
 .barra-cta { display: none; }
 

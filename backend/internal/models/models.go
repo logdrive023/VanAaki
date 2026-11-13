@@ -128,6 +128,10 @@ type ConfigVan struct {
 	ConfirmarManual bool `json:"confirmarManual,omitempty"`
 	// padrão: conduta, pontos e prêmios ligados. true = esconde tudo (é um extra)
 	SemGamificacao bool `json:"semGamificacao,omitempty"`
+	// economia (só informativo): consumo do veículo, combustível e preço que o tio paga
+	ConsumoKmL  float64 `json:"consumoKmL,omitempty"`  // km por litro (padrão 8)
+	Combustivel string  `json:"combustivel,omitempty"` // gasolina | diesel | etanol | gnv
+	PrecoLitro  int     `json:"precoLitro,omitempty"`  // centavos por litro
 }
 
 // Normalizar põe os valores padrão no que não foi configurado.
@@ -143,6 +147,15 @@ func (c ConfigVan) Normalizar() ConfigVan {
 	}
 	if c.AvisoParadas < 1 || c.AvisoParadas > 3 {
 		c.AvisoParadas = 1
+	}
+	if c.ConsumoKmL <= 0 || c.ConsumoKmL > 40 {
+		c.ConsumoKmL = 8
+	}
+	if c.Combustivel == "" {
+		c.Combustivel = "gasolina"
+	}
+	if c.PrecoLitro <= 0 || c.PrecoLitro > 3000 {
+		c.PrecoLitro = 619 // referência para começar; o tio coloca o preço que paga
 	}
 	return c
 }
@@ -248,6 +261,8 @@ type Viagem struct {
 	AtualizadoEm string   `json:"atualizadoEm"`
 	// horário do último ponto de GPS aplicado (o replay da fila offline não volta no tempo)
 	UltimaPosEm string `json:"ultimaPosEm,omitempty"`
+	// velocidade média real da van nesta viagem (km/h, média móvel do GPS com paradas e trânsito)
+	VelKmh float64 `json:"velKmh,omitempty"`
 
 	// só nas cópias enviadas para família/escola (calculado no servidor, respeitando a privacidade)
 	Visoes       map[string]VisaoFamilia `json:"visoes,omitempty"`
@@ -339,6 +354,17 @@ type Mensagem struct {
 	ID       string `json:"id"`
 	AlunoID  string `json:"alunoId"`
 	De       string `json:"de"`
+	Texto    string `json:"texto"`
+	CriadoEm string `json:"criadoEm"`
+	Lida     bool   `json:"lida"`
+}
+
+// Recado = mensagem entre o tio da van e a escola (uma conversa por van + escola).
+type Recado struct {
+	ID       string `json:"id"`
+	VanID    string `json:"vanId"`
+	EscolaID string `json:"escolaId"`
+	De       string `json:"de"` // motorista | escola
 	Texto    string `json:"texto"`
 	CriadoEm string `json:"criadoEm"`
 	Lida     bool   `json:"lida"`

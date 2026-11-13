@@ -9,12 +9,12 @@ import type { DadosVan } from './dados';
  * a distância e o horário (hora de sair, chegada em cada escola). Usado pela Agenda, pelo Painel e pela Rota.
  * `presencaDe` = combinado do aluno naquele dia (sem combinado = vai e volta).
  */
-export function planejarTrecho(d: DadosVan, turno: Turno, tipo: TipoViagem, presencaDe: (alunoId: string) => Presenca | undefined, agora = new Date()) {
+export function planejarTrecho(d: DadosVan, turno: Turno, tipo: TipoViagem, presencaDe: (alunoId: string) => Presenca | undefined, agora = new Date(), forcarOtimizado = false) {
   const van = d.van!;
   const cfg = van.turnos.find((t) => t.turno === turno);
   const base = d.ativos.filter((a) => a.turno === turno && !!cfg?.escolaIds.includes(a.escolaId));
   const rf = van.rotasFixas?.[chaveRotaFixa(turno, tipo)];
-  const fixa = !!rf?.ativa;
+  const fixa = !!rf?.ativa && !forcarOtimizado;
   const doTurno: Aluno[] = fixa ? ordenarPorFixa(base, rf!.ordem) : base;
   const vao = doTurno.filter((a) => vaiNoTrecho(presencaDe(a.id), tipo));
   const fora = doTurno.filter((a) => !vao.includes(a));

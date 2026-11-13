@@ -38,10 +38,34 @@ func (rt *Router) lerNotificacoes(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+type recadoReq struct {
+	VanID    string `json:"vanId"`
+	EscolaID string `json:"escolaId"`
+	Texto    string `json:"texto"`
+}
+
+func (rt *Router) enviarRecado(w http.ResponseWriter, r *http.Request) {
+	httpx.Acao(w, r, func(ctx context.Context, e models.Escopo, q recadoReq) (any, error) {
+		return nil, rt.s.EnviarRecado(ctx, e, q.VanID, q.EscolaID, q.Texto)
+	})
+}
+
+func (rt *Router) lerRecados(w http.ResponseWriter, r *http.Request) {
+	httpx.Acao(w, r, func(ctx context.Context, e models.Escopo, q recadoReq) (any, error) {
+		return nil, rt.s.LerRecados(ctx, e, q.VanID, q.EscolaID)
+	})
+}
+
 func (rt *Router) Register(api *mux.Router) {
 	api.HandleFunc("/notificacoes/lidas", rt.lerNotificacoes).Methods("POST")
 	conv := api.NewRoute().Subrouter()
 	conv.Use(middleware.Perfis(models.PerfilMotorista, models.PerfilPais))
 	conv.HandleFunc("/mensagens", rt.enviar).Methods("POST")
 	conv.HandleFunc("/mensagens/lidas", rt.ler).Methods("POST")
+
+	// recados tio ↔ escola
+	recados := api.NewRoute().Subrouter()
+	recados.Use(middleware.Perfis(models.PerfilMotorista, models.PerfilEscola))
+	recados.HandleFunc("/recados", rt.enviarRecado).Methods("POST")
+	recados.HandleFunc("/recados/lidos", rt.lerRecados).Methods("POST")
 }

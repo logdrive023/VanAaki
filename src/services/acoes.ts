@@ -40,6 +40,11 @@ export const salvarRotaFixa = (_vanId: string, turno: Turno, tipo: TipoViagem, m
 
 // ---------------- mensagens ----------------
 
+/** Recado para a escola (tio) ou para a van (escola). Vai pela fila: sem sinal, sai quando voltar. */
+export const enviarRecado = (vanId: string, escolaId: string, de: 'motorista' | 'escola', texto: string) =>
+  (texto.trim() ? enfileirar({ tipo: 'recado', caminho: '/recados', metodo: 'POST', corpo: { vanId, escolaId, texto: texto.trim(), de } }).then(() => undefined) : Promise.resolve());
+export const lerRecados = (vanId: string, escolaId: string) => post('/recados/lidos', { vanId, escolaId });
+
 export const enviarMensagem = (alunoId: string, de: 'pais' | 'motorista', texto: string) =>
   (texto.trim() ? enfileirar({ tipo: 'mensagem', caminho: '/mensagens', metodo: 'POST', corpo: { alunoId, texto: texto.trim(), de } }).then(() => undefined) : Promise.resolve());
 export const lerMensagens = (alunoId: string, _quemLe?: 'pais' | 'motorista') => post('/mensagens/lidas', { alunoId });

@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useSyncExternalStore } from 'react';
 import { db } from '../db/db';
-import type { LatLng, Mensagem, OpFila, Parada, Presenca, TipoOp, Viagem } from '../db/types';
+import type { LatLng, Mensagem, OpFila, Parada, Presenca, Recado, TipoOp, Viagem } from '../db/types';
 import { distM } from '../lib/geo';
 import { agoraIso, uid } from '../lib/util';
 import { api, ErroApi } from './cliente';
@@ -35,7 +35,7 @@ export function useFila() {
 // ---------------- enfileirar ----------------
 
 /** Tudo que o efeito local lê ou escreve (numa transação só: ou aplica tudo, ou nada). */
-const tabelas = () => [db.fila, db.viagens, db.presencas, db.pagamentos, db.mensagens, db.alunos, db.escolas, db.vans, db.config];
+const tabelas = () => [db.fila, db.viagens, db.presencas, db.pagamentos, db.mensagens, db.recados, db.alunos, db.escolas, db.vans, db.config];
 
 export async function enfileirar(op: Omit<OpFila, 'id' | 'criadoEm' | 'tentativas'> & { id?: string }) {
   const o: OpFila = { ...op, id: op.id ?? uid(), criadoEm: agoraIso(), tentativas: 0 };
@@ -227,6 +227,12 @@ async function aplicarLocal(o: OpFila) {
       const p = await db.pagamentos.get(id);
       if (!p || p.status === 'pago') return;
       await db.pagamentos.put(c.porPais ? { ...p, informadoEm: p.informadoEm ?? o.criadoEm, metodo: 'pix' } : { ...p, status: 'pago', pagoEm: o.criadoEm, metodo: c.metodo as 'pix' | 'dinheiro' });
+      return;
+    }
+    case 'recado': {
+      if (await db.recados.get(o.id)) return;
+      const r: Recado = { id: o.id, vanId: c.vanId as string, escolaId: c.escolaId as string, de: c.de as Recado['de'], texto: c.texto as string, criadoEm: o.criadoEm, lida: true, enviando: true };
+      await db.recados.put(r);
       return;
     }
     case 'mensagem': {

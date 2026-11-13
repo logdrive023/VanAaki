@@ -263,6 +263,14 @@ func (s *Service) Restaurar(ctx context.Context) error {
 	} {
 		_ = s.repo.InserirMensagem(ctx, m)
 	}
+	for i, r := range []models.Recado{
+		{De: "escola", Texto: "Bom dia, Carlos! Sexta a saída da manhã é às 11h por causa da feira de ciências.", CriadoEm: ontem + "T11:02:00.000Z", Lida: true},
+		{De: "motorista", Texto: "Bom dia! Combinado, estarei na portaria às 11h.", CriadoEm: ontem + "T11:15:00.000Z", Lida: true},
+		{De: "escola", Texto: "O Pedro vai sair mais cedo hoje, a mãe vem buscar.", CriadoEm: models.AgoraIso()},
+	} {
+		r.ID, r.VanID, r.EscolaID = fmt.Sprintf("rec-demo-%d", i), VanPrincipal, SM
+		_ = s.repo.InserirRecado(ctx, r)
+	}
 	for _, x := range []models.Notificacao{
 		{Para: "motorista", VanID: VanPrincipal, Icone: "🙋", Titulo: "Gabriel não vai hoje", Texto: "Motivo: Está com febre"},
 		{Para: "motorista", VanID: VanPrincipal, Icone: "🎁", Titulo: "Pedido de prêmio", Texto: "Pedro quer \"Sentar na janela por 1 semana\" (30 ⭐)"},

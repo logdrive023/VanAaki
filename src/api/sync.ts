@@ -1,14 +1,14 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useState } from 'react';
 import { db } from '../db/db';
-import type { Aluno, Escola, Eu, EventoPontos, LatLng, Mensagem, Notificacao, Pagamento, Presenca, Recompensa, Resgate, Van, Viagem } from '../db/types';
+import type { Aluno, Escola, Eu, EventoPontos, LatLng, Mensagem, Notificacao, Pagamento, Presenca, Recado, Recompensa, Resgate, Van, Viagem } from '../db/types';
 import { api, API_URL, lerSessao } from './cliente';
 import { reaplicar } from './fila';
 
 interface Pacote {
   eu: Eu; hoje: string;
   escolas: Escola[]; vans: Van[]; alunos: Aluno[]; pagamentos: Pagamento[]; presencas: Presenca[]; viagens: Viagem[];
-  notificacoes: Notificacao[]; mensagens: Mensagem[]; pontos: EventoPontos[]; recompensas: Recompensa[]; resgates: Resgate[];
+  notificacoes: Notificacao[]; mensagens: Mensagem[]; recados?: Recado[]; pontos: EventoPontos[]; recompensas: Recompensa[]; resgates: Resgate[];
 }
 
 /** Baixa tudo o que este perfil pode ver e troca a cópia local (numa transação: a tela redesenha uma vez). */
@@ -24,6 +24,7 @@ export async function sincronizar() {
     await trocar(db.viagens, p.viagens);
     await trocar(db.notificacoes, p.notificacoes);
     await trocar(db.mensagens, p.mensagens);
+    await trocar(db.recados, p.recados ?? []);
     await trocar(db.pontos, p.pontos);
     await trocar(db.recompensas, p.recompensas);
     await trocar(db.resgates, p.resgates);

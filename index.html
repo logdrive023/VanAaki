@@ -141,6 +141,39 @@
       </div>
     </section>
 
+
+    <!-- ================= ANTES × DEPOIS (contraste) ================= -->
+    <section class="secao fundo-branco" id="antes">
+      <div class="container">
+        <div class="titulo-secao centro revelar">
+          <span class="sobre">Antes × Depois</span>
+          <h2>O seu dia hoje. E com o VanAaki.</h2>
+        </div>
+        <div class="contraste">
+          <div class="ct-col antes revelar">
+            <h3><span>😮‍💨</span>Hoje</h3>
+            <ul>
+              <li>Dezenas de "tio, já saiu?" no WhatsApp toda manhã</li>
+              <li>Mensalidade anotada no caderno e cobrança sem graça</li>
+              <li>Buzinar no portão e a criança ainda escovando o dente</li>
+              <li>"Hoje ele não vai" avisado quando você já está na porta</li>
+              <li>GPS obrigatório chegando e sem saber por onde começar</li>
+            </ul>
+          </div>
+          <div class="ct-col depois revelar">
+            <h3><span>😎</span>Com o VanAaki</h3>
+            <ul>
+              <li>As famílias recebem o aviso sozinhas: você só dirige</li>
+              <li>Pix com QR Code e o valor certo; você vê quem pagou</li>
+              <li>"Faltam 2 paradas": a criança já espera no portão</li>
+              <li>Combinado marcado na agenda, a rota já se ajusta</li>
+              <li>Trajetos guardados e link de fiscalização prontos</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ================= RECURSOS (bento) ================= -->
     <section class="secao fundo-branco" id="recursos">
       <div class="container">
@@ -187,6 +220,15 @@
           <h2>O GPS vai ser obrigatório. Você já está pronto.</h2>
           <p>O projeto, em análise na Câmara dos Deputados, exige rastreamento em tempo real com acesso para pais, escola e poder público, e o registro dos trajetos por pelo menos 90 dias. Sem isso, a van não tira nem renova a autorização.</p>
           <p class="pl-nota">Quem já trabalha teria 180 dias para se adequar depois de publicada a lei. O texto ainda pode mudar até a votação.</p>
+
+          <ol class="pl-etapas">
+            <li class="feito"><b>1</b><span>Apresentado na Câmara</span></li>
+            <li class="agora"><b>2</b><span>Comissões (agora)</span></li>
+            <li><b>3</b><span>Senado</span></li>
+            <li><b>4</b><span>Sanção</span></li>
+            <li class="prazo"><b>180</b><span>dias para adequar</span></li>
+          </ol>
+          <p class="pl-urgencia">Depois do prazo, a van sem rastreamento não renova a autorização. Quem já usa um sistema chega lá tranquilo, com meses de trajetos guardados.</p>
           <a href="./app.html#/motorista/demo" class="btn btn-primario">Ver a tela de fiscalização <i data-lucide="arrow-right"></i></a>
         </div>
         <div class="pl-tabela revelar">
@@ -198,6 +240,31 @@
           <div class="pl-linha"><strong>Trajetos por 90 dias</strong><span><i data-lucide="check"></i>Cada posição com data e hora, por mais de um ano</span></div>
           <div class="pl-linha"><strong>Funcionamento contínuo</strong><span><i data-lucide="check"></i>Sem internet, guarda e envia depois</span></div>
           <div class="pl-linha"><strong>Relatórios</strong><span><i data-lucide="check"></i>Planilha e relatório para imprimir</span></div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ================= CALCULADORA ================= -->
+    <section class="secao" id="calculadora">
+      <div class="container calc-grade">
+        <div class="titulo-secao revelar">
+          <span class="sobre">Faça a conta</span>
+          <h2>Quanto o VanAaki vale para a sua van?</h2>
+          <p>Mexa nos números. É uma estimativa simples, feita aqui no seu celular: nada é enviado.</p>
+          <div class="calc-entradas">
+            <label><span>Alunos na van <b id="c-alunos-v">18</b></span><input id="c-alunos" type="range" min="4" max="40" value="18"></label>
+            <label><span>Mensalidade média <b id="c-mens-v">R$ 420</b></span><input id="c-mens" type="range" min="200" max="900" step="10" value="420"></label>
+          </div>
+        </div>
+        <div class="calc-resultado revelar" aria-live="polite">
+          <div class="cr-linha grande"><span>Passa pela sua van por mês</span><strong id="c-fat">R$ 7.560</strong></div>
+          <div class="cr-linha"><span>O VanAaki custa</span><strong>R$ 49<small>/mês</small></strong></div>
+          <div class="cr-destaque"><b id="c-pct">0,6%</b> do que você fatura. Menos de <b id="c-dias">3 dias</b> de mensalidade de um aluno.</div>
+          <div class="cr-linha"><span>"Já saiu?" que você deixa de responder</span><strong id="c-msg">~380/mês</strong></div>
+          <div class="cr-linha"><span>Tempo de volta para você</span><strong id="c-horas">~3 h/mês</strong></div>
+          <small class="cr-nota">Conta: 1 pergunta por aluno por dia letivo (21 dias), 30 segundos para responder cada uma.</small>
+          <a href="./app.html#/motorista/demo" class="btn btn-escuro btn-bloco btn-grande"><i data-lucide="play"></i>Ver funcionando</a>
         </div>
       </div>
     </section>
@@ -230,6 +297,13 @@
             <ul><li><i data-lucide="check"></i>Portaria: chegadas ao vivo</li><li><i data-lucide="check"></i>Credenciamento das vans</li><li><i data-lucide="check"></i>Confirmação de entrada, se quiser</li></ul>
             <a href="./app.html#/escola/demo" class="btn btn-claro btn-bloco">Ver a portaria</a>
           </div>
+        </div>
+
+        <div class="risco-zero revelar">
+          <span><i data-lucide="check"></i>Grátis para testar</span>
+          <span><i data-lucide="check"></i>Sem cartão de crédito</span>
+          <span><i data-lucide="check"></i>Cancela quando quiser</span>
+          <span><i data-lucide="check"></i>Seus dados são seus: leve tudo em planilha</span>
         </div>
       </div>
     </section>

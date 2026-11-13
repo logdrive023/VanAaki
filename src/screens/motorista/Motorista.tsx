@@ -4,6 +4,8 @@ import Mapa3D from '../../components/Mapa3D';
 import { MenuMais, ShellPainel, type ItemMenu } from '../../components/Shell';
 import { Agenda } from './Agenda';
 import { Configuracoes } from './Configuracoes';
+import { Economia } from './Economia';
+import { ConversasRecados } from '../../components/recados';
 import { planejarTrecho } from './plano';
 import { SeletorPlano } from '../../components/presenca';
 import { Avatar, ir, Kpi, Modal, saudacao, Toggle, useNotificacoes, Vazio } from '../../components/ui';
@@ -25,7 +27,7 @@ export default function Motorista({ aba = 'painel', extra }: { aba?: string; ext
   const vanId = eu?.vanIds[0] ?? '';
   const d = useDadosVan(vanId);
   const pedidos = useLiveQuery(() => db.resgates.where('status').equals('pendente').count()) ?? 0;
-  const msgs = useLiveQuery(() => db.mensagens.filter((m) => m.de === 'pais' && !m.lida).count()) ?? 0;
+  const msgs = useLiveQuery(async () => (await db.mensagens.filter((m) => m.de === 'pais' && !m.lida).count()) + (await db.recados.filter((r) => r.de === 'escola' && !r.lida).count())) ?? 0;
   const [modal, setModal] = useState<'van' | 'turnos' | null>(null);
   if (d.carregando || !d.van) return <div className="carregando"><div className="giro" /></div>;
   const pend = d.pagamentosMes.filter((p) => p.status === 'pendente' && !p.informadoEm).length;
@@ -38,7 +40,8 @@ export default function Motorista({ aba = 'painel', extra }: { aba?: string; ext
     { id: 'rota', ic: 'rota', nome: 'Rota', grupo: 'Dia a dia', badge: d.ativa ? 1 : 0, principal: true },
     { id: 'alunos', ic: 'alunos', nome: 'Alunos', grupo: 'Dia a dia', principal: true },
     { id: 'financeiro', ic: 'financeiro', nome: 'Financeiro', desc: 'Mensalidades e cobranças', grupo: 'Gestão', badge: pend + informados },
-    { id: 'mensagens', ic: 'mensagem', nome: 'Mensagens', desc: 'Conversas com as famílias', grupo: 'Gestão', badge: msgs },
+    { id: 'mensagens', ic: 'mensagem', nome: 'Mensagens', desc: 'Famílias e escolas', grupo: 'Gestão', badge: msgs },
+    { id: 'economia', ic: 'combustivel', nome: 'Economia', desc: 'Combustível, km e se a rota compensa', grupo: 'Gestão' },
     { id: 'conformidade', ic: 'escudo', nome: 'Fiscalização', desc: 'PL 1240: trajetos e relatórios', grupo: 'Gestão' },
     ...(d.gamificacao ? [
       { id: 'conduta', ic: 'estrela', nome: 'Conduta', desc: 'Elogios e ocorrências', grupo: 'Extras' },
@@ -48,8 +51,8 @@ export default function Motorista({ aba = 'painel', extra }: { aba?: string; ext
   ];
   const titulos: Record<string, string> = {
     painel: `${saudacao()}, ${primeiroNome(d.van.motorista.replace(/^(tio|tia)\s+/i, ''))}`, agenda: 'Agenda', mais: 'Mais', configuracoes: 'Configurações', rota: d.ativa ? 'Rota em andamento' : 'Rota do dia', alunos: 'Alunos',
-    financeiro: 'Financeiro', conduta: 'Conduta e ranking', premios: 'Loja de prêmios', mensagens: 'Mensagens dos pais',
-    conformidade: 'Fiscalização e trajetos',
+    financeiro: 'Financeiro', conduta: 'Conduta e ranking', premios: 'Loja de prêmios', mensagens: 'Mensagens',
+    conformidade: 'Fiscalização e trajetos', economia: 'Economia da rota',
   };
   const perfil = (
     <div className="perfil-side">
@@ -72,8 +75,9 @@ export default function Motorista({ aba = 'painel', extra }: { aba?: string; ext
       {aba === 'financeiro' && <Financeiro d={d} />}
       {aba === 'conduta' && d.gamificacao && <Conduta d={d} />}
       {aba === 'premios' && d.gamificacao && <Premios d={d} />}
-      {aba === 'mensagens' && <Mensagens d={d} />}
+      {aba === 'mensagens' && <MensagensTio d={d} />}
       {aba === 'conformidade' && <Conformidade d={d} />}
+      {aba === 'economia' && <Economia d={d} />}
     </ShellPainel>
   );
 }
@@ -89,12 +93,14 @@ function Painel({ d, pedidos, onMinhaVan, onTurnos }: { d: DadosVan; pedidos: nu
   return (
     <>
       {configurado ? <ProximaRota d={d} /> : <PrimeirosPassos d={d} onMinhaVan={onMinhaVan} onTurnos={onTurnos} />}
+      {configurado && (
       <section className="kpis">
         <Kpi ic="alunos" rot="Alunos ativos" num={d.ativos.length} sub={`${d.van!.turnos.filter((t) => t.ativo).length} turno(s) de trabalho`} />
         <Kpi ic="check" rot={`Pagaram ${nomeMes(mesAtual()).toLowerCase()}`} num={<>{pagos.length}<span className="muted">/{d.pagamentosMes.length}</span></>} sub={reais(pagos.reduce((s, p) => s + p.valor, 0))} subCls="verde" />
         <Kpi ic="relogio" rot="Mensalidades em aberto" num={pend.length} sub={`${reais(pend.reduce((s, p) => s + p.valor, 0))} · ${pend.filter(atrasado).length} atrasada(s)`} subCls={pend.some(atrasado) ? 'vermelho' : 'muted'} onClick={() => ir('motorista/financeiro')} />
         <Kpi ic="calendario" rot="Combinados de hoje" num={d.avisos.length} sub={d.avisos.length ? 'mudanças na ida ou na volta' : 'todos vão e voltam'} />
       </section>
+      )}
       <div className="grade-painel">
         <section className="card">
           <div className="card-topo"><h3>Turnos de hoje</h3><button className="btn btn-fantasma btn-sm" onClick={() => ir('motorista/agenda')}><I n="calendario" />Agenda</button></div>
@@ -125,6 +131,28 @@ function Painel({ d, pedidos, onMinhaVan, onTurnos }: { d: DadosVan; pedidos: nu
         </section>
       </div>
     </>
+  );
+}
+
+/** Mensagens do tio: com as famílias (por aluno) e com as escolas (recados da portaria). */
+function MensagensTio({ d }: { d: DadosVan }) {
+  const [qual, setQual] = useState<'familias' | 'escolas'>('familias');
+  const naoFam = useLiveQuery(() => db.mensagens.filter((m) => m.de === 'pais' && !m.lida).count()) ?? 0;
+  const naoEsc = useLiveQuery(() => db.recados.filter((r) => r.de === 'escola' && !r.lida).count()) ?? 0;
+  const escolas = d.escolas.filter((e) => d.van!.escolaIds.includes(e.id));
+  return (
+    <div className="pilha">
+      <div className="seg" style={{ maxWidth: 420 }}>
+        <button type="button" className={qual === 'familias' ? 'ativo' : ''} onClick={() => setQual('familias')}><I n="casa" />Famílias{naoFam ? ` (${naoFam})` : ''}</button>
+        <button type="button" className={qual === 'escolas' ? 'ativo' : ''} onClick={() => setQual('escolas')}><I n="escola" />Escolas{naoEsc ? ` (${naoEsc})` : ''}</button>
+      </div>
+      {qual === 'familias' ? <Mensagens d={d} /> : (
+        <ConversasRecados eu="motorista" conversas={escolas.map((e) => ({
+          vanId: d.van!.id, escolaId: e.id, nome: e.nome,
+          detalhe: TURNOS.filter((t) => e.horarios[t]).map((t) => `${NOME_TURNO[t]} ${e.horarios[t]!.entrada}–${e.horarios[t]!.saida}`).join(' · '),
+        }))} />
+      )}
+    </div>
   );
 }
 
@@ -350,10 +378,11 @@ function FormAluno({ inicial, d, onFechar }: { inicial: Aluno; d: DadosVan; onFe
   const [valor, setValor] = useState((inicial.mensalidade / 100).toFixed(2).replace('.', ','));
   const [erro, setErro] = useState('');
   const existe = d.alunos.some((x) => x.id === a.id);
+  const escolasVan = d.escolas.filter((e) => d.van!.escolaIds.includes(e.id));
   const set = <K extends keyof Aluno>(k: K, v: Aluno[K]) => setA((x) => ({ ...x, [k]: v }));
   const salvar = async () => {
     const c = centavos(valor);
-    if (!a.nome.trim() || !a.responsavel.trim() || !a.endereco.trim()) return setErro('Preencha nome, responsável e endereço.');
+    if (!a.nome.trim() || !a.responsavel.trim() || !a.endereco.trim()) return setErro('Falta o nome do aluno, do pai ou da mãe, ou o endereço.');
     if (c === null || c <= 0) return setErro('Mensalidade inválida.');
     try {
       await salvarAluno({ ...a, nome: a.nome.trim(), apelido: a.apelido.trim() || a.nome.trim().split(' ')[0], mensalidade: c }, !existe);
@@ -363,31 +392,34 @@ function FormAluno({ inicial, d, onFechar }: { inicial: Aluno; d: DadosVan; onFe
   return (
     <Modal titulo={existe ? `Editar ${inicial.nome}` : 'Novo aluno'} onFechar={onFechar}>
       <div className="form">
+        <label className="fld"><span>Nome do aluno</span><input value={a.nome} onChange={(e) => set('nome', e.target.value)} autoFocus={!existe} /></label>
         <div className="dupla">
-          <label className="fld"><span>Nome completo</span><input value={a.nome} onChange={(e) => set('nome', e.target.value)} /></label>
-          <label className="fld"><span>Apelido (aparece no ranking)</span><input value={a.apelido} onChange={(e) => set('apelido', e.target.value)} /></label>
+          <label className="fld"><span>Escola</span><select value={a.escolaId} onChange={(e) => set('escolaId', e.target.value)}>{escolasVan.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}</select></label>
+          <label className="fld"><span>Turno</span><select value={a.turno} onChange={(e) => set('turno', e.target.value as Turno)}>{TURNOS.filter((t) => d.mapaEscolas.get(a.escolaId)?.horarios[t] || a.turno === t).map((t) => <option key={t} value={t}>{NOME_TURNO[t]}</option>)}</select></label>
         </div>
         <div className="dupla">
-          <label className="fld"><span>Escola</span><select value={a.escolaId} onChange={(e) => set('escolaId', e.target.value)}>{d.escolas.filter((e) => d.van!.escolaIds.includes(e.id)).map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}</select></label>
-          <div className="dupla">
-            <label className="fld"><span>Série</span><input value={a.serie} onChange={(e) => set('serie', e.target.value)} /></label>
-            <label className="fld"><span>Turno</span><select value={a.turno} onChange={(e) => set('turno', e.target.value as Turno)}>{TURNOS.map((t) => <option key={t} value={t}>{NOME_TURNO[t]}</option>)}</select></label>
-          </div>
+          <label className="fld"><span>Nome do pai ou da mãe</span><input value={a.responsavel} onChange={(e) => set('responsavel', e.target.value)} /></label>
+          <label className="fld"><span>WhatsApp dele(a)</span><input value={a.telefoneResp} onChange={(e) => set('telefoneResp', e.target.value)} inputMode="tel" placeholder="11 90000-0000" /></label>
         </div>
-        <div className="dupla">
-          <label className="fld"><span>Responsável</span><input value={a.responsavel} onChange={(e) => set('responsavel', e.target.value)} /></label>
-          <label className="fld"><span>WhatsApp do responsável</span><input value={a.telefoneResp} onChange={(e) => set('telefoneResp', e.target.value)} /></label>
-        </div>
-        <div className="dupla">
-          <label className="fld"><span>Mensalidade (R$)</span><input value={valor} onChange={(e) => setValor(e.target.value)} inputMode="decimal" /></label>
-          <label className="fld"><span>Dia do vencimento</span><input type="number" min={1} max={28} value={a.diaVencimento} onChange={(e) => set('diaVencimento', Math.min(28, Math.max(1, Number(e.target.value) || 1)))} /></label>
-        </div>
-        <div className="fld"><span>Endereço de embarque</span>
+        <div className="fld"><span>Onde a van busca</span>
           <BuscaEndereco valor={a.endereco} onTexto={(t) => set('endereco', t)} onLocal={(p) => set('local', p)} />
         </div>
-        <div className="fld"><span>Confira o ponto no mapa (toque para ajustar o portão)</span>
-          <Mapa3D altura={240} enquadrar={[a.local]} chave={`form-${a.local.lat.toFixed(5)}`} marcadores={[{ id: 'p', pos: a.local, tipo: 'pin' }]} onClick={(p) => set('local', p)} />
+        <div className="fld"><span>Confira no mapa (toque para ajustar o portão)</span>
+          <Mapa3D altura={220} enquadrar={[a.local]} chave={`form-${a.local.lat.toFixed(5)}`} marcadores={[{ id: 'p', pos: a.local, tipo: 'pin' }]} onClick={(p) => set('local', p)} />
         </div>
+        <details className="opcoes">
+          <summary><I n="config" />Mais detalhes (opcional) · {reais(centavos(valor) ?? a.mensalidade)}, vence dia {a.diaVencimento}<I n="chevron" /></summary>
+          <div>
+            <div className="dupla">
+              <label className="fld"><span>Mensalidade (R$)</span><input value={valor} onChange={(e) => setValor(e.target.value)} inputMode="decimal" /></label>
+              <label className="fld"><span>Dia do vencimento</span><input type="number" min={1} max={28} value={a.diaVencimento} onChange={(e) => set('diaVencimento', Math.min(28, Math.max(1, Number(e.target.value) || 1)))} /></label>
+            </div>
+            <div className="dupla">
+              <label className="fld"><span>Série</span><input value={a.serie} onChange={(e) => set('serie', e.target.value)} placeholder="ex.: 4º ano" /></label>
+              <label className="fld"><span>Apelido (ranking)</span><input value={a.apelido} onChange={(e) => set('apelido', e.target.value)} placeholder={a.nome.split(' ')[0]} /></label>
+            </div>
+          </div>
+        </details>
         {existe && inicial.codigoFamilia && (
           <div className="convite-box">
             <div><strong>Convite da família</strong><span className="muted small">{inicial.familiaConectada ? 'A família já está no app.' : 'Mande pelo WhatsApp: a família entra em "Família → Primeiro acesso" com o código.'}</span></div>
@@ -407,8 +439,8 @@ function FormAluno({ inicial, d, onFechar }: { inicial: Aluno; d: DadosVan; onFe
 
 /** Mensagem pronta do convite (abre o WhatsApp do tio com o texto; ele só aperta enviar). */
 function convite(a: Aluno, motorista: string) {
-  const link = `${location.origin}${location.pathname}#/pais`;
-  return linkWhats(a.telefoneResp, `Olá! Aqui é o ${motorista}, da van de ${primeiroNome(a.nome)}. Pelo app VanAaki você vê quando ele é o próximo, quando embarca e chega na escola. Entre em ${link} → "Primeiro acesso" e use o código ${a.codigoFamilia}.`);
+  const link = `${location.origin}${location.pathname}#/pais/convite/${a.codigoFamilia}`;
+  return linkWhats(a.telefoneResp, `Olá! Aqui é o ${motorista}, da van de ${primeiroNome(a.nome)}. Pelo app VanAaki você recebe um aviso quando a van estiver chegando, quando ${primeiroNome(a.nome)} embarcar e chegar na escola. É só tocar no link: ${link}`);
 }
 
 /** Dados da van e o ponto da garagem (de onde sai a ida e onde termina a volta). */

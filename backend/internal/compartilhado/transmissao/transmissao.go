@@ -88,7 +88,7 @@ func ParaFamilia(v models.Viagem, alunoIDs []string, L Locais) (models.Viagem, b
 		Paradas: []models.Parada{}, Alvo: -1, Caminho: []models.LatLng{}, Trechos: map[string][]models.LatLng{},
 		Rastro: []models.LatLng{}, Avisados: []string{}, RotaReal: v.RotaReal, NaParada: false,
 		IniciadaEm: v.IniciadaEm, ConcluidaEm: v.ConcluidaEm, AtualizadoEm: v.AtualizadoEm, Velocidade: v.Velocidade,
-		EscolaIDs: []string{}, Visoes: visoes,
+		EscolaIDs: []string{}, Visoes: visoes, VelKmh: v.VelKmh,
 	}
 	for _, p := range v.Paradas {
 		if (p.Tipo == "aluno" && models.Contem(alunoIDs, p.AlunoID)) || (p.Tipo == "escola" && escolas[p.EscolaID]) {

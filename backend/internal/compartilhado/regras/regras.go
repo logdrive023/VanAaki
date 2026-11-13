@@ -168,7 +168,8 @@ func EtaAte(v *models.Viagem, i int) int {
 	if v.Status != "em_andamento" {
 		return 0
 	}
-	return geo.EtaMin(CaminhoAte(v, i), PendentesEntre(v, v.Alvo, i), v.RotaReal)
+	// previsão pelo movimento real da van hoje (velocidade média medida pelo GPS)
+	return geo.EtaMinVel(CaminhoAte(v, i), PendentesEntre(v, v.Alvo, i), v.RotaReal, v.VelKmh)
 }
 
 // ---------------- privacidade ----------------

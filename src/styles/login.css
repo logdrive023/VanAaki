@@ -73,3 +73,10 @@
   .login-caixa { margin-top: 0; }
   .login-perfis { box-shadow: none; }
 }
+
+/* convite do tio (link do WhatsApp) */
+.login-convite { display: flex; gap: 12px; align-items: flex-start; padding: 16px; background: var(--amarelo-suave); border: 1.5px solid var(--amarelo); border-radius: 16px; }
+.lc-ic { width: 38px; height: 38px; border-radius: 11px; background: var(--amarelo); display: grid; place-items: center; flex-shrink: 0; }
+.lc-ic svg { width: 18px; height: 18px; }
+.login-convite strong { display: block; font-family: var(--display); font-size: 17px; }
+.login-convite span { display: block; font-size: 14px; color: var(--amarelo-texto); margin-top: 2px; }

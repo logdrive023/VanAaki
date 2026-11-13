@@ -57,7 +57,7 @@ function Inicio({ f, jogo }: { f: F; jogo: boolean }) {
         <p><I n={s.ic} tam={16} />{f.viagem?.status === 'em_andamento' ? 'Agora' : 'Hoje'}</p>
         <h2>{s.titulo}</h2>
         <p style={{ marginTop: 4 }}>{s.sub}</p>
-        {v.fase === 'proximo' && <div className="grande">{v.eta} <small>minutinhos</small></div>}
+        {s.chegada && <div className="grande">{s.chegada}<small> {s.rotuloChegada}</small></div>}
       </div>
       {podePronto && (
         <div className="checkin">
@@ -74,16 +74,6 @@ function Inicio({ f, jogo }: { f: F; jogo: boolean }) {
       )}
       {v.mostrarMapa && f.viagem && <div className="m-card" style={{ padding: 8 }}><MapaFamilia v={v} aluno={a} escola={f.escola} viagem={f.viagem} altura={260} /></div>}
       {jogo && <NivelCard ev={ev} saldo={saldoDe(ev, resgates)} sequencia={sequencia(ev)} />}
-      <div className="carteirinha">
-        <div className="qr" />
-        <div style={{ position: 'relative' }}>
-          <small>Carteirinha VanAaki</small>
-          <div style={{ fontWeight: 700, fontSize: 17 }}>{a.nome}</div>
-          <small>{f.escola?.nome} · {a.serie}</small><br />
-          <small>Van: {f.van?.motorista} · {f.van?.placa}</small>
-        </div>
-      </div>
-      {jogo && <div className="m-card"><h4>Últimos pontos</h4><Feed ev={ev} limite={5} /></div>}
     </>
   );
 }

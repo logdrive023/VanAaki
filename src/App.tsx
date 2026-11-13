@@ -90,6 +90,7 @@ export default function App() {
   if (p === 'fiscal' && aba) return <Fiscal token={aba} />;
   if (!perfil) return <Carregando />;
   // link "#/motorista/demo" (botão do site): entra direto na demonstração
-  if (!lerSessao(perfil)) return <Entrar perfil={perfil} autoDemo={aba === 'demo'} />;
+  // "#/pais/convite/CODIGO" (link do WhatsApp do tio): abre o primeiro acesso já preenchido
+  if (!lerSessao(perfil)) return <Entrar perfil={perfil} autoDemo={aba === 'demo'} convite={aba === 'convite' ? extra : undefined} />;
   return <Conectado perfil={perfil} aba={aba} extra={extra} />;
 }

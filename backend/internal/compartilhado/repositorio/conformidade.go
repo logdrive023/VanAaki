@@ -50,11 +50,11 @@ func (r *Repo) Trajeto(ctx context.Context, viagemID string) ([]models.PontoTraj
 
 // EstatTrajeto = números do registro de uma viagem.
 type EstatTrajeto struct {
-	Pontos      int
-	Km          float64
-	Origem      string
-	Primeira    string
-	Ultima      string
+	Pontos   int
+	Km       float64
+	Origem   string
+	Primeira string
+	Ultima   string
 }
 
 // EstatTrajetos soma, por viagem, quantas posições foram gravadas e a distância percorrida (fórmula de haversine).

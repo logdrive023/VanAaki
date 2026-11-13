@@ -59,7 +59,7 @@ export function AgendaFamilia({ aluno, escola, podeMudar = true }: { aluno: Alun
   );
 }
 
-function MudarDia({ aluno, dia, atual, motivoAtual, nome, onFechar }: { aluno: Aluno; dia: string; atual: Plano; motivoAtual: string; nome: string; onFechar: () => void }) {
+export function MudarDia({ aluno, dia, atual, motivoAtual, nome, onFechar }: { aluno: Aluno; dia: string; atual: Plano; motivoAtual: string; nome: string; onFechar: () => void }) {
   const [plano, setPlano] = useState<Plano>(atual);
   const [motivo, setMotivo] = useState(motivoAtual);
   const [erro, setErro] = useState('');

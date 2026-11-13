@@ -8,6 +8,7 @@ import { I } from '../components/Icone';
 import { db } from '../db/db';
 import { useEu } from '../api/sync';
 import { FormEscola } from '../components/formularios';
+import { ConversasRecados } from '../components/recados';
 import { TURNOS, type Aluno, type Escola as TEscola, type Presenca, type TipoViagem, type Turno, type Van, type Viagem } from '../db/types';
 import { tipoEvento } from '../lib/gamificacao';
 import { visaoEscola } from '../lib/privacidade';
@@ -30,6 +31,7 @@ export default function Escola({ aba = 'chegadas' }: { aba?: string }) {
   const alunos = useLiveQuery(() => db.alunos.where('escolaId').equals(escolaId).filter((a) => a.ativo).toArray(), [escolaId]) ?? [];
   const viagens = useLiveQuery(() => db.viagens.where('data').equals(hoje()).filter((v) => v.escolaIds.includes(escolaId) && v.status !== 'cancelada').toArray(), [escolaId]) ?? [];
   const presencas = useLiveQuery(() => db.presencas.where('data').equals(hoje()).toArray()) ?? [];
+  const recadosNovos = useLiveQuery(() => db.recados.filter((r) => r.de === 'motorista' && !r.lida).count()) ?? 0;
   if (!escola) return <div className="vazio">Carregando…</div>;
 
   const mapaAlunos = new Map(alunos.map((a) => [a.id, a]));
@@ -41,9 +43,10 @@ export default function Escola({ aba = 'chegadas' }: { aba?: string }) {
     { id: 'chegadas', ic: 'portaria', nome: 'Portaria', badge: aConfirmar },
     { id: 'vans', ic: 'van', nome: 'Vans', badge: pendCred },
     { id: 'alunos', ic: 'alunos', nome: 'Alunos' },
+    { id: 'recados', ic: 'mensagem', nome: 'Recados', badge: recadosNovos },
     { id: 'ocorrencias', ic: 'lista', nome: 'Ocorrências' },
   ];
-  const titulos: Record<string, string> = { chegadas: 'Portaria', vans: 'Vans credenciadas', alunos: 'Alunos que usam van', ocorrencias: 'Ocorrências nas vans' };
+  const titulos: Record<string, string> = { chegadas: 'Portaria', vans: 'Vans credenciadas', alunos: 'Alunos que usam van', ocorrencias: 'Ocorrências nas vans', recados: 'Recados com as vans' };
   const perfil = (
     <div className="perfil-side">
       <Avatar nome={escola.nome} cor="#00B894" />
@@ -75,6 +78,7 @@ export default function Escola({ aba = 'chegadas' }: { aba?: string }) {
       {aba === 'vans' && <Vans escola={escola} vans={vans} alunos={alunos} />}
       {aba === 'alunos' && <AlunosEscola escola={escola} turno={turno} alunos={alunos.filter((a) => a.turno === turno)} vans={vans} viagens={doTurno} presencas={presencas} />}
       {aba === 'ocorrencias' && <Ocorrencias alunos={mapaAlunos} />}
+      {aba === 'recados' && <ConversasRecados eu="escola" conversas={vans.map((v) => ({ vanId: v.id, escolaId: escola.id, nome: v.nome, detalhe: `${v.motorista} · ${v.placa} · ${v.telefone}` }))} />}
       {editando && <FormEscola inicial={escola} onFechar={() => setEditando(false)} />}
     </ShellPainel>
   );
@@ -98,6 +102,14 @@ function Portaria({ escola, turno, vans, viagens, alunos }: { escola: TEscola; t
 
   return (
     <div className="pilha">
+      {!doTurno.length && <Vazio ic="van">Nenhuma van credenciada atende este turno</Vazio>}
+      {resumo.map(({ van, ida, volta, vi, vv }) => (
+        <section key={van.id} className="card pilha">
+          <div className="aluno-cel"><Avatar nome={van.motorista} cor="#6C5CE7" /><div><strong>{van.nome}</strong><span className="muted small">{van.modelo} · <span className="placa">{van.placa}</span> · {van.telefone}</span></div></div>
+          <Trecho titulo={<><I n="escola" />Entrada (ida)</>} v={ida} ve={vi} escola={escola} alunos={alunos} />
+          <Trecho titulo={<><I n="casa" />Saída (volta)</>} v={volta} ve={vv} escola={escola} alunos={alunos} />
+        </section>
+      ))}
       <section className="kpis">
         <Kpi ic="van" rot="Vans no turno" num={doTurno.length} sub="credenciadas" />
         <Kpi ic="check" rot="Já chegaram" num={chegaram} sub="na entrada" subCls={chegaram ? 'verde' : 'muted'} />
@@ -111,14 +123,6 @@ function Portaria({ escola, turno, vans, viagens, alunos }: { escola: TEscola; t
         <Toggle on={!!escola.confirmaEntrada} onChange={(x) => void definirConfirmaEntrada(escola.id, x)} />
       </section>
       <div className="privacidade"><span className="ic"><I n="escudo" /></span><span>A escola vê quantos alunos estão a bordo e a previsão. A posição da van no mapa só aparece quando o <b>próximo destino dela é esta escola</b>.</span></div>
-      {!doTurno.length && <Vazio ic="van">Nenhuma van credenciada atende este turno</Vazio>}
-      {resumo.map(({ van, ida, volta, vi, vv }) => (
-        <section key={van.id} className="card pilha">
-          <div className="aluno-cel"><Avatar nome={van.motorista} cor="#6C5CE7" /><div><strong>{van.nome}</strong><span className="muted small">{van.modelo} · <span className="placa">{van.placa}</span> · {van.telefone}</span></div></div>
-          <Trecho titulo={<><I n="escola" />Entrada (ida)</>} v={ida} ve={vi} escola={escola} alunos={alunos} />
-          <Trecho titulo={<><I n="casa" />Saída (volta)</>} v={volta} ve={vv} escola={escola} alunos={alunos} />
-        </section>
-      ))}
     </div>
   );
 }

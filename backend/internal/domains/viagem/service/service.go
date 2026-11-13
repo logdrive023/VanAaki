@@ -953,6 +953,7 @@ func (s *service) chegou(ctx context.Context, v *models.Viagem, L locais) {
 // e, com a confirmação automática ligada, a saída dela (confirma o embarque/entrega no horário do ponto).
 func (s *service) aplicarPosicao(ctx context.Context, v *models.Viagem, pos models.LatLng, em string, L locais, auto bool) (mudou, retracar bool) {
 	v.Simulado = false
+	medirVelocidade(v, pos, em)
 	v.Pos = pos
 	if em > v.UltimaPosEm {
 		v.UltimaPosEm = em
@@ -977,6 +978,24 @@ func (s *service) aplicarPosicao(ctx context.Context, v *models.Viagem, pos mode
 		mudou = true
 	}
 	return mudou, retracar
+}
+
+// medirVelocidade: média móvel da velocidade real (distância ÷ tempo entre pontos, contando paradas
+// e trânsito). É ela que faz a previsão dos pais acompanhar o dia de hoje, não uma média fixa.
+func medirVelocidade(v *models.Viagem, pos models.LatLng, em string) {
+	if v.UltimaPosEm == "" || em <= v.UltimaPosEm {
+		return
+	}
+	dt := models.ParseIso(em).Sub(models.ParseIso(v.UltimaPosEm)).Seconds()
+	if dt < 2 || dt > 180 {
+		return
+	}
+	inst := math.Min(geo.DistM(v.Pos, pos)/dt*3.6, 90)
+	if v.VelKmh <= 0 {
+		v.VelKmh = geo.VelMediaKmh
+	}
+	peso := math.Min(dt/120, 0.25) // pontos mais espaçados pesam mais (até 25%)
+	v.VelKmh = v.VelKmh*(1-peso) + inst*peso
 }
 
 // Posicao: GPS do celular do tio, ao vivo.

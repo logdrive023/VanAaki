@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie';
 import type {
-  Aluno, Config, OpFila, Escola, EventoPontos, Mensagem, Notificacao, Pagamento, Presenca, Recompensa, Resgate, Van, Viagem,
+  Aluno, Config, OpFila, Recado, Escola, EventoPontos, Mensagem, Notificacao, Pagamento, Presenca, Recompensa, Resgate, Van, Viagem,
 } from './types';
 
 /**
@@ -24,6 +24,8 @@ export class VanDB extends Dexie {
   config!: Table<Config, string>;
   /** ações feitas no aparelho que ainda não chegaram ao servidor (sem internet / internet ruim) */
   fila!: Table<OpFila, number>;
+  /** recados tio ↔ escola */
+  recados!: Table<Recado, string>;
 
   constructor(nome: string) {
     super(nome);
@@ -43,11 +45,13 @@ export class VanDB extends Dexie {
     });
     // v2: fila de ações offline (fica guardada mesmo se o app fechar ou o celular reiniciar)
     this.version(2).stores({ fila: '++seq, tipo, viagemId' });
+    // v3: recados entre o tio e a escola
+    this.version(3).stores({ recados: 'id, vanId, escolaId, criadoEm' });
   }
 
   get todas() {
     return [this.escolas, this.vans, this.alunos, this.pagamentos, this.presencas, this.viagens,
-      this.notificacoes, this.mensagens, this.pontos, this.recompensas, this.resgates, this.config];
+      this.notificacoes, this.mensagens, this.recados, this.pontos, this.recompensas, this.resgates, this.config];
   }
 }
 

@@ -42,6 +42,10 @@ export interface ConfigVan {
   confirmarManual?: boolean;
   /** true = esconde conduta, pontos e prêmios */
   semGamificacao?: boolean;
+  /** economia (só informativo): km por litro, combustível e preço por litro em centavos */
+  consumoKmL?: number;
+  combustivel?: 'gasolina' | 'diesel' | 'etanol' | 'gnv';
+  precoLitro?: number;
 }
 
 export interface Van {
@@ -200,6 +204,8 @@ export interface Viagem {
   atualizadoEm: string;
   /** horário do último ponto de GPS aplicado no servidor */
   ultimaPosEm?: string;
+  /** velocidade média real da van nesta viagem (km/h, medida pelo GPS) */
+  velKmh?: number;
   /** só na cópia da família: o que ela pode ver de cada filho (calculado no servidor) */
   visoes?: Record<string, unknown>;
   /** só na cópia da escola */
@@ -220,6 +226,19 @@ export interface Notificacao {
   texto: string;
   criadoEm: string;
   lida: boolean;
+}
+
+/** Recado entre o tio da van e a escola (uma conversa por van + escola). */
+export interface Recado {
+  id: string;
+  vanId: string;
+  escolaId: string;
+  de: 'motorista' | 'escola';
+  texto: string;
+  criadoEm: string;
+  lida: boolean;
+  /** ainda na fila do aparelho (sem internet) */
+  enviando?: boolean;
 }
 
 export interface Mensagem {
@@ -288,7 +307,7 @@ export interface Eu { usuario: Usuario; vanIds: string[]; alunoIds: string[]; es
 
 // ---------------- offline-first ----------------
 
-export type TipoOp = 'iniciar' | 'parada' | 'posicoes' | 'encerrar' | 'presenca' | 'pagar' | 'mensagem' | 'pronto';
+export type TipoOp = 'iniciar' | 'parada' | 'posicoes' | 'encerrar' | 'presenca' | 'pagar' | 'mensagem' | 'recado' | 'pronto';
 
 /** Uma ação guardada no aparelho até o servidor confirmar. `id` vira a Idempotency-Key. */
 export interface OpFila {

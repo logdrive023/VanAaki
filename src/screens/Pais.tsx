@@ -8,13 +8,15 @@ import { db } from '../db/db';
 import type { Pagamento } from '../db/types';
 import { saldoDe, sequencia, tipoEvento } from '../lib/gamificacao';
 import { haQuanto, nomeMes, primeiroNome, reais } from '../lib/util';
-import { atrasado, definirPresenca, vincularFilho } from '../services/acoes';
+import { atrasado, vincularFilho } from '../services/acoes';
 import { useEu } from '../api/sync';
 import { PainelTeste } from '../components/ui';
 import { Chat } from './motorista/Gestao';
 import { EscolhaPlano } from '../components/presenca';
 import { NOME_TURNO } from '../lib/turnos';
-import { AgendaFamilia, PagarPix } from './familiaAgenda';
+import { AgendaFamilia, MudarDia, PagarPix } from './familiaAgenda';
+import type { Plano } from '../lib/turnos';
+import { hoje } from '../lib/util';
 import { LinhaTempo, MapaFamilia, SeletorAluno, textoStatus, useAlunoPerfil, useFamilia } from './familia';
 
 export default function Pais({ aba = 'inicio' }: { aba?: string }) {
@@ -46,7 +48,7 @@ export default function Pais({ aba = 'inicio' }: { aba?: string }) {
       {aba === 'inicio' && <Inicio f={f} />}
       {aba === 'rastreio' && <Rastreio f={f} />}
       {aba === 'pagamentos' && <Pagamentos f={f} />}
-      {aba === 'agenda' && <AgendaFamilia aluno={f.aluno} escola={f.escola} />}
+      {aba === 'agenda' && <><AgendaFamilia aluno={f.aluno} escola={f.escola} /><AcessoAluno f={f} /></>}
       {aba === 'conduta' && <CondutaPais f={f} />}
       {aba === 'chat' && <div className="m-card"><Chat alunoId={alunoId} eu="pais" titulo={`Conversa com ${f.van?.motorista}`} /></div>}
     </ShellFone>
@@ -64,7 +66,7 @@ function StatusCard({ f, compacto }: { f: F; compacto?: boolean }) {
       <div className="entre"><span className="st-ic"><I n={s.ic} /></span>{f.viagem?.status === 'em_andamento' && <span className="tag tag-verde ao-vivo"><span className="ponto" /> Ao vivo</span>}</div>
       <div className="st-titulo">{s.titulo}</div>
       <div className={`st-sub ${destaque ? '' : 'muted'}`}>{s.sub}</div>
-      {v.fase === 'proximo' && <div className="eta-num">{v.eta}<small> min</small></div>}
+      {s.chegada && <div className="eta-num">{s.chegada}<small> {s.rotuloChegada}</small></div>}
       {!compacto && v.mostrarMapa && <button className={`btn ${destaque ? 'btn-escuro' : 'btn-primario'} btn-sm`} style={{ marginTop: 14 }} onClick={() => ir('pais/rastreio')}><I n="mapa" />{v.aBordo ? 'Acompanhar o trajeto' : 'Ver a van no mapa'}</button>}
     </div>
   );
@@ -73,7 +75,7 @@ function StatusCard({ f, compacto }: { f: F; compacto?: boolean }) {
 function Inicio({ f }: { f: F }) {
   const a = f.aluno!;
   const notifs = useNotificacoes({ para: 'pais', alunoId: a.id });
-  const [motivo, setMotivo] = useState('');
+  const [escolha, setEscolha] = useState<Plano | null>(null);
   return (
     <>
       <StatusCard f={f} />
@@ -82,8 +84,8 @@ function Inicio({ f }: { f: F }) {
       )}
       <div className="m-card">
         <h4>Van hoje para {primeiroNome(a.nome)} <span className="tag"><I n={a.turno} />{NOME_TURNO[a.turno]}</span></h4>
-        <EscolhaPlano valor={f.plano} onChange={(p) => void definirPresenca(a.id, p, motivo.trim() || undefined)} />
-        <input className="inp" style={{ marginTop: 10 }} placeholder="Motivo (opcional): consulta, futebol, viagem…" value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+        {/* um toque abre a confirmação: um toque errado não avisa o tio por engano */}
+        <EscolhaPlano valor={f.plano} onChange={(p) => p !== f.plano && setEscolha(p)} />
         <p className="muted small" style={{ marginTop: 8 }}>{f.plano !== 'ambos' ? `Combinado com o tio${f.presenca?.motivo ? ` · ${f.presenca.motivo}` : ''}. A rota já foi ajustada e ninguém perde ponto.` : `${f.escola?.nome} · avise antes da rota: o tio não perde tempo e a criança não perde ponto.`}</p>
       </div>
       <div className="m-card">
@@ -101,12 +103,12 @@ function Inicio({ f }: { f: F }) {
           <I n="chevron" />
         </button>
       )}
-      <AcessoAluno f={f} />
       <div className="m-card">
         <h4>Últimos avisos</h4>
         {notifs.length === 0 && <Vazio ic="semSino">Nada ainda</Vazio>}
         {notifs.slice(0, 6).map((n) => <div key={n.id} className="linha-item"><div className="aluno-cel"><span className="nota-ic">{n.icone}</span><div><strong>{n.titulo}</strong><span className="muted small">{n.texto} · {haQuanto(n.criadoEm)}</span></div></div></div>)}
       </div>
+      {escolha && <MudarDia aluno={a} dia={hoje()} atual={escolha} motivoAtual={f.presenca?.motivo ?? ''} nome={primeiroNome(a.nome)} onFechar={() => setEscolha(null)} />}
     </>
   );
 }
@@ -198,7 +200,7 @@ function AcessoAluno({ f }: { f: F }) {
   const [codigo, setCodigo] = useState('');
   const [msg, setMsg] = useState('');
   const [aberto, setAberto] = useState(false);
-  const app = `${location.origin}${location.pathname}#/aluno`;
+  const app = `${location.origin}${location.pathname}#/aluno/convite/${a.codigoAluno}`;
   return (
     <div className="m-card">
       <h4>App do {primeiroNome(a.nome)}</h4>

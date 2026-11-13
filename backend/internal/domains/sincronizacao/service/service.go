@@ -33,6 +33,7 @@ type Pacote struct {
 	Viagens      []models.Viagem       `json:"viagens"`
 	Notificacoes []models.Notificacao  `json:"notificacoes"`
 	Mensagens    []models.Mensagem     `json:"mensagens"`
+	Recados      []models.Recado       `json:"recados"`
 	Pontos       []models.EventoPontos `json:"pontos"`
 	Recompensas  []models.Recompensa   `json:"recompensas"`
 	Resgates     []models.Resgate      `json:"resgates"`
@@ -81,7 +82,7 @@ func (s *service) Pacote(ctx context.Context, e models.Escopo) (Pacote, error) {
 	p := Pacote{
 		Eu:   Eu{Usuario: e.Usuario, VanIDs: e.VanIDs, AlunoIDs: e.AlunoIDs, EscolaID: e.EscolaID},
 		Hoje: models.Hoje(), Escolas: []models.Escola{}, Vans: []models.Van{}, Alunos: []models.Aluno{}, Pagamentos: []models.Pagamento{},
-		Presencas: []models.Presenca{}, Viagens: []models.Viagem{}, Notificacoes: []models.Notificacao{}, Mensagens: []models.Mensagem{},
+		Presencas: []models.Presenca{}, Viagens: []models.Viagem{}, Notificacoes: []models.Notificacao{}, Mensagens: []models.Mensagem{}, Recados: []models.Recado{},
 		Pontos: []models.EventoPontos{}, Recompensas: []models.Recompensa{}, Resgates: []models.Resgate{},
 	}
 	var err error
@@ -127,6 +128,9 @@ func (s *service) motorista(ctx context.Context, e models.Escopo, p *Pacote) err
 		return err
 	}
 	if p.Notificacoes, err = s.repo.Notificacoes(ctx, "motorista", []string{}, e.VanIDs, ""); err != nil {
+		return err
+	}
+	if p.Recados, err = s.repo.RecadosDasVans(ctx, e.VanIDs); err != nil {
 		return err
 	}
 	if p.Mensagens, err = s.repo.MensagensDosAlunos(ctx, al); err != nil {
@@ -220,6 +224,9 @@ func (s *service) escola(ctx context.Context, e models.Escopo, p *Pacote) error 
 	p.Escolas = []models.Escola{esc}
 	vans, err := s.repo.VansDaEscola(ctx, e.EscolaID)
 	if err != nil {
+		return err
+	}
+	if p.Recados, err = s.repo.RecadosDaEscola(ctx, e.EscolaID); err != nil {
 		return err
 	}
 	vanIDs := []string{}

@@ -72,11 +72,11 @@ function Campo({ rotulo, ic, dica, children }: { rotulo: string; ic?: NomeIcone;
   );
 }
 
-export default function Entrar({ perfil, autoDemo }: { perfil: Perfil; autoDemo?: boolean }) {
+export default function Entrar({ perfil, autoDemo, convite }: { perfil: Perfil; autoDemo?: boolean; convite?: string }) {
   const info = INFO[perfil];
   const servidor = useServidor();
-  const [modo, setModo] = useState<'entrar' | 'criar'>(perfil === 'aluno' ? 'criar' : 'entrar');
-  const [f, setF] = useState<Record<string, string>>({});
+  const [modo, setModo] = useState<'entrar' | 'criar'>(perfil === 'aluno' || convite ? 'criar' : 'entrar');
+  const [f, setF] = useState<Record<string, string>>(convite ? { codigo: convite.toUpperCase().replace(/[^A-Z0-9]/g, '') } : {});
   const [verSenha, setVerSenha] = useState(false);
   const [erro, setErro] = useState('');
   const [enviando, setEnviando] = useState<'' | 'form' | 'demo'>('');
@@ -117,6 +117,12 @@ export default function Entrar({ perfil, autoDemo }: { perfil: Perfil; autoDemo?
     history.replaceState(null, '', `#/${perfil}`);
     void chamar('/auth/demo', { perfil }, 'demo');
   }, [autoDemo]); // eslint-disable-line react-hooks/exhaustive-deps
+  // aluno com o link do código: entra sozinho (criança pequena não precisa digitar nada)
+  useEffect(() => {
+    if (perfil !== 'aluno' || !convite || jaFoi.current || SEM_API) return;
+    jaFoi.current = true;
+    void chamar('/auth/aluno', { codigo: f.codigo }, 'form');
+  }, [convite]); // eslint-disable-line react-hooks/exhaustive-deps
   const fora = SEM_API; // sem servidor configurado não há o que tentar; caído, o botão continua (pode voltar a qualquer momento)
 
   return (
@@ -148,7 +154,15 @@ export default function Entrar({ perfil, autoDemo }: { perfil: Perfil; autoDemo?
 
           <StatusServidor estado={servidor} />
 
-          <section className="login-demo">
+          {convite && (
+            <section className="login-convite">
+              <span className="lc-ic"><I n="mensagem" /></span>
+              <div><strong>{perfil === 'aluno' ? 'Oi! Entrando no seu app…' : 'Você foi convidado pelo tio da van'}</strong>
+                <span>{perfil === 'aluno' ? 'Já já aparece quando a van vem te buscar.' : 'O código já está preenchido. Falta só o seu nome e uma senha para entrar das próximas vezes.'}</span></div>
+            </section>
+          )}
+
+          {!convite && <section className="login-demo">
             <div className="ld-txt">
               <strong>Conhecer sem cadastro</strong>
               <span>Dados de exemplo, tudo funcionando. Abra os outros perfis em outra aba e veja ao vivo.</span>
@@ -156,11 +170,11 @@ export default function Entrar({ perfil, autoDemo }: { perfil: Perfil; autoDemo?
             <button type="button" className="btn btn-primario btn-bloco btn-grande" disabled={ocupado || fora} onClick={() => void chamar('/auth/demo', { perfil }, 'demo')}>
               {enviando === 'demo' ? <><I n="carregando" className="girando" />{demorando ? 'Acordando o servidor…' : 'Entrando…'}</> : <><I n="teste" />Entrar na demonstração</>}
             </button>
-          </section>
+          </section>}
 
-          <div className="login-ou"><span>ou com a sua conta</span></div>
+          {!convite && <div className="login-ou"><span>ou com a sua conta</span></div>}
 
-          {perfil !== 'aluno' && (
+          {perfil !== 'aluno' && !convite && (
             <div className="seg login-seg">
               <button type="button" className={modo === 'entrar' ? 'ativo' : ''} onClick={() => { setModo('entrar'); setErro(''); }}>Entrar</button>
               <button type="button" className={modo === 'criar' ? 'ativo' : ''} onClick={() => { setModo('criar'); setErro(''); }}>{info.criar}</button>
