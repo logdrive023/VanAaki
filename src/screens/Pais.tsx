@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { calcularRanking, Feed, NivelCard, Selos, usePontosAluno, usePontosVan } from '../components/gamificacao';
 import { ShellFone, type ItemMenu } from '../components/Shell';
 import { Avatar, ir, Modal, useNotificacoes, Vazio } from '../components/ui';
+import { I } from '../components/Icone';
 import { db } from '../db/db';
 import type { Pagamento } from '../db/types';
 import { saldoDe, sequencia, tipoEvento } from '../lib/gamificacao';
@@ -12,7 +13,7 @@ import { useEu } from '../api/sync';
 import { PainelTeste } from '../components/ui';
 import { Chat } from './motorista/Gestao';
 import { EscolhaPlano } from '../components/presenca';
-import { ICONE_TURNO, NOME_TURNO } from '../lib/turnos';
+import { NOME_TURNO } from '../lib/turnos';
 import { LinhaTempo, MapaFamilia, SeletorAluno, textoStatus, useAlunoPerfil, useFamilia } from './familia';
 
 export default function Pais({ aba = 'inicio' }: { aba?: string }) {
@@ -24,17 +25,17 @@ export default function Pais({ aba = 'inicio' }: { aba?: string }) {
   if (eu && !eu.alunoIds.length) return <SemFilho />;
   if (f.carregando || !f.aluno || !f.visao) return <div className="vazio">Carregando…</div>;
   const menu: ItemMenu[] = [
-    { id: 'inicio', ic: '🏠', nome: 'Início' },
-    { id: 'rastreio', ic: '📍', nome: 'Rastreio', badge: f.visao.mostrarMapa ? 1 : 0 },
-    { id: 'pagamentos', ic: '💳', nome: 'Pagamentos', badge: pend },
-    { id: 'conduta', ic: '⭐', nome: 'Conduta' },
-    { id: 'chat', ic: '💬', nome: 'Tio', badge: msgs },
+    { id: 'inicio', ic: 'casa', nome: 'Início' },
+    { id: 'rastreio', ic: 'pin', nome: 'Rastreio', badge: f.visao.mostrarMapa ? 1 : 0 },
+    { id: 'pagamentos', ic: 'financeiro', nome: 'Pagamentos', badge: pend },
+    { id: 'conduta', ic: 'estrela', nome: 'Conduta' },
+    { id: 'chat', ic: 'mensagem', nome: 'Tio', badge: msgs },
   ];
   const topo = (
-    <div className="linha" style={{ flex: 1 }}>
+    <div className="linha" style={{ flex: 1, flexWrap: 'nowrap', minWidth: 0 }}>
       <Avatar aluno={f.aluno} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <small>Família · {eu?.usuario.nome}</small>
+        <small>Família {eu?.usuario.nome.split(' ').slice(-1)[0]}</small>
         <SeletorAluno id={alunoId} onChange={setAlunoId} perfis={f.perfis} />
       </div>
     </div>
@@ -45,7 +46,7 @@ export default function Pais({ aba = 'inicio' }: { aba?: string }) {
       {aba === 'rastreio' && <Rastreio f={f} />}
       {aba === 'pagamentos' && <Pagamentos alunoId={alunoId} />}
       {aba === 'conduta' && <CondutaPais f={f} />}
-      {aba === 'chat' && <div className="m-card"><Chat alunoId={alunoId} eu="pais" titulo={`💬 Conversa com ${f.van?.motorista}`} /></div>}
+      {aba === 'chat' && <div className="m-card"><Chat alunoId={alunoId} eu="pais" titulo={`Conversa com ${f.van?.motorista}`} /></div>}
     </ShellFone>
   );
 }
@@ -58,11 +59,11 @@ function StatusCard({ f, compacto }: { f: F; compacto?: boolean }) {
   const destaque = ['proximo', 'na_porta', 'a_bordo_final', 'volta_indo_escola', 'volta_na_escola'].includes(v.fase);
   return (
     <div className={`status-card ${destaque ? 'destaque' : ['aguardando', 'a_bordo', 'volta_outra_escola'].includes(v.fase) ? 'escuro' : ''}`}>
-      <div className="entre"><span style={{ fontSize: 28 }}>{s.ic}</span>{f.viagem?.status === 'em_andamento' && <span className="tag tag-verde ao-vivo"><span className="ponto" /> Ao vivo</span>}</div>
-      <div style={{ fontSize: 20, fontWeight: 900, marginTop: 6 }}>{s.titulo}</div>
-      <div className={destaque ? '' : 'muted'} style={{ fontWeight: 700 }}>{s.sub}</div>
-      {v.fase === 'proximo' && <div className="eta-num" style={{ marginTop: 10 }}>{v.eta} <small>min</small></div>}
-      {!compacto && v.mostrarMapa && <button className="btn btn-escuro btn-sm" style={{ marginTop: 12 }} onClick={() => ir('pais/rastreio')}>📍 Ver a van no mapa</button>}
+      <div className="entre"><span className="st-ic"><I n={s.ic} /></span>{f.viagem?.status === 'em_andamento' && <span className="tag tag-verde ao-vivo"><span className="ponto" /> Ao vivo</span>}</div>
+      <div className="st-titulo">{s.titulo}</div>
+      <div className={`st-sub ${destaque ? '' : 'muted'}`}>{s.sub}</div>
+      {v.fase === 'proximo' && <div className="eta-num">{v.eta}<small> min</small></div>}
+      {!compacto && v.mostrarMapa && <button className={`btn ${destaque ? 'btn-escuro' : 'btn-primario'} btn-sm`} style={{ marginTop: 14 }} onClick={() => ir('pais/rastreio')}><I n="mapa" />{v.aBordo ? 'Acompanhar o trajeto' : 'Ver a van no mapa'}</button>}
     </div>
   );
 }
@@ -75,10 +76,10 @@ function Inicio({ f }: { f: F }) {
     <>
       <StatusCard f={f} />
       {(f.visao!.fase === 'aguardando' || f.visao!.fase === 'volta_outra_escola') && (
-        <div className="privacidade"><span className="ic">🔒</span><span><b>Por segurança</b>, a posição da van aparece só quando {primeiroNome(a.nome)} for o próximo. Ninguém vê o endereço de outras crianças.</span></div>
+        <div className="privacidade"><span className="ic"><I n="escudo" /></span><span><b>Por segurança</b>, a van aparece no mapa quando {primeiroNome(a.nome)} for o próximo e durante todo o tempo em que estiver a bordo. Ninguém vê o endereço de outras crianças.</span></div>
       )}
       <div className="m-card">
-        <h4>Van hoje para {primeiroNome(a.nome)} <span className="tag tag-cinza">{ICONE_TURNO[a.turno]} {NOME_TURNO[a.turno]}</span></h4>
+        <h4>Van hoje para {primeiroNome(a.nome)} <span className="tag"><I n={a.turno} />{NOME_TURNO[a.turno]}</span></h4>
         <EscolhaPlano valor={f.plano} onChange={(p) => void definirPresenca(a.id, p, motivo.trim() || undefined)} />
         <input className="inp" style={{ marginTop: 10 }} placeholder="Motivo (opcional): consulta, futebol, viagem…" value={motivo} onChange={(e) => setMotivo(e.target.value)} />
         <p className="muted small" style={{ marginTop: 8 }}>{f.plano !== 'ambos' ? `Combinado com o tio${f.presenca?.motivo ? ` · ${f.presenca.motivo}` : ''}. A rota já foi ajustada e ninguém perde ponto.` : `${f.escola?.nome} · avise antes da rota: o tio não perde tempo e a criança não perde ponto.`}</p>
@@ -88,14 +89,14 @@ function Inicio({ f }: { f: F }) {
         <div className="motorista-box">
           <Avatar nome={f.van?.motorista ?? ''} cor="#6C5CE7" />
           <div><strong>{f.van?.motorista}</strong><br /><span className="muted small">{f.van?.modelo} · <span className="placa">{f.van?.placa}</span></span></div>
-          <div className="acoes"><button className="icone-btn" onClick={() => ir('pais/chat')}>💬</button><a className="icone-btn verde" href={`tel:${f.van?.telefone}`}>📞</a></div>
+          <div className="acoes"><button className="icone-btn" onClick={() => ir('pais/chat')} aria-label="Mensagem"><I n="mensagem" /></button><a className="icone-btn verde" href={`tel:${f.van?.telefone}`} aria-label="Ligar"><I n="telefone" /></a></div>
         </div>
       </div>
       <AcessoAluno f={f} />
       <div className="m-card">
         <h4>Últimos avisos</h4>
-        {notifs.length === 0 && <Vazio ic="🔕">Nada ainda</Vazio>}
-        {notifs.slice(0, 6).map((n) => <div key={n.id} className="linha-item"><div className="aluno-cel"><span style={{ fontSize: 20 }}>{n.icone}</span><div><strong>{n.titulo}</strong><span className="muted small">{n.texto} · {haQuanto(n.criadoEm)}</span></div></div></div>)}
+        {notifs.length === 0 && <Vazio ic="semSino">Nada ainda</Vazio>}
+        {notifs.slice(0, 6).map((n) => <div key={n.id} className="linha-item"><div className="aluno-cel"><span className="nota-ic">{n.icone}</span><div><strong>{n.titulo}</strong><span className="muted small">{n.texto} · {haQuanto(n.criadoEm)}</span></div></div></div>)}
       </div>
     </>
   );
@@ -107,15 +108,18 @@ function Rastreio({ f }: { f: F }) {
     <>
       <StatusCard f={f} compacto />
       {v.mostrarMapa && f.viagem
-        ? <div className="m-card" style={{ padding: 8 }}><MapaFamilia v={v} aluno={a} escola={f.escola} viagem={f.viagem} altura="48vh" /></div>
+        ? <div className="m-card" style={{ padding: 8 }}>
+            {v.aBordo && <div className="alerta-otim" style={{ marginBottom: 8 }}><I n="van" />{primeiroNome(a.nome)} está a bordo: você acompanha o trajeto até {v.alvoTipo === 'escola' ? 'a escola' : 'em casa'}.</div>}
+            <MapaFamilia v={v} aluno={a} escola={f.escola} viagem={f.viagem} altura="48vh" />
+          </div>
         : (['aguardando', 'a_bordo', 'volta_outra_escola'].includes(v.fase) || (v.fase === 'sem_viagem' && f.plano === 'ambos')) && (
-          <div className="m-card" style={{ textAlign: 'center', padding: 26 }}>
-            <div style={{ fontSize: 46 }}>🔒</div>
-            <strong style={{ fontSize: 17 }}>O mapa aparece quando for a sua vez</strong>
-            <p className="muted small" style={{ marginTop: 6 }}>Para a segurança de todas as crianças, a localização da van só é mostrada quando o próximo destino dela for a sua casa ou a escola de {primeiroNome(a.nome)}.{v.paradasAntes > 0 ? ` Agora faltam ${v.paradasAntes} parada(s) antes.` : ''}</p>
+          <div className="m-card vazio" style={{ padding: 26 }}>
+            <span className="ic"><I n="escudo" /></span>
+            <strong style={{ fontSize: 16 }}>O mapa aparece quando for a sua vez</strong>
+            <p className="muted small">Para a segurança de todas as crianças, a van aparece quando o próximo destino for a sua casa ou a escola de {primeiroNome(a.nome)}, e durante todo o tempo em que {primeiroNome(a.nome)} estiver a bordo.{v.paradasAntes > 0 ? ` Agora faltam ${v.paradasAntes} parada(s) antes.` : ''}</p>
           </div>
         )}
-      <div className="m-card"><h4>Hoje</h4>{f.viagem ? <LinhaTempo viagem={f.viagem} aluno={a} escola={f.escola} v={v} /> : <Vazio ic="🅿️">A van ainda não saiu hoje</Vazio>}</div>
+      <div className="m-card"><h4>Hoje</h4>{f.viagem ? <LinhaTempo viagem={f.viagem} aluno={a} escola={f.escola} v={v} /> : <Vazio ic="van">A van ainda não saiu hoje</Vazio>}</div>
     </>
   );
 }
@@ -128,8 +132,8 @@ function Pagamentos({ alunoId }: { alunoId: string }) {
   return (
     <>
       <div className={`status-card ${aberto.length ? 'destaque' : ''}`}>
-        <span className="muted small" style={{ fontWeight: 800 }}>{aberto.length ? 'EM ABERTO' : 'TUDO EM DIA'}</span>
-        <div className="big">{reais(aberto.reduce((s, p) => s + p.valor, 0))}</div>
+        <span className="muted small" style={{ fontWeight: 600 }}>{aberto.length ? 'Em aberto' : 'Tudo em dia'}</span>
+        <div className="big" style={{ marginTop: 4 }}>{reais(aberto.reduce((s, p) => s + p.valor, 0))}</div>
         {aberto.some(atrasado) && <span className="tag tag-vermelho" style={{ marginTop: 6 }}>Mensalidade atrasada</span>}
       </div>
       <div className="m-card">
@@ -137,7 +141,7 @@ function Pagamentos({ alunoId }: { alunoId: string }) {
         {lista.map((p) => (
           <div key={p.id} className="linha-item">
             <div><strong>{nomeMes(p.mes)} {p.mes.slice(0, 4)}</strong><span className="muted small">{p.status === 'pago' ? `Pago em ${p.pagoEm?.slice(0, 10).split('-').reverse().join('/')} · ${p.metodo}` : `Vence ${p.vencimento.split('-').reverse().join('/')} · ${reais(p.valor)}`}</span></div>
-            {p.status === 'pago' ? <span className="tag tag-verde">✓ Pago</span> : <button className="btn btn-primario btn-sm" onClick={() => setPix(p)}>Pagar Pix</button>}
+            {p.status === 'pago' ? <span className="tag tag-verde"><I n="check" />Pago</span> : <button className="btn btn-primario btn-sm" onClick={() => setPix(p)}>Pagar com Pix</button>}
           </div>
         ))}
       </div>
@@ -145,10 +149,10 @@ function Pagamentos({ alunoId }: { alunoId: string }) {
         <Modal titulo={`Pix · ${nomeMes(pix.mes)}`} onFechar={() => setPix(null)}>
           <div className="pilha">
             <div className="big" style={{ textAlign: 'center' }}>{reais(pix.valor)}</div>
-            <div className="qr" style={{ width: 170, height: 170, margin: '0 auto', border: '10px solid #fff', boxShadow: 'var(--sombra)' }} />
+            <div className="qr" style={{ width: 170, height: 170, margin: '0 auto', border: '10px solid #fff', boxShadow: '0 0 0 1px var(--borda)' }} />
             <div className="pix-codigo">00020126580014BR.GOV.BCB.PIX0136{pix.id.slice(0, 32)}5204000053039865406{(pix.valor / 100).toFixed(2)}5802BR5925VANAAKI TESTE6009SAO PAULO</div>
-            <small className="muted">⚠️ Código fictício, só para validar o fluxo. Nenhum dinheiro é movimentado.</small>
-            <button className="btn btn-verde btn-bloco" onClick={async () => { await pagar(pix.id, 'pix', 'pais'); setPix(null); }}>✅ Simular pagamento confirmado</button>
+            <small className="muted">Código fictício, só para validar o fluxo. Nenhum dinheiro é movimentado.</small>
+            <button className="btn btn-escuro btn-bloco" onClick={async () => { await pagar(pix.id, 'pix', 'pais'); setPix(null); }}><I n="check" />Simular pagamento confirmado</button>
           </div>
         </Modal>
       )}
@@ -174,10 +178,10 @@ function CondutaPais({ f }: { f: F }) {
         <div className={`selo ${ocorr.length ? '' : 'ok'}`} style={ocorr.length ? { background: 'var(--vermelho-claro)', color: '#B4252A' } : undefined}><span>⚠️</span>{ocorr.length}<small>ocorrências</small></div>
       </div>
       {ocorr.length > 0 && (
-        <div className="m-card" style={{ border: '2px solid var(--vermelho-claro)' }}>
-          <h4>⚠️ Ocorrências registradas pelo tio</h4>
+        <div className="m-card" style={{ borderColor: 'var(--vermelho-suave)' }}>
+          <h4 className="vermelho">Ocorrências registradas pelo tio</h4>
           <Feed ev={ocorr} limite={5} />
-          <button className="btn btn-claro btn-sm" style={{ marginTop: 8 }} onClick={() => ir('pais/chat')}>💬 Conversar com o tio</button>
+          <button className="btn btn-claro btn-sm" style={{ marginTop: 8 }} onClick={() => ir('pais/chat')}><I n="mensagem" />Conversar com o tio</button>
         </div>
       )}
       <div className="m-card"><h4>Conquistas de {primeiroNome(a.nome)}</h4><Selos ev={ev} /></div>
@@ -201,7 +205,7 @@ function AcessoAluno({ f }: { f: F }) {
       <div className="linha" style={{ marginTop: 10 }}>
         <button className="btn btn-claro btn-sm" onClick={() => void navigator.clipboard?.writeText(`${app}
 Código: ${a.codigoAluno}`)}>Copiar link e código</button>
-        <button className="btn btn-claro btn-sm" onClick={() => setAberto(!aberto)}>＋ Outro filho</button>
+        <button className="btn btn-claro btn-sm" onClick={() => setAberto(!aberto)}><I n="mais" />Outro filho</button>
       </div>
       {aberto && (
         <form className="linha" style={{ marginTop: 10 }} onSubmit={async (e) => {
@@ -224,7 +228,7 @@ function SemFilho() {
   return (
     <div className="entrar">
       <div className="entrar-card">
-        <div className="entrar-topo"><span className="entrar-ic">👨‍👩‍👧</span><div><h1>Adicione seu filho</h1><p className="muted">Digite o código de convite que o tio da van mandou.</p></div></div>
+        <div className="entrar-topo"><span className="entrar-ic"><I n="casa" /></span><div><h1>Adicione seu filho</h1><p className="muted">Digite o código de convite que o tio da van mandou.</p></div></div>
         <form className="form" onSubmit={async (e) => { e.preventDefault(); try { await vincularFilho(codigo); location.reload(); } catch (er) { setMsg((er as Error).message); } }}>
           <input className="inp inp-codigo" required value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="EX: AB12CD" />
           {msg && <div className="aviso-erro">{msg}</div>}

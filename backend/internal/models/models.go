@@ -222,6 +222,48 @@ type VisaoFamilia struct {
 	Eta          *int     `json:"eta,omitempty"`
 	ParadasAntes int      `json:"paradasAntes"`
 	HoraFase     string   `json:"horaFase,omitempty"`
+	// true = o filho está dentro da van: a família acompanha a posição durante todo o trajeto (PL 1240/2026)
+	ABordo bool `json:"aBordo,omitempty"`
+}
+
+// ---------------- PL 1240/2026: registro dos trajetos e fiscalização ----------------
+
+// PontoTrajeto = uma posição registrada da van, com o horário.
+type PontoTrajeto struct {
+	Lat float64 `json:"lat"`
+	Lng float64 `json:"lng"`
+	Em  string  `json:"em"`
+}
+
+// ResumoViagem = uma linha do histórico de trajetos (sem nome nem endereço de aluno).
+type ResumoViagem struct {
+	ID          string   `json:"id"`
+	Data        string   `json:"data"`
+	Turno       Turno    `json:"turno"`
+	Tipo        string   `json:"tipo"`
+	Status      string   `json:"status"`
+	IniciadaEm  string   `json:"iniciadaEm"`
+	ConcluidaEm string   `json:"concluidaEm,omitempty"`
+	Escolas     []string `json:"escolas"`
+	Alunos      int      `json:"alunos"`    // embarcados (ida) ou entregues (volta)
+	Ausentes    int      `json:"ausentes"`  // não estavam / fora do trecho
+	Pontos      int      `json:"pontos"`    // posições registradas
+	Km          float64  `json:"km"`        // distância percorrida pelo registro
+	Origem      string   `json:"origem"`    // gps | simulacao
+	PrimeiraEm  string   `json:"primeiraEm,omitempty"`
+	UltimaEm    string   `json:"ultimaEm,omitempty"`
+}
+
+// AcessoFiscal = link somente leitura para o poder público.
+type AcessoFiscal struct {
+	Token          string `json:"token"`
+	VanID          string `json:"vanId"`
+	Nome           string `json:"nome"`
+	CriadoEm       string `json:"criadoEm"`
+	ExpiraEm       string `json:"expiraEm"`
+	RevogadoEm     string `json:"revogadoEm,omitempty"`
+	UltimoAcessoEm string `json:"ultimoAcessoEm,omitempty"`
+	Acessos        int    `json:"acessos"`
 }
 
 type VisaoEscola struct {

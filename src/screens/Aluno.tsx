@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { Feed, Missoes, NivelCard, Ranking, Selos, usePontosAluno, usePontosVan } from '../components/gamificacao';
 import { ShellFone, type ItemMenu } from '../components/Shell';
 import { Avatar, Vazio } from '../components/ui';
+import { I } from '../components/Icone';
 import { db } from '../db/db';
 import { saldoDe, sequencia } from '../lib/gamificacao';
 import { haQuanto } from '../lib/util';
@@ -14,15 +15,15 @@ export default function Aluno({ aba = 'inicio' }: { aba?: string }) {
   const f = useFamilia(alunoId);
   if (f.carregando || !f.aluno || !f.visao) return <div className="vazio">Carregando…</div>;
   const menu: ItemMenu[] = [
-    { id: 'inicio', ic: '🏠', nome: 'Início' },
-    { id: 'missoes', ic: '🎯', nome: 'Missões' },
-    { id: 'ranking', ic: '🏆', nome: 'Ranking' },
-    { id: 'loja', ic: '🎁', nome: 'Loja' },
+    { id: 'inicio', ic: 'casa', nome: 'Início' },
+    { id: 'missoes', ic: 'alvo', nome: 'Missões' },
+    { id: 'ranking', ic: 'trofeu', nome: 'Ranking' },
+    { id: 'loja', ic: 'premio', nome: 'Loja' },
   ];
   const topo = (
-    <div className="linha" style={{ flex: 1 }}>
+    <div className="linha" style={{ flex: 1, flexWrap: 'nowrap', minWidth: 0 }}>
       <Avatar aluno={f.aluno} />
-      <div style={{ flex: 1, minWidth: 0 }}><small>Oi, {f.aluno.apelido}! 👋</small><SeletorAluno id={alunoId} onChange={setAlunoId} perfis={f.perfis} /></div>
+      <div style={{ flex: 1, minWidth: 0 }}><small>Oi, {f.aluno.apelido}!</small><SeletorAluno id={alunoId} onChange={setAlunoId} perfis={f.perfis} /></div>
     </div>
   );
   return (
@@ -47,19 +48,19 @@ function Inicio({ f }: { f: F }) {
   return (
     <>
       <div className="aluno-ola">
-        <p>{s.ic} {f.viagem?.status === 'em_andamento' ? 'Agora' : 'Hoje'}</p>
-        <h2 style={{ fontSize: 22 }}>{s.titulo}</h2>
+        <p><I n={s.ic} tam={16} />{f.viagem?.status === 'em_andamento' ? 'Agora' : 'Hoje'}</p>
+        <h2>{s.titulo}</h2>
         <p style={{ marginTop: 4 }}>{s.sub}</p>
         {v.fase === 'proximo' && <div className="grande">{v.eta} <small>minutinhos</small></div>}
       </div>
       {podePronto && (
         <div className="checkin">
           {parada!.prontoEm ? (
-            <><div style={{ fontSize: 50 }}>🙌</div><strong style={{ fontSize: 17 }}>O tio sabe que você está no portão!</strong><p className="muted small">Quando embarcar você ganha +10 ⭐</p></>
+            <><span className="entrar-ic" style={{ background: 'var(--verde-suave)', color: 'var(--verde)' }}><I n="check" /></span><strong style={{ fontSize: 17, marginTop: 8 }}>O tio sabe que você está no portão!</strong><p className="muted small">Quando embarcar você ganha +10 pontos</p></>
           ) : (
             <>
               <strong style={{ fontSize: 16 }}>Já está no portão com a mochila?</strong>
-              <button className="btn-gigante" onClick={() => void marcarPronto(a.id)}><div><span>🙋</span>Tô no portão!</div></button>
+              <button className="btn-gigante" onClick={() => void marcarPronto(a.id)}><div><I n="mao" />Tô no portão!</div></button>
               <span className="muted small">Vale +10 pontos se for antes da van chegar</span>
             </>
           )}
@@ -70,8 +71,8 @@ function Inicio({ f }: { f: F }) {
       <div className="carteirinha">
         <div className="qr" />
         <div style={{ position: 'relative' }}>
-          <small>CARTEIRINHA VANAAKI</small>
-          <div style={{ fontWeight: 900, fontSize: 18 }}>{a.nome}</div>
+          <small>Carteirinha VanAaki</small>
+          <div style={{ fontWeight: 700, fontSize: 17 }}>{a.nome}</div>
           <small>{f.escola?.nome} · {a.serie}</small><br />
           <small>Van: {f.van?.motorista} · {f.van?.placa}</small>
         </div>
@@ -85,8 +86,8 @@ function MissoesAba({ alunoId }: { alunoId: string }) {
   const ev = usePontosAluno(alunoId);
   return (
     <>
-      <div className="m-card"><h4>🎯 Missões da semana <span className="tag tag-amarelo">renovam segunda</span></h4><Missoes ev={ev} /></div>
-      <div className="m-card"><h4>🏅 Conquistas</h4><Selos ev={ev} /></div>
+      <div className="m-card"><h4>Missões da semana <span className="tag tag-amarelo">renovam segunda</span></h4><Missoes ev={ev} /></div>
+      <div className="m-card"><h4>Conquistas</h4><Selos ev={ev} /></div>
       <div className="m-card">
         <h4>Como ganhar pontos</h4>
         <div className="small" style={{ display: 'grid', gap: 6 }}>
@@ -114,7 +115,7 @@ function Loja({ alunoId, vanId }: { alunoId: string; vanId: string }) {
   const saldo = saldoDe(ev, resgates);
   return (
     <>
-      <div className="status-card destaque entre"><div><small style={{ fontWeight: 800 }}>SEU SALDO</small><div className="big">{saldo} ⭐</div></div><span style={{ fontSize: 44 }}>🎁</span></div>
+      <div className="status-card destaque entre"><div><small style={{ fontWeight: 600 }}>Seu saldo</small><div className="big">{saldo} ⭐</div></div><span className="st-ic" style={{ width: 52, height: 52 }}><I n="premio" tam={26} /></span></div>
       <div className="m-card">
         <h4>Prêmios da van</h4>
         {premios.map((p) => {
@@ -127,7 +128,7 @@ function Loja({ alunoId, vanId }: { alunoId: string; vanId: string }) {
             </div>
           );
         })}
-        {!premios.length && <Vazio ic="🎁">O tio ainda não cadastrou prêmios</Vazio>}
+        {!premios.length && <Vazio ic="premio">O tio ainda não cadastrou prêmios</Vazio>}
       </div>
       <div className="m-card">
         <h4>Meus pedidos</h4>

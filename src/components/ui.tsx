@@ -6,6 +6,7 @@ import { api, perfilDaAba, sair } from '../api/cliente';
 import { sincronizar, useEu } from '../api/sync';
 import { marcarLidas } from '../services/notificar';
 import { haQuanto, iniciais } from '../lib/util';
+import { I, type NomeIcone } from './Icone';
 
 // ---------------- rota (hash) ----------------
 
@@ -40,7 +41,7 @@ export function Modal({ titulo, onFechar, children }: { titulo: string; onFechar
   return (
     <div className="modal-fundo" onMouseDown={(e) => { if (e.target === e.currentTarget) onFechar(); }}>
       <div className="modal" role="dialog" aria-label={titulo}>
-        <div className="entre" style={{ marginBottom: 6 }}><h3 style={{ margin: 0 }}>{titulo}</h3><button className="btn btn-claro btn-sm" onClick={onFechar}>✕</button></div>
+        <div className="modal-topo"><h3>{titulo}</h3><button className="btn btn-fantasma btn-sm btn-ic" onClick={onFechar} aria-label="Fechar"><I n="fechar" /></button></div>
         {children}
       </div>
     </div>
@@ -51,8 +52,8 @@ export function Toggle({ on, onChange, titulo }: { on: boolean; onChange: (v: bo
   return <button type="button" className={`toggle ${on ? 'on' : ''}`} onClick={() => onChange(!on)} title={titulo} aria-pressed={on} />;
 }
 
-export function Vazio({ ic, children }: { ic: string; children: ReactNode }) {
-  return <div className="vazio"><span className="ic">{ic}</span>{children}</div>;
+export function Vazio({ ic, children }: { ic: NomeIcone; children: ReactNode }) {
+  return <div className="vazio"><span className="ic"><I n={ic} /></span>{children}</div>;
 }
 
 // ---------------- notificações ----------------
@@ -115,16 +116,16 @@ export function Sino({ filtro }: { filtro: FiltroNotif }) {
   };
   return (
     <>
-      <button className="sino-btn" onClick={abrir} aria-label="Notificações">🔔{naoLidas > 0 && <span className="bolinha">{naoLidas}</span>}</button>
+      <button className="sino-btn" onClick={abrir} aria-label="Notificações"><I n="sino" />{naoLidas > 0 && <span className="bolinha">{naoLidas}</span>}</button>
       {aberto && (
         <>
           <div style={{ position: 'fixed', inset: 0, zIndex: 299 }} onClick={() => { setAberto(false); void marcarLidas(filtro.para, filtro); }} />
           <div className="painel-notif">
             <div className="entre" style={{ padding: '4px 6px 8px' }}>
               <strong>Notificações</strong>
-              <button className="btn btn-claro btn-sm" onClick={() => void marcarLidas(filtro.para, filtro)}>Marcar lidas</button>
+              <button className="btn btn-fantasma btn-sm" onClick={() => void marcarLidas(filtro.para, filtro)}><I n="checks" />Marcar lidas</button>
             </div>
-            {lista.length === 0 && <Vazio ic="🔕">Nada por aqui</Vazio>}
+            {lista.length === 0 && <Vazio ic="semSino">Nada por aqui</Vazio>}
             {lista.slice(0, 40).map((n) => (
               <div key={n.id} className={`notif-item ${n.lida ? '' : 'nova'}`}>
                 <span className="ic">{n.icone}</span>
@@ -144,36 +145,71 @@ interface BIP extends Event { prompt: () => Promise<void> }
 let promptInstalar: BIP | null = null;
 window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); promptInstalar = e as BIP; });
 
-export function PainelTeste() {
+/** Menu da conta: sair, instalar, e (na demonstração) abrir os outros perfis e recomeçar. */
+export function PainelTeste({ lateral, compacto }: { lateral?: boolean; compacto?: boolean }) {
   const [aberto, setAberto] = useState(false);
   const eu = useEu();
   const perfil = perfilDaAba();
   const abrirAba = (p: string) => window.open(`./app.html#/${p}`, `vanaaki-${p}`);
   const demo = !!eu?.usuario.demo;
+  const nome = eu?.usuario.nome ?? '';
+  const pos = lateral ? 'pos-lateral' : compacto ? 'pos-topo' : '';
   return (
     <>
-      <button className="demo-btn" onClick={() => setAberto(!aberto)} title="Conta">{demo ? '🧪' : '👤'}<span> {demo ? 'Demonstração' : 'Conta'}</span></button>
+      {lateral ? (
+        <button className="conta-lateral" onClick={() => setAberto(!aberto)}>
+          <Avatar nome={nome || '?'} cor="#262931" tam={30} />
+          <span><strong>{nome}</strong><small>{demo ? 'Demonstração' : 'Minha conta'}</small></span>
+          <I n="config" tam={16} />
+        </button>
+      ) : compacto ? (
+        <button className="sino-btn" onClick={() => setAberto(!aberto)} aria-label="Conta"><I n={demo ? 'teste' : 'usuario'} /></button>
+      ) : (
+        <button className="demo-btn" onClick={() => setAberto(!aberto)} title="Conta"><I n={demo ? 'teste' : 'usuario'} /><span>{demo ? 'Demonstração' : 'Conta'}</span></button>
+      )}
       {aberto && (
-        <div className="demo-painel">
-          <strong>{eu?.usuario.nome}</strong>
-          <small>{eu?.usuario.email ?? (demo ? 'Conta de demonstração' : '')}</small>
-          {demo && (
-            <>
-              <small>Abra cada perfil numa aba e veja tudo acontecer ao vivo.</small>
-              <div className="grade-demo">
-                <button onClick={() => abrirAba('motorista')}>🧑‍✈️ Motorista</button>
-                <button onClick={() => abrirAba('pais')}>👨‍👩‍👧 Família</button>
-                <button onClick={() => abrirAba('aluno')}>🎒 Aluno</button>
-                <button onClick={() => abrirAba('escola')}>🏫 Escola</button>
-              </div>
-              <button onClick={async () => { if (confirm('Voltar os dados da demonstração ao início? (vale para todos que estão testando)')) { await api('/demo/restaurar', { metodo: 'POST', semToken: true }); await sincronizar(); } }}>♻️ Recomeçar a demonstração</button>
-            </>
-          )}
-          {promptInstalar && <button onClick={() => { void promptInstalar?.prompt(); promptInstalar = null; setAberto(false); }}>📲 Instalar o app</button>}
-          <a href="./index.html">🏠 Site do VanAaki</a>
-          <button onClick={() => sair(perfil)}>↩︎ Sair</button>
-        </div>
+        <>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 399 }} onClick={() => setAberto(false)} />
+          <div className={`demo-painel ${pos}`}>
+            <div className="cab">
+              <strong>{nome}</strong>
+              <small>{eu?.usuario.email ?? (demo ? 'Conta de demonstração' : '')}</small>
+            </div>
+            {demo && (
+              <>
+                <span className="rotulo">Ver como</span>
+                <div className="grade-demo">
+                  <button onClick={() => abrirAba('motorista')}><I n="van" />Motorista</button>
+                  <button onClick={() => abrirAba('pais')}><I n="casa" />Família</button>
+                  <button onClick={() => abrirAba('aluno')}><I n="aluno" />Aluno</button>
+                  <button onClick={() => abrirAba('escola')}><I n="escola" />Escola</button>
+                </div>
+                <small style={{ padding: '0 8px 6px' }}>Cada perfil abre numa aba. Tudo atualiza ao vivo.</small>
+                <button onClick={async () => { if (confirm('Voltar os dados da demonstração ao início? (vale para todos que estão testando)')) { await api('/demo/restaurar', { metodo: 'POST', semToken: true }); await sincronizar(); } }}><I n="recomecar" />Recomeçar a demonstração</button>
+              </>
+            )}
+            {promptInstalar && <button onClick={() => { void promptInstalar?.prompt(); promptInstalar = null; setAberto(false); }}><I n="celular" />Instalar o app</button>}
+            <a href="./index.html"><I n="externo" />Site do VanAaki</a>
+            <button onClick={() => sair(perfil)}><I n="sair" />Sair</button>
+          </div>
+        </>
       )}
     </>
   );
 }
+
+/** Indicador do painel: rótulo, número grande e uma linha de apoio. */
+export function Kpi({ ic, rot, num, sub, subCls, onClick, children }: { ic: NomeIcone; rot: ReactNode; num?: ReactNode; sub?: ReactNode; subCls?: string; onClick?: () => void; children?: ReactNode }) {
+  return (
+    <div className={`kpi ${onClick ? 'clicavel' : ''}`} onClick={onClick}>
+      <span className="ic"><I n={ic} /></span>
+      <div className="rot">{rot}</div>
+      {num !== undefined && <div className="num">{num}</div>}
+      {sub && <div className={`delta ${subCls ?? 'muted'}`}>{sub}</div>}
+      {children}
+    </div>
+  );
+}
+
+/** Saudação pela hora do dia. */
+export const saudacao = () => { const h = new Date().getHours(); return h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'; };

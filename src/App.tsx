@@ -2,6 +2,8 @@ import { Component, useEffect, useRef, type ReactNode } from 'react';
 import { lerSessao } from './api/cliente';
 import { useConexao, useEu } from './api/sync';
 import { useHash } from './components/ui';
+import { I } from './components/Icone';
+import Fiscal from './screens/Fiscal';
 import type { Perfil } from './db/types';
 import Aluno from './screens/Aluno';
 import Entrar from './screens/Entrar';
@@ -17,7 +19,7 @@ class Protecao extends Component<{ children: ReactNode }, { erro?: Error }> {
     if (!this.state.erro) return this.props.children;
     return (
       <div className="vazio" style={{ maxWidth: 460, margin: '20vh auto' }}>
-        <span className="ic">😵</span>
+        <span className="ic"><I n="alerta" /></span>
         <strong>Algo deu errado nesta tela.</strong>
         <p className="small" style={{ margin: '8px 0 14px' }}>{this.state.erro.message}</p>
         <button className="btn btn-primario" onClick={() => location.reload()}>Recarregar</button>
@@ -41,7 +43,7 @@ function Conectado({ perfil, aba, extra }: { perfil: Perfil; aba?: string; extra
   if (!eu) {
     return (
       <div className="vazio" style={{ maxWidth: 420, margin: '20vh auto' }}>
-        <span className="ic">📡</span><strong>Não deu para falar com o servidor</strong>
+        <span className="ic"><I n="semWifi" /></span><strong>Não deu para falar com o servidor</strong>
         <p className="small" style={{ margin: '8px 0 14px' }}>{erro}</p>
         <button className="btn btn-primario" onClick={() => location.reload()}>Tentar de novo</button>
       </div>
@@ -53,7 +55,7 @@ function Conectado({ perfil, aba, extra }: { perfil: Perfil; aba?: string; extra
     : <Escola aba={aba} />;
   return (
     <>
-      {!online && <div className="offline">Sem conexão · mostrando os últimos dados</div>}
+      {!online && <div className="offline"><I n="semWifi" tam={15} />Sem conexão · mostrando os últimos dados</div>}
       <Protecao key={`${perfil}/${aba}`}>{tela}</Protecao>
     </>
   );
@@ -65,11 +67,14 @@ export default function App() {
   const perfil = PERFIS.find((x) => x === p);
   const inicial = useRef(perfil);
   useEffect(() => {
+    if (p === 'fiscal') { document.title = 'VanAaki · Fiscalização'; return; }
     if (!perfil) { window.location.replace('./index.html'); return; }
     // cada perfil usa o próprio banco local: trocou de perfil na mesma aba → recarrega
     if (inicial.current !== perfil) location.reload();
     document.title = `VanAaki · ${NOMES[perfil]}`;
   }, [perfil]);
+  // link de fiscalização (PL 1240/2026): página pública, sem login
+  if (p === 'fiscal' && aba) return <Fiscal token={aba} />;
   if (!perfil) return <Carregando />;
   if (!lerSessao(perfil)) return <Entrar perfil={perfil} />;
   return <Conectado perfil={perfil} aba={aba} extra={extra} />;

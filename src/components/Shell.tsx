@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
+import { I, Logo, type NomeIcone } from './Icone';
 import { ir, PainelTeste, Sino, Toasts, type FiltroNotif } from './ui';
 
 /** `curto`: nome usado nas abas de baixo do celular (onde cabem ~7 palavras curtas). */
-export interface ItemMenu { id: string; ic: string; nome: string; curto?: string; badge?: number; grupo?: string }
+export interface ItemMenu { id: string; ic: NomeIcone; nome: string; curto?: string; badge?: number; grupo?: string }
 
 /** Layout com menu lateral (desktop) e abas embaixo (celular) — motorista e escola. */
 export function ShellPainel({ base, menu, atual, perfil, filtro, titulo, sub, acoes, children }: {
@@ -13,7 +14,7 @@ export function ShellPainel({ base, menu, atual, perfil, filtro, titulo, sub, ac
   return (
     <div className="shell">
       <aside className="sidebar">
-        <a href="./index.html" className="logo"><div className="logo-icone">🚐</div><span>Van<b>Aaki</b></span></a>
+        <Logo />
         {perfil}
         <nav className="side-menu">
           {menu.map((m) => {
@@ -21,18 +22,19 @@ export function ShellPainel({ base, menu, atual, perfil, filtro, titulo, sub, ac
             grupoAnterior = m.grupo;
             return (
               <span key={m.id} style={{ display: 'contents' }}>
-                {rot && <span className="side-rotulo" style={{ marginTop: 10 }}>{rot}</span>}
+                {rot && <span className="side-rotulo">{rot}</span>}
                 <a className={atual === m.id ? 'ativo' : ''} onClick={() => ir(`${base}/${m.id}`)}>
-                  {m.ic} {m.nome}{!!m.badge && <span className="cont">{m.badge}</span>}
+                  <I n={m.ic} />{m.nome}{!!m.badge && <span className="cont">{m.badge}</span>}
                 </a>
               </span>
             );
           })}
         </nav>
+        <div className="side-rodape"><PainelTeste lateral /></div>
       </aside>
       <main className="main">
         <div className="main-topo">
-          <div>{sub && <span className="muted small">{sub}</span>}<h1>{titulo}</h1></div>
+          <div style={{ minWidth: 0 }}>{sub && <span className="muted small">{sub}</span>}<h1>{titulo}</h1></div>
           <div className="acoes">{acoes}<Sino filtro={filtro} /></div>
         </div>
         {children}
@@ -40,7 +42,7 @@ export function ShellPainel({ base, menu, atual, perfil, filtro, titulo, sub, ac
       <nav className="tabs-mobile">
         {menu.map((m) => (
           <a key={m.id} className={atual === m.id ? 'ativo' : ''} onClick={() => ir(`${base}/${m.id}`)}>
-            <i>{m.ic}</i><span className="rot">{m.curto ?? m.nome}</span>{!!m.badge && <span className="bolinha">{m.badge}</span>}
+            <I n={m.ic} /><span className="rot">{m.curto ?? m.nome}</span>{!!m.badge && <span className="bolinha">{m.badge}</span>}
           </a>
         ))}
       </nav>
@@ -57,18 +59,17 @@ export function ShellFone({ base, menu, atual, classe, topo, filtro, children }:
   return (
     <div className={`fone-shell ${classe ?? ''}`}>
       <div className="fone-app">
-        <div className="fone-topo">{topo}<Sino filtro={filtro} /></div>
+        <div className="fone-topo">{topo}<PainelTeste compacto /><Sino filtro={filtro} /></div>
         <div className="fone-corpo">{children}</div>
         <nav className="tab-bar">
           {menu.map((m) => (
             <a key={m.id} className={atual === m.id ? 'ativo' : ''} onClick={() => ir(`${base}/${m.id}`)}>
-              <i>{m.ic}</i>{m.nome}{!!m.badge && <span className="bolinha">{m.badge}</span>}
+              <I n={m.ic} />{m.nome}{!!m.badge && <span className="bolinha">{m.badge}</span>}
             </a>
           ))}
         </nav>
       </div>
       <Toasts filtro={filtro} />
-      <PainelTeste />
     </div>
   );
 }

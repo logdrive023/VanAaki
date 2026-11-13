@@ -31,6 +31,8 @@ export interface VisaoFamilia {
   paradasAntes: number;
   /** hora do acontecimento principal da fase (embarque, chegada…) */
   horaFase?: string;
+  /** o filho está dentro da van: a família acompanha o trajeto todo (PL 1240/2026) */
+  aBordo?: boolean;
 }
 
 /** Caminho do ponto atual até a parada `ate` (inclusive), passando pelas pendentes do meio. */

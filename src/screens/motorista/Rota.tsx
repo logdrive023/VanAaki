@@ -3,10 +3,11 @@ import { useEu } from '../../api/sync';
 import Mapa3D, { type Linha, type Marcador } from '../../components/Mapa3D';
 import { SeletorPlano } from '../../components/presenca';
 import { Avatar, Toggle } from '../../components/ui';
+import { I } from '../../components/Icone';
 import { TURNOS, type Escola, type Parada, type TipoViagem, type Turno, type Viagem } from '../../db/types';
 import { compCaminho, etaMin } from '../../lib/geo';
 import { caminhoAte, etaAte } from '../../lib/privacidade';
-import { atrasoPrevisto, FOLGA_MIN, horarioAlvo, ICONE_TURNO, NOME_TURNO, ordenarEscolas, planejarHorario, turnoAgora, vaiNoTrecho } from '../../lib/turnos';
+import { atrasoPrevisto, FOLGA_MIN, horarioAlvo, NOME_TURNO, ordenarEscolas, planejarHorario, turnoAgora, vaiNoTrecho } from '../../lib/turnos';
 import { hora, horaMais, primeiroNome } from '../../lib/util';
 import { definirPresenca, salvarRotaFixa } from '../../services/acoes';
 import { chaveRotaFixa, configurarViagem, encerrarViagem, enviarPosicao, iniciarViagem, marcarParada, ordemLocal, ordenarPorFixa } from '../../services/viagem';
@@ -21,10 +22,10 @@ export function Rota({ d, turnoInicial }: { d: DadosVan; turnoInicial?: Turno })
 /** Selo de atraso: compara a previsão de chegada com o horário da escola. */
 function SeloHorario({ eta, horario }: { eta: number; horario?: string }) {
   const atraso = atrasoPrevisto(eta, horario);
-  if (atraso === null) return horario ? <span className="tag tag-cinza">⏰ {horario}</span> : null;
+  if (atraso === null) return horario ? <span className="tag"><I n="relogio" />{horario}</span> : null;
   return atraso > 0
-    ? <span className="tag atraso">⚠️ {atraso} min atrasado</span>
-    : <span className="tag no-horario">✓ no horário ({horario})</span>;
+    ? <span className="tag atraso"><I n="alerta" />{atraso} min atrasado</span>
+    : <span className="tag no-horario"><I n="check" />no horário · {horario}</span>;
 }
 
 // ---------------- antes de sair ----------------
@@ -100,36 +101,36 @@ function PrepararRota({ d, turnoInicial }: { d: DadosVan; turnoInicial?: Turno }
       <div className="card pilha" style={{ padding: 14 }}>
         <div className="chips-turno">
           {TURNOS.filter((t) => van.turnos.some((x) => x.turno === t && x.ativo)).map((t) => (
-            <button key={t} className={`chip-turno ${turno === t ? 'ativo' : ''}`} onClick={() => setTurno(t)}>{ICONE_TURNO[t]} {NOME_TURNO[t]}</button>
+            <button key={t} className={`chip-turno ${turno === t ? 'ativo' : ''}`} onClick={() => setTurno(t)}><I n={t} />{NOME_TURNO[t]}</button>
           ))}
         </div>
         <div className="abas" style={{ alignSelf: 'start' }}>
-          <a className={tipo === 'ida' ? 'ativo' : ''} onClick={() => setTipo('ida')}>☀️ Ida (casa → escola)</a>
-          <a className={tipo === 'volta' ? 'ativo' : ''} onClick={() => setTipo('volta')}>🏠 Volta (escola → casa)</a>
+          <a className={tipo === 'ida' ? 'ativo' : ''} onClick={() => setTipo('ida')}><I n="escola" />Ida · casa → escola</a>
+          <a className={tipo === 'volta' ? 'ativo' : ''} onClick={() => setTipo('volta')}><I n="casa" />Volta · escola → casa</a>
         </div>
-        {feitaHoje.length > 0 && <div className="alerta-otim" style={{ margin: 0 }}>🏁 <span>A {tipo} da {NOME_TURNO[turno].toLowerCase()} já foi feita hoje às {hora(feitaHoje[feitaHoje.length - 1].concluidaEm)}.</span></div>}
+        {feitaHoje.length > 0 && <div className="alerta-otim" style={{ margin: 0 }}><I n="bandeira" /><span>A {tipo} da {NOME_TURNO[turno].toLowerCase()} já foi feita hoje às {hora(feitaHoje[feitaHoje.length - 1].concluidaEm)}.</span></div>}
       </div>
       <div className="rota-grid">
         <section className="card" style={{ padding: 12 }}>
           <Mapa3D altura="min(62vh, 560px)" marcadores={marcadores} linhas={[{ id: 'p', pts: previa.pts, tipo: 'previa' }]} enquadrar={[van.garagem, ...previa.pts]} chave={`${turno}|${tipo}|${vao.length}`} />
           <div className="linha" style={{ padding: '12px 6px 2px' }}>
-            <span className="tag tag-azul">📏 ~{previa.km.toFixed(1)} km</span>
-            <span className="tag tag-azul">⏱️ ~{previa.min} min</span>
-            {otimizar && previa.economia > 0.05 && <span className="tag tag-verde">⚡ Otimização economiza {previa.economia.toFixed(1)} km</span>}
+            <span className="tag"><I n="rota" />~{previa.km.toFixed(1)} km</span>
+            <span className="tag"><I n="cronometro" />~{previa.min} min</span>
+            {otimizar && previa.economia > 0.05 && <span className="tag tag-verde"><I n="raio" />economiza {previa.economia.toFixed(1)} km</span>}
             <span className="muted small">Linha tracejada = ordem prevista. Ao sair, a rota é traçada pelas ruas.</span>
           </div>
         </section>
         <section className="card pilha">
-          <h3>{ICONE_TURNO[turno]} {tipo === 'ida' ? 'Ida' : 'Volta'} da {NOME_TURNO[turno].toLowerCase()}</h3>
+          <h3 className="turno-titulo"><I n={turno} />{tipo === 'ida' ? 'Ida' : 'Volta'} da {NOME_TURNO[turno].toLowerCase()}</h3>
           {escolas.length > 0 && previa.horario.sairAs && (
             <div className={`horario-saida ${previa.horario.atrasadoMin ? 'atrasado' : ''}`}>
-              <span className="ic">⏰</span>
+              <span className="ic"><I n="alarme" /></span>
               <div>
                 <strong>{tipo === 'ida' ? `Saia da garagem até ${previa.horario.sairAs}` : `Esteja em ${escolas[0].nome} às ${previa.horario.sairAs}`}</strong>
                 <span className="small">{tipo === 'ida'
                   ? `Calculado pelo horário de entrada das escolas (${FOLGA_MIN} min de folga) · última escola ~${previa.horario.fimAs}`
                   : `Horário de saída da escola · todos em casa ~${previa.horario.fimAs}`}</span>
-                {previa.horario.atrasadoMin ? <span className="tag atraso" style={{ marginTop: 6, alignSelf: 'start' }}>⚠️ Já passou {previa.horario.atrasadoMin} min da hora de {tipo === 'ida' ? 'sair' : 'estar lá'}</span> : null}
+                {previa.horario.atrasadoMin ? <span className="tag atraso" style={{ marginTop: 6, alignSelf: 'start' }}><I n="alerta" />Já passou {previa.horario.atrasadoMin} min da hora de {tipo === 'ida' ? 'sair' : 'estar lá'}</span> : null}
               </div>
             </div>
           )}
@@ -139,7 +140,7 @@ function PrepararRota({ d, turnoInicial }: { d: DadosVan; turnoInicial?: Turno }
               const h = previa.horario.escolas.find((x) => x.escolaId === e.id);
               return (
                 <div key={e.id} className="linha-item">
-                  <span>🏫 {i + 1}º · {e.nome}</span>
+                  <span className="ic-txt"><I n="escola" tam={16} />{i + 1}º · {e.nome}</span>
                   <span className="linha" style={{ gap: 6, justifyContent: 'flex-end' }}>
                     <span className="tag tag-cinza">{tipo === 'ida' ? 'entra' : 'sai'} {horarioAlvo(e, turno, tipo) ?? '—'}</span>
                     {h && h.folga !== null && (tipo === 'ida'
@@ -154,8 +155,8 @@ function PrepararRota({ d, turnoInicial }: { d: DadosVan; turnoInicial?: Turno }
           <div className="pilha" style={{ gap: 6 }}>
             <strong className="small">Ordem das casas</strong>
             <div className="abas modo-rota">
-              <a className={!fixa ? 'ativo' : ''} onClick={() => usarFixa(false)}>⚡ Otimizada</a>
-              <a className={fixa ? 'ativo' : ''} onClick={() => usarFixa(true)}>📌 Rota fixa</a>
+              <a className={!fixa ? 'ativo' : ''} onClick={() => usarFixa(false)}><I n="raio" />Otimizada</a>
+              <a className={fixa ? 'ativo' : ''} onClick={() => usarFixa(true)}><I n="pin" />Rota fixa</a>
             </div>
             <small className="muted">{fixa
               ? `Você define a ordem com ↑ ↓ e ela fica salva (ex.: o semestre todo). Quem não vai no dia é só pulado.${rf?.atualizadaEm ? ` Atualizada em ${new Date(rf.atualizadaEm).toLocaleDateString('pt-BR')}.` : ''}`
@@ -164,8 +165,8 @@ function PrepararRota({ d, turnoInicial }: { d: DadosVan; turnoInicial?: Turno }
           <div className="pilha" style={{ gap: 6 }}>
             <strong className="small">Posição da van</strong>
             <div className="abas modo-rota">
-              <a className={!simulado ? 'ativo' : ''} onClick={() => setSimulado(false)}>📱 GPS do celular</a>
-              <a className={simulado ? 'ativo' : ''} onClick={() => setSimulado(true)}>🧪 Simulação</a>
+              <a className={!simulado ? 'ativo' : ''} onClick={() => setSimulado(false)}><I n="celular" />GPS do celular</a>
+              <a className={simulado ? 'ativo' : ''} onClick={() => setSimulado(true)}><I n="teste" />Simulação</a>
             </div>
             <small className="muted">{simulado ? 'A van anda sozinha pelas ruas (para testar e mostrar o app).' : 'Deixe esta tela aberta durante a rota: o app usa o GPS do celular e as famílias acompanham.'}</small>
           </div>
@@ -186,8 +187,8 @@ function PrepararRota({ d, turnoInicial }: { d: DadosVan; turnoInicial?: Turno }
                   <div className="aluno-cel">
                     {fixa && (
                       <div className="ordem-btns">
-                        <button className="btn btn-claro btn-sm" title="Subir" disabled={i === 0} onClick={() => mover(a.id, -1)}>↑</button>
-                        <button className="btn btn-claro btn-sm" title="Descer" disabled={i === doTurno.length - 1} onClick={() => mover(a.id, 1)}>↓</button>
+                        <button className="btn btn-claro btn-sm" title="Subir" disabled={i === 0} onClick={() => mover(a.id, -1)}><I n="cima" /></button>
+                        <button className="btn btn-claro btn-sm" title="Descer" disabled={i === doTurno.length - 1} onClick={() => mover(a.id, 1)}><I n="baixo" /></button>
                       </div>
                     )}
                     <Avatar aluno={a} tam={34} /><div><strong>{n ? `${n}. ` : ''}{a.nome}</strong><span className="muted small">{d.mapaEscolas.get(a.escolaId)?.nome} · {a.endereco}</span></div>
@@ -198,11 +199,11 @@ function PrepararRota({ d, turnoInicial }: { d: DadosVan; turnoInicial?: Turno }
             })}
             {!doTurno.length && <span className="muted small">Nenhum aluno neste turno.</span>}
           </div>
-          {erro && <span className="tag tag-vermelho">{erro}</span>}
-          <button className="btn btn-primario btn-bloco" disabled={saindo || !vao.length} onClick={() => void sair()}>
-            {saindo ? '🛰️ Traçando a rota pelas ruas…' : `▶ Iniciar ${tipo} com ${vao.length} aluno${vao.length === 1 ? '' : 's'}`}
+          {erro && <div className="aviso-erro">{erro}</div>}
+          <button className="btn btn-primario btn-bloco btn-grande" disabled={saindo || !vao.length} onClick={() => void sair()}>
+            <I n={saindo ? 'satelite' : 'navegar'} />{saindo ? 'Traçando a rota pelas ruas…' : `Iniciar ${tipo} com ${vao.length} aluno${vao.length === 1 ? '' : 's'}`}
           </button>
-          <small className="muted">Cada família e cada escola recebem um aviso. A localização da van só aparece para uma família quando o próximo destino for a casa ou a escola dela.</small>
+          <small className="muted">Cada família e cada escola recebem um aviso. Antes do embarque a família só vê a van quando ela é a próxima; com o filho a bordo, acompanha o trajeto todo. Os trajetos ficam guardados para a fiscalização.</small>
         </section>
       </div>
     </>
@@ -211,9 +212,14 @@ function PrepararRota({ d, turnoInicial }: { d: DadosVan; turnoInicial?: Turno }
 
 // ---------------- em andamento ----------------
 
-/** GPS do celular do tio: manda a posição para o servidor (no máximo a cada 3 s) enquanto a rota estiver aberta. */
+/**
+ * GPS do celular do tio: manda a posição para o servidor (no máximo a cada 3 s) enquanto a rota estiver aberta.
+ * Sem internet, as posições ficam numa fila no aparelho e sobem juntas quando a conexão volta,
+ * para o histórico do trajeto não ter buracos (PL 1240/2026: operação contínua).
+ */
 function useGPS(v: Viagem) {
   const [estado, setEstado] = useState<'off' | 'buscando' | 'ok' | 'negado' | 'sem'>('off');
+  const [fila, setFila] = useState(0);
   const ultimo = useRef(0);
   useEffect(() => {
     if (v.simulado || v.status !== 'em_andamento') { setEstado('off'); return; }
@@ -224,7 +230,7 @@ function useGPS(v: Viagem) {
         setEstado('ok');
         if (Date.now() - ultimo.current < 3000) return;
         ultimo.current = Date.now();
-        void enviarPosicao(v.id, { lat: p.coords.latitude, lng: p.coords.longitude }).catch(() => undefined);
+        void enviarPosicao(v.id, { lat: p.coords.latitude, lng: p.coords.longitude }).then(setFila).catch(() => undefined);
       },
       (e) => setEstado(e.code === e.PERMISSION_DENIED ? 'negado' : 'buscando'),
       { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 },
@@ -235,11 +241,11 @@ function useGPS(v: Viagem) {
     nav.wakeLock?.request('screen').then((t) => { trava = t; }).catch(() => undefined);
     return () => { navigator.geolocation.clearWatch(id); void trava?.release().catch(() => undefined); };
   }, [v.id, v.simulado, v.status]);
-  return estado;
+  return [estado, fila] as const;
 }
 
 function RotaAoVivo({ d, v }: { d: DadosVan; v: Viagem }) {
-  const gps = useGPS(v);
+  const [gps, fila] = useGPS(v);
   const fim = v.paradas.length;
   const atual: Parada | undefined = v.alvo < fim ? v.paradas[v.alvo] : undefined;
   const eta = etaMin([v.pos, ...v.caminho], 0, v.rotaReal);
@@ -272,12 +278,12 @@ function RotaAoVivo({ d, v }: { d: DadosVan; v: Viagem }) {
         <Mapa3D altura="min(70vh, 640px)" marcadores={marcadores} linhas={linhas} seguir={v.pos} />
         <div className="linha" style={{ padding: '12px 6px 2px' }}>
           <span className="tag tag-verde ao-vivo"><span className="ponto" /> Ao vivo</span>
-          <span className="tag tag-azul">{ICONE_TURNO[v.turno]} {NOME_TURNO[v.turno]} · {v.tipo === 'ida' ? 'ida' : 'volta'} · {feitos}/{casas.length} {v.tipo === 'ida' ? 'embarcados' : 'entregues'}</span>
-          <span className="tag tag-azul">🏁 fim ~{horaMais(etaFim)}</span>
-          {!!v.economiaKm && v.economiaKm > 0.05 && <span className="tag tag-verde">⚡ -{v.economiaKm.toFixed(1)} km otimizados</span>}
+          <span className="tag"><I n={v.turno} />{NOME_TURNO[v.turno]} · {v.tipo} · {feitos}/{casas.length} {v.tipo === 'ida' ? 'embarcados' : 'entregues'}</span>
+          <span className="tag"><I n="bandeira" />fim ~{horaMais(etaFim)}</span>
+          {!!v.economiaKm && v.economiaKm > 0.05 && <span className="tag tag-verde"><I n="raio" />-{v.economiaKm.toFixed(1)} km</span>}
           {!v.rotaReal && <span className="tag tag-laranja">Sem internet: rota em linha reta</span>}
           {!v.simulado && <span className={`tag ${gps === 'ok' ? 'tag-verde' : gps === 'negado' || gps === 'sem' ? 'tag-vermelho' : 'tag-cinza'}`}>
-            {gps === 'ok' ? '📡 GPS ativo' : gps === 'negado' ? '📡 Libere a localização no navegador' : gps === 'sem' ? '📡 Sem GPS neste aparelho' : '📡 Procurando GPS…'}</span>}
+            <I n="satelite" />{gps === 'ok' ? `GPS ativo${fila ? ` · ${fila} na fila` : ''}` : gps === 'negado' ? 'Libere a localização no navegador' : gps === 'sem' ? 'Sem GPS neste aparelho' : 'Procurando GPS…'}</span>}
         </div>
       </section>
       <section className="pilha">
@@ -288,17 +294,17 @@ function RotaAoVivo({ d, v }: { d: DadosVan; v: Viagem }) {
             return (
               <>
                 <div className="entre">
-                  <span className="muted small" style={{ fontWeight: 800 }}>{v.naParada ? '📍 VOCÊ CHEGOU' : `PRÓXIMA PARADA · ${eta} min`}</span>
-                  {atual.prontoEm && <span className="tag tag-verde">🙋 Já está no portão</span>}
+                  <span className="rotulo-alvo">{v.naParada ? 'Você chegou' : `Próxima parada · ${eta} min`}</span>
+                  {atual.prontoEm && <span className="tag tag-verde"><I n="mao" />No portão</span>}
                 </div>
                 <div className="linha" style={{ marginTop: 10 }}>
                   <Avatar aluno={a} tam={48} />
-                  <div><div style={{ fontSize: 20, fontWeight: 900 }}>{a.nome}</div><span className="muted small">{a.endereco} · {nomeEsc(a.escolaId)}</span></div>
+                  <div style={{ minWidth: 0 }}><div className="nome-alvo">{a.nome}</div><span className="muted small">{a.endereco} · {nomeEsc(a.escolaId)}</span></div>
                 </div>
                 <div className="botoes">
-                  <button className="btn btn-verde" onClick={() => void marcarParada(v.id, 'feito')}>{v.tipo === 'ida' ? '✅ Embarcou' : '🏠 Entregue'}</button>
-                  {v.tipo === 'ida' ? <button className="btn btn-vermelho" onClick={() => void marcarParada(v.id, 'ausente')}>🚫 Não estava</button>
-                    : <a className="btn btn-claro" href={`tel:${a.telefoneResp}`}>📞 Ligar</a>}
+                  <button className="btn btn-primario" onClick={() => void marcarParada(v.id, 'feito')}><I n="check" />{v.tipo === 'ida' ? 'Embarcou' : 'Entregue'}</button>
+                  {v.tipo === 'ida' ? <button className="btn btn-claro" onClick={() => void marcarParada(v.id, 'ausente')}><I n="fechar" />Não estava</button>
+                    : <a className="btn btn-claro" href={`tel:${a.telefoneResp}`}><I n="telefone" />Ligar</a>}
                 </div>
               </>
             );
@@ -308,21 +314,21 @@ function RotaAoVivo({ d, v }: { d: DadosVan; v: Viagem }) {
             return (
               <>
                 <div className="entre">
-                  <span className="muted small" style={{ fontWeight: 800 }}>{v.naParada ? '📍 NA ESCOLA' : `PRÓXIMA ESCOLA · ${eta} min`}</span>
+                  <span className="rotulo-alvo">{v.naParada ? 'Na escola' : `Próxima escola · ${eta} min`}</span>
                   <SeloHorario eta={v.naParada ? 0 : eta} horario={horarioAlvo(e, v.turno, v.tipo)} />
                 </div>
-                <div style={{ fontSize: 20, fontWeight: 900, marginTop: 8 }}>🏫 {e.nome}</div>
+                <div className="nome-alvo" style={{ marginTop: 10 }}>{e.nome}</div>
                 <span className="muted small">{v.tipo === 'ida' ? `Descem ${lista.length}` : `Sobem ${lista.length}`}: {lista.map((p) => primeiroNome(d.mapaAlunos.get(p.alunoId)?.nome ?? '')).join(', ') || '—'}</span>
                 <div className="botoes" style={{ gridTemplateColumns: '1fr' }}>
-                  <button className="btn btn-verde" onClick={() => void marcarParada(v.id, 'feito')}>{v.tipo === 'ida' ? `✅ Desceram ${lista.length}` : `✅ Embarcaram ${lista.length}`}</button>
+                  <button className="btn btn-primario" onClick={() => void marcarParada(v.id, 'feito')}><I n="checks" />{v.tipo === 'ida' ? `Desceram ${lista.length}` : `Embarcaram ${lista.length}`}</button>
                 </div>
                 {v.tipo === 'volta' && <small className="muted" style={{ display: 'block', marginTop: 8 }}>Algum aluno não veio? Use "Fora" na lista abaixo antes de confirmar.</small>}
               </>
             );
           })() : (
             <>
-              <span className="muted small" style={{ fontWeight: 800 }}>ÚLTIMO TRECHO · {eta} min</span>
-              <div style={{ fontSize: 20, fontWeight: 900, marginTop: 8 }}>🏁 Indo para {v.destinoNome}</div>
+              <span className="rotulo-alvo">Último trecho · {eta} min</span>
+              <div className="nome-alvo" style={{ marginTop: 10 }}>Indo para {v.destinoNome}</div>
             </>
           )}
         </div>
@@ -337,7 +343,7 @@ function RotaAoVivo({ d, v }: { d: DadosVan; v: Viagem }) {
                 const h = horarioAlvo(e, v.turno, v.tipo);
                 return (
                   <li key={`esc:${e.id}`} className={cls}>
-                    <span className="n">🏫</span>
+                    <span className="n"><I n="escola" /></span>
                     <div className="info"><strong>{e.nome}</strong><span className="muted small">{p.status === 'ausente' ? 'Sem alunos — pulada' : `${v.tipo === 'ida' ? 'Entrada' : 'Saída'} ${h ?? '—'} · ${casas.filter((c) => c.escolaId === e.id && c.status !== 'ausente').length} aluno(s)`}</span></div>
                     {p.status === 'pendente' ? <SeloHorario eta={etaAte(v, i)} horario={h} /> : <span className="hora">{p.hora ? hora(p.hora) : ''}</span>}
                   </li>
@@ -346,8 +352,8 @@ function RotaAoVivo({ d, v }: { d: DadosVan; v: Viagem }) {
               const a = d.mapaAlunos.get(p.alunoId)!;
               return (
                 <li key={p.alunoId} className={cls}>
-                  <span className="n">{p.status === 'feito' ? '✓' : p.status === 'ausente' ? '–' : i + 1}</span>
-                  <div className="info"><strong>{a.nome}</strong><span className="muted small">{p.status === 'ausente' ? (p.avisou ? 'Combinado: fora deste trecho' : 'Não estava') : p.prontoEm && p.status === 'pendente' ? '🙋 no portão' : `${nomeEsc(a.escolaId)} · ${a.endereco}`}</span></div>
+                  <span className="n">{p.status === 'feito' ? <I n="check" /> : p.status === 'ausente' ? '–' : i + 1}</span>
+                  <div className="info"><strong>{a.nome}</strong><span className="muted small">{p.status === 'ausente' ? (p.avisou ? 'Combinado: fora deste trecho' : 'Não estava') : p.prontoEm && p.status === 'pendente' ? 'No portão' : `${nomeEsc(a.escolaId)} · ${a.endereco}`}</span></div>
                   {p.status === 'pendente' && i !== v.alvo
                     ? <button className="btn btn-claro btn-sm" title="Tirar deste trecho e reotimizar" onClick={() => void definirPresenca(a.id, v.tipo === 'ida' ? (d.plano(a.id) === 'so_ida' ? 'nao_vai' : 'so_volta') : (d.plano(a.id) === 'so_volta' ? 'nao_vai' : 'so_ida'), undefined, 'motorista')}>Fora</button>
                     : <span className="hora">{p.hora ? hora(p.hora) : ''}</span>}
@@ -359,7 +365,7 @@ function RotaAoVivo({ d, v }: { d: DadosVan; v: Viagem }) {
 
         <div className="card controle-sim">
           <h3>Posição da van</h3>
-          <div className="entre"><span>{v.simulado ? '🧪 Simulação (a van anda sozinha)' : '📱 GPS do celular'}</span><Toggle on={v.simulado} onChange={(x) => void configurarViagem(v.id, { simulado: x })} titulo="Simulação" /></div>
+          <div className="entre"><span className="ic-txt"><I n={v.simulado ? 'teste' : 'celular'} />{v.simulado ? 'Simulação (a van anda sozinha)' : 'GPS do celular'}</span><Toggle on={v.simulado} onChange={(x) => void configurarViagem(v.id, { simulado: x })} titulo="Simulação" /></div>
           {v.simulado && (
             <>
               <div className="entre"><span>Confirmar as paradas sozinho</span><Toggle on={v.automatico} onChange={(x) => void configurarViagem(v.id, { automatico: x })} /></div>
@@ -368,7 +374,7 @@ function RotaAoVivo({ d, v }: { d: DadosVan; v: Viagem }) {
               </label>
             </>
           )}
-          <button className="btn btn-claro" onClick={() => { if (confirm('Encerrar a rota agora?')) void encerrarViagem(v.id); }}>⏹ Encerrar rota</button>
+          <button className="btn btn-claro" onClick={() => { if (confirm('Encerrar a rota agora?')) void encerrarViagem(v.id); }}><I n="parar" />Encerrar rota</button>
         </div>
       </section>
     </div>
@@ -381,8 +387,8 @@ function Navegar({ destino }: { destino?: { lat: number; lng: number } }) {
   const ll = `${destino.lat},${destino.lng}`;
   return (
     <div className="navegar">
-      <a className="btn btn-sm" href={`https://waze.com/ul?ll=${ll}&navigate=yes`} target="_blank" rel="noreferrer">🧭 Waze</a>
-      <a className="btn btn-sm" href={`https://www.google.com/maps/dir/?api=1&destination=${ll}&travelmode=driving`} target="_blank" rel="noreferrer">🗺️ Maps</a>
+      <a className="btn btn-sm" href={`https://waze.com/ul?ll=${ll}&navigate=yes`} target="_blank" rel="noreferrer"><I n="navegar" />Waze</a>
+      <a className="btn btn-sm" href={`https://www.google.com/maps/dir/?api=1&destination=${ll}&travelmode=driving`} target="_blank" rel="noreferrer"><I n="mapa" />Maps</a>
     </div>
   );
 }

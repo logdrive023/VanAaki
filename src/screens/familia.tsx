@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useState } from 'react';
+import { Check } from 'lucide-react';
 import Mapa3D, { type Marcador } from '../components/Mapa3D';
 import { db } from '../db/db';
 import { useEu } from '../api/sync';
@@ -8,6 +9,7 @@ import { visaoFamilia, type VisaoFamilia } from '../lib/privacidade';
 import { NOME_TURNO, planoDe, type Plano } from '../lib/turnos';
 import { hoje, hora, horaMais, primeiroNome } from '../lib/util';
 import { idxAluno, idxEscola } from '../services/viagem';
+import type { NomeIcone } from '../components/Icone';
 
 /** Filho escolhido (a família pode ter mais de um). Só vale um dos filhos da conta. */
 export function useAlunoPerfil(): [string, (id: string) => void] {
@@ -50,32 +52,32 @@ const paradas = (n: number) => `${n} parada${n > 1 ? 's' : ''}`;
 const faltam = (n: number, minuscula = false) => { const t = `${n > 1 ? 'Faltam' : 'Falta'} ${paradas(n)}`; return minuscula ? t[0].toLowerCase() + t.slice(1) : t; };
 
 /** Texto do status, igual para pais e aluno (respeitando a privacidade). */
-export function textoStatus(v: VisaoFamilia, a: Aluno, viagem: Viagem | undefined, escola: string, plano: Plano, jeitoAluno = false) {
+export function textoStatus(v: VisaoFamilia, a: Aluno, viagem: Viagem | undefined, escola: string, plano: Plano, jeitoAluno = false): { ic: NomeIcone; titulo: string; sub: string } {
   const n = jeitoAluno ? 'você' : primeiroNome(a.nome);
   const N = jeitoAluno ? 'Você' : primeiroNome(a.nome);
   const prev = `previsão ~${horaMais(v.eta ?? 0)}`;
   switch (v.fase) {
     case 'sem_viagem':
-      if (plano === 'so_volta') return { ic: '🏫', titulo: jeitoAluno ? 'Hoje seus pais te levam' : `Hoje você leva ${n}`, sub: 'O tio traz na volta. Avisamos quando ele sair da escola.' };
-      if (plano === 'so_ida') return { ic: '🚐', titulo: 'Hoje só a ida de van', sub: jeitoAluno ? 'Seus pais te buscam na escola.' : `Você busca ${n} na escola.` };
-      if (plano === 'nao_vai') return { ic: '🏠', titulo: jeitoAluno ? 'Hoje você não vai de van' : `${N} não vai de van hoje`, sub: 'O tio já sabe e a rota foi ajustada.' };
-      return { ic: '🅿️', titulo: 'A van ainda não saiu', sub: `Turno da ${NOME_TURNO[a.turno].toLowerCase()} · você recebe um aviso quando o tio iniciar a rota.` };
-    case 'nao_vai': return { ic: '🏠', titulo: viagem?.tipo === 'volta' ? (jeitoAluno ? 'Hoje seus pais te buscam' : `Você busca ${n} hoje`) : (jeitoAluno ? 'Hoje seus pais te levam' : `Você leva ${n} hoje`), sub: 'Combinado com o tio: a rota já foi ajustada.' };
-    case 'ausente': return { ic: '🚫', titulo: 'O tio passou e não encontrou', sub: `Às ${hora(v.horaFase)}` };
+      if (plano === 'so_volta') return { ic: 'escola', titulo: jeitoAluno ? 'Hoje seus pais te levam' : `Hoje você leva ${n}`, sub: 'O tio traz na volta. Avisamos quando ele sair da escola.' };
+      if (plano === 'so_ida') return { ic: 'van', titulo: 'Hoje só a ida de van', sub: jeitoAluno ? 'Seus pais te buscam na escola.' : `Você busca ${n} na escola.` };
+      if (plano === 'nao_vai') return { ic: 'casa', titulo: jeitoAluno ? 'Hoje você não vai de van' : `${N} não vai de van hoje`, sub: 'O tio já sabe e a rota foi ajustada.' };
+      return { ic: 'van', titulo: 'A van ainda não saiu', sub: `Turno da ${NOME_TURNO[a.turno].toLowerCase()} · você recebe um aviso quando o tio iniciar a rota.` };
+    case 'nao_vai': return { ic: 'casa', titulo: viagem?.tipo === 'volta' ? (jeitoAluno ? 'Hoje seus pais te buscam' : `Você busca ${n} hoje`) : (jeitoAluno ? 'Hoje seus pais te levam' : `Você leva ${n} hoje`), sub: 'Combinado com o tio: a rota já foi ajustada.' };
+    case 'ausente': return { ic: 'alerta', titulo: 'O tio passou e não encontrou', sub: `Às ${hora(v.horaFase)}` };
     case 'aguardando': return viagem?.tipo === 'volta'
-      ? { ic: '🔒', titulo: `${N} está na van`, sub: `${v.paradasAntes ? `${faltam(v.paradasAntes)} antes ${jeitoAluno ? 'da sua casa' : 'da sua casa'}` : 'Você é o próximo'} · ${prev}` }
-      : { ic: '🔒', titulo: 'O tio está buscando outros alunos', sub: `${v.paradasAntes ? `${faltam(v.paradasAntes)} antes ${jeitoAluno ? 'de você' : 'da sua casa'}` : 'Você é o próximo'} · ${prev}` };
-    case 'proximo': return { ic: '🔔', titulo: jeitoAluno ? 'Você é o próximo!' : `${N} é o próximo!`, sub: `A van chega ${viagem?.tipo === 'volta' ? 'na sua casa' : 'no portão'} em ~${v.eta} min` };
+      ? { ic: 'van', titulo: `${N} está na van`, sub: `${v.paradasAntes ? `${faltam(v.paradasAntes)} antes ${jeitoAluno ? 'da sua casa' : 'da sua casa'}` : 'Você é o próximo'} · ${prev}` }
+      : { ic: 'escudo', titulo: 'O tio está buscando outros alunos', sub: `${v.paradasAntes ? `${faltam(v.paradasAntes)} antes ${jeitoAluno ? 'de você' : 'da sua casa'}` : 'Você é o próximo'} · ${prev}` };
+    case 'proximo': return { ic: 'sino', titulo: jeitoAluno ? 'Você é o próximo!' : `${N} é o próximo!`, sub: `A van chega ${viagem?.tipo === 'volta' ? 'na sua casa' : 'no portão'} em ~${v.eta} min` };
     case 'na_porta': return viagem?.tipo === 'volta'
-      ? { ic: '📍', titulo: 'A van chegou na sua casa!', sub: 'Hora de descer' }
-      : { ic: '📍', titulo: 'O tio chegou no portão!', sub: 'Pode embarcar 🚐' };
-    case 'a_bordo': return { ic: '🚐', titulo: jeitoAluno ? 'Você está a bordo' : `${N} está a bordo`, sub: `${faltam(v.paradasAntes)} até ${escola} · ${prev}` };
-    case 'a_bordo_final': return { ic: '🏫', titulo: `A caminho de ${escola}`, sub: `Chega em ~${v.eta} min` };
-    case 'chegou_escola': return { ic: '🏫', titulo: jeitoAluno ? `Você chegou em ${escola}` : `${N} chegou em ${escola}`, sub: `Às ${hora(v.horaFase)}` };
-    case 'volta_outra_escola': return { ic: '🔒', titulo: 'O tio está buscando em outra escola', sub: `Depois vem para ${escola} · ${faltam(v.paradasAntes, true)} · ${prev}` };
-    case 'volta_indo_escola': return { ic: '🏫', titulo: `O tio está indo para ${escola}`, sub: `Chega em ~${v.eta} min para buscar ${n}` };
-    case 'volta_na_escola': return { ic: '📍', titulo: `O tio chegou em ${escola}`, sub: jeitoAluno ? 'Pode ir para a van 🚐' : `${N} já pode embarcar` };
-    case 'entregue': return { ic: '🏠', titulo: jeitoAluno ? 'Você chegou em casa' : `${N} chegou em casa`, sub: `Às ${hora(v.horaFase)}` };
+      ? { ic: 'pin', titulo: 'A van chegou na sua casa!', sub: 'Hora de descer' }
+      : { ic: 'pin', titulo: 'O tio chegou no portão!', sub: 'Pode embarcar' };
+    case 'a_bordo': return { ic: 'van', titulo: jeitoAluno ? 'Você está a bordo' : `${N} está a bordo`, sub: `${faltam(v.paradasAntes)} até ${escola} · ${prev}` };
+    case 'a_bordo_final': return { ic: 'escola', titulo: `A caminho de ${escola}`, sub: `Chega em ~${v.eta} min` };
+    case 'chegou_escola': return { ic: 'escola', titulo: jeitoAluno ? `Você chegou em ${escola}` : `${N} chegou em ${escola}`, sub: `Às ${hora(v.horaFase)}` };
+    case 'volta_outra_escola': return { ic: 'escudo', titulo: 'O tio está buscando em outra escola', sub: `Depois vem para ${escola} · ${faltam(v.paradasAntes, true)} · ${prev}` };
+    case 'volta_indo_escola': return { ic: 'escola', titulo: `O tio está indo para ${escola}`, sub: `Chega em ~${v.eta} min para buscar ${n}` };
+    case 'volta_na_escola': return { ic: 'pin', titulo: `O tio chegou em ${escola}`, sub: jeitoAluno ? 'Pode ir para a van' : `${N} já pode embarcar` };
+    case 'entregue': return { ic: 'casa', titulo: jeitoAluno ? 'Você chegou em casa' : `${N} chegou em casa`, sub: `Às ${hora(v.horaFase)}` };
   }
 }
 
@@ -114,7 +116,7 @@ export function LinhaTempo({ viagem, aluno, escola, v }: { viagem?: Viagem; alun
     <ul className="linha-tempo">
       {passos.map((s, i) => (
         <li key={i} className={s.ok ? 'ok' : s.agora ? 'agora' : ''}>
-          <span className="b">{s.ok ? '✓' : ''}</span>
+          <span className="b">{s.ok ? <Check size={13} strokeWidth={2.6} /> : ''}</span>
           <div><strong style={{ color: s.ok || s.agora ? undefined : 'var(--texto-2)' }}>{s.t}</strong></div>
           <small>{s.h}</small>
         </li>

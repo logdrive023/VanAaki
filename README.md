@@ -5,6 +5,14 @@ Van escolar com **gestão para o tio**, **rastreio seguro para os pais**, **gami
 - **Frontend:** PWA em React + Vite (`index.html` landing, `app.html` app), mapa 3D MapLibre.
 - **Backend:** API em Go (`backend/`), Postgres, login com JWT e tempo real por SSE.
 - As regras (rota, privacidade, pontos, permissões) rodam no servidor. O app guarda uma cópia local (IndexedDB) só do que aquele perfil pode ver.
+- **Pronto para o PL 1240/2026** (GPS obrigatório no transporte escolar): trajetos guardados com horário, link de fiscalização e planilha.
+
+### Visual
+
+Minimalista, com a cor da marca tirada da própria van escolar: **amarelo escolar `#FFC20E` + grafite `#111318`**, as cores da faixa
+"ESCOLAR" que o CTB (art. 136) exige. O amarelo aparece pouco (ação principal, item ativo, destaque); o resto é papel `#F6F6F3`,
+branco e bordas finas. Fonte **Geist** (texto) e **Geist Mono** (códigos e placas); ícones **lucide**, num traço só.
+Tokens em `src/styles/tokens.css`, app em `src/styles/app.css`, site em `src/styles/landing.css`.
 
 ## Rodar local
 
@@ -61,6 +69,9 @@ com `compartilhado/{repositorio,regras,avisos,transmissao}`, `middleware`, `real
 | `PUT /api/presencas` · `POST /api/mensagens` · `POST /api/pagamentos/{id}/pagar` | família e motorista |
 | `POST /api/viagens/pronto`, `/api/resgates` | aluno e família |
 | `PUT /api/escola/confirma-entrada`, `/escola/credenciar` · `POST /api/viagens/{id}/entrada` | escola |
+| `POST /api/viagens/{id}/posicoes` (posições guardadas sem internet) | motorista |
+| `GET /api/conformidade`, `/conformidade/historico`, `/conformidade/historico.csv`, `/conformidade/viagens/{id}/trajeto` · `POST /api/conformidade/acessos` · `DELETE /api/conformidade/acessos/{token}` | motorista |
+| `GET /api/publico/fiscal/{token}`, `/publico/fiscal/{token}/viagens/{id}/trajeto` | público (link de fiscalização) |
 
 ## Publicar
 
@@ -68,6 +79,24 @@ com `compartilhado/{repositorio,regras,avisos,transmissao}`, `middleware`, `real
   `VITE_API_URL` no repositório (Settings → Secrets and variables → Actions → Variables) com o endereço da API.
 - **API:** qualquer servidor com Docker (VPS, Fly.io, Railway…): `backend/Dockerfile` + um Postgres. Use HTTPS
   (o GPS do celular e o app instalado exigem) e `CORS_ORIGINS` com o domínio do app.
+
+## PL 1240/2026 (GPS obrigatório)
+
+O projeto de lei (em análise na Câmara) obriga GPS em todo veículo de transporte escolar, com acesso em tempo real para pais,
+escola (conforme o contrato) e poder público, registro das rotas por pelo menos 90 dias e funcionamento contínuo; sem isso a van
+não tira nem renova a autorização (180 dias para adequar depois de publicada a lei). Como o VanAaki atende:
+
+| O PL pede | No VanAaki |
+|---|---|
+| Localização em tempo real | GPS do celular do motorista a cada 3 s (sem rastreador extra) |
+| Acesso dos pais | A van aparece na vez da família **e durante todo o tempo em que o filho está a bordo** (só a posição da van e o destino do filho) |
+| Acesso da escola | Portaria das escolas credenciadas |
+| Acesso do poder público | Link somente leitura `app.html#/fiscal/<token>`: van ao vivo, escolas e histórico, sem dado de criança (LGPD) |
+| Rotas por 90 dias | Tabela `posicoes` (posição + horário, a cada 4 s), guardada por 400 dias e limpa uma vez por dia |
+| Funcionamento contínuo | Sem internet, o celular guarda as posições e envia em lote (`/viagens/{id}/posicoes`) |
+| Relatórios | Tela "Fiscalização" do motorista: checklist, histórico com mapa do trajeto, planilha CSV e impressão |
+
+A demonstração cria 3 semanas de trajetos passados para o relatório já abrir com dados.
 
 ## Regras principais
 
@@ -93,7 +122,8 @@ liga "Confirmar a entrada na portaria" e confirma aluno por aluno.
 
 **Privacidade (combinado com o time):** a família não vê onde a van está enquanto o tio busca outras crianças
 e não sabe quem são nem onde moram. Vê só o próprio filho, quantas paradas faltam, a previsão e o destino final.
-O mapa abre quando o próximo destino da van é a casa dela ou a escola do filho.
+O mapa abre quando o próximo destino da van é a casa dela ou a escola do filho, e fica aberto **enquanto o filho está a bordo**
+(PL 1240/2026) — nesse caso vai só a posição da van, sem o caminho nem as paradas dos outros.
 O ranking usa apelidos. Regras em `src/lib/privacidade.ts`.
 
 **Gamificação:** pontos automáticos (pronto no portão +10, embarque +3, avisar ausência +2, faltar sem avisar −5),

@@ -1,6 +1,7 @@
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useEffect, useRef, useState } from 'react';
+import { Bus, createElement as svgIcone, House, MapPin, School, type IconNode } from 'lucide';
 import type { LatLng } from '../db/types';
 
 /**
@@ -9,7 +10,7 @@ import type { LatLng } from '../db/types';
  */
 const ESTILO = 'https://tiles.openfreemap.org/styles/liberty';
 
-export type TipoMarcador = 'van' | 'casa' | 'escola' | 'garagem' | 'parada' | 'feito' | 'ausente' | 'alvo' | 'pin';
+export type TipoMarcador = 'van' | 'casa' | 'escola' | 'garagem' | 'parada' | 'feito' | 'ausente' | 'alvo' | 'pin' | 'inicio' | 'fim';
 export interface Marcador { id: string; pos: LatLng; tipo: TipoMarcador; texto?: string; rotulo?: string }
 export interface Linha { id: string; pts: LatLng[]; tipo: 'rota' | 'feita' | 'previa' }
 
@@ -26,7 +27,7 @@ interface Props {
   centro?: LatLng;
 }
 
-const ICONE: Partial<Record<TipoMarcador, string>> = { van: '🚐', casa: '🏠', escola: '🏫', garagem: '🅿️', pin: '📍' };
+const ICONE: Partial<Record<TipoMarcador, IconNode>> = { van: Bus, casa: House, escola: School, pin: MapPin };
 
 export default function Mapa3D({ marcadores, linhas = [], seguir, enquadrar, chave, altura = 420, onClick, centro }: Props) {
   const div = useRef<HTMLDivElement>(null);
@@ -51,10 +52,10 @@ export default function Mapa3D({ marcadores, linhas = [], seguir, enquadrar, cha
     const montar = () => {
       if (m.getSource('linhas')) { setPronto(true); return; }
       m.addSource('linhas', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-      m.addLayer({ id: 'l-feita', type: 'line', source: 'linhas', filter: ['==', ['get', 'tipo'], 'feita'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#9AA7BD', 'line-width': 5, 'line-dasharray': [1, 1.5] } });
-      m.addLayer({ id: 'l-previa', type: 'line', source: 'linhas', filter: ['==', ['get', 'tipo'], 'previa'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#E5A800', 'line-width': 4, 'line-dasharray': [2, 1.5] } });
+      m.addLayer({ id: 'l-feita', type: 'line', source: 'linhas', filter: ['==', ['get', 'tipo'], 'feita'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#9A9DA6', 'line-width': 4, 'line-dasharray': [1, 1.5] } });
+      m.addLayer({ id: 'l-previa', type: 'line', source: 'linhas', filter: ['==', ['get', 'tipo'], 'previa'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#111318', 'line-width': 3.5, 'line-dasharray': [2, 1.5] } });
       m.addLayer({ id: 'l-rota-borda', type: 'line', source: 'linhas', filter: ['==', ['get', 'tipo'], 'rota'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#ffffff', 'line-width': 10 } });
-      m.addLayer({ id: 'l-rota', type: 'line', source: 'linhas', filter: ['==', ['get', 'tipo'], 'rota'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#1F3260', 'line-width': 6 } });
+      m.addLayer({ id: 'l-rota', type: 'line', source: 'linhas', filter: ['==', ['get', 'tipo'], 'rota'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#111318', 'line-width': 5 } });
       setPronto(true);
     };
     m.on('style.load', montar);
@@ -94,7 +95,10 @@ export default function Mapa3D({ marcadores, linhas = [], seguir, enquadrar, cha
       if (!p) {
         const el = document.createElement('div');
         el.className = `mk mk-${mk.tipo}`;
-        el.textContent = mk.texto ?? ICONE[mk.tipo] ?? '';
+        const ic = ICONE[mk.tipo];
+        if (mk.texto !== undefined) el.textContent = mk.texto;
+        else if (ic) { const svg = svgIcone(ic); svg.setAttribute('stroke-width', '2.2'); el.appendChild(svg); }
+        else if (mk.tipo === 'garagem') el.textContent = 'P';
         if (mk.rotulo) { const r = document.createElement('span'); r.className = 'mk-rotulo'; r.textContent = mk.rotulo; el.appendChild(r); }
         const marker = new maplibregl.Marker({ element: el }).setLngLat([mk.pos.lng, mk.pos.lat]).addTo(m);
         p = { m: marker, el, sig };

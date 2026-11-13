@@ -40,6 +40,8 @@ type Service interface {
 	Encerrar(ctx context.Context, e models.Escopo, viagemID string) error
 	Configurar(ctx context.Context, e models.Escopo, viagemID string, req entities.ConfigurarRequest) error
 	Posicao(ctx context.Context, e models.Escopo, viagemID string, pos models.LatLng) error
+	// PosicoesLote: posições que o celular guardou sem internet (vão para o histórico; a última move a van)
+	PosicoesLote(ctx context.Context, e models.Escopo, viagemID string, pts []models.PontoTrajeto) error
 	ConfirmarEntrada(ctx context.Context, e models.Escopo, viagemID string, alunoIDs []string) error
 	AjustarPorPresenca(ctx context.Context, alunoID string) error
 	Simular(ctx context.Context)
@@ -52,10 +54,41 @@ type service struct {
 	osrm *osrm.Cliente
 	// uma alteração de viagem por vez (GPS, botões do tio e simulação mexem na mesma linha)
 	mu sync.Mutex
+	// última posição gravada no histórico, por viagem (grava no máximo a cada intervaloRegistro)
+	muReg    sync.Mutex
+	gravados map[string]time.Time
+}
+
+// Intervalo mínimo entre duas posições gravadas no histórico de trajetos (PL 1240/2026).
+const intervaloRegistro = 4 * time.Second
+
+// registrar guarda a posição no histórico de trajetos (com horário), sem repetir em menos de intervaloRegistro.
+func (s *service) registrar(ctx context.Context, v models.Viagem, pos models.LatLng, origem string, forcar bool) {
+	s.muReg.Lock()
+	ult, ok := s.gravados[v.ID]
+	if !forcar && ok && time.Since(ult) < intervaloRegistro {
+		s.muReg.Unlock()
+		return
+	}
+	s.gravados[v.ID] = time.Now()
+	if v.Status != "em_andamento" {
+		delete(s.gravados, v.ID)
+	}
+	s.muReg.Unlock()
+	if err := s.repo.InserirPosicoes(ctx, v.ID, v.VanID, origem, []models.PontoTrajeto{{Lat: pos.Lat, Lng: pos.Lng, Em: models.AgoraIso()}}); err != nil {
+		log.Printf("histórico de trajeto: %v", err)
+	}
+}
+
+func origemDe(v models.Viagem) string {
+	if v.Simulado {
+		return "simulacao"
+	}
+	return "gps"
 }
 
 func New(r *repositorio.Repo, av *avisos.Avisos, tx *transmissao.T, o *osrm.Cliente) Service {
-	return &service{repo: r, av: av, tx: tx, osrm: o}
+	return &service{repo: r, av: av, tx: tx, osrm: o, gravados: map[string]time.Time{}}
 }
 
 // ---------------- locais ----------------
@@ -314,6 +347,7 @@ func (s *service) Iniciar(ctx context.Context, e models.Escopo, req entities.Ini
 	if err := s.repo.SalvarViagem(ctx, v); err != nil {
 		return v, err
 	}
+	s.registrar(ctx, v, inicio, origemDe(v), true)
 	s.tx.Van(ctx, van.ID)
 	s.tx.Viagem(ctx, v, false)
 	return v, nil
@@ -839,12 +873,47 @@ func (s *service) Posicao(ctx context.Context, e models.Escopo, viagemID string,
 	err = s.repo.SalvarViagem(ctx, v)
 	s.mu.Unlock()
 	if err == nil {
+		s.registrar(ctx, v, pos, "gps", mudou)
 		if mudou {
 			s.tx.Van(ctx, v.VanID)
 		}
 		s.tx.Viagem(ctx, v, !mudou)
 	}
 	return err
+}
+
+func (s *service) PosicoesLote(ctx context.Context, e models.Escopo, viagemID string, pts []models.PontoTrajeto) error {
+	if len(pts) == 0 {
+		return nil
+	}
+	if len(pts) > 5000 {
+		return core.Invalido("Posições demais de uma vez.")
+	}
+	s.mu.Lock()
+	v, err := s.viagemDoTio(ctx, e, viagemID)
+	s.mu.Unlock()
+	if err != nil {
+		return err
+	}
+	validos := make([]models.PontoTrajeto, 0, len(pts))
+	for _, p := range pts {
+		t := models.ParseIso(p.Em)
+		if p.Lat < -90 || p.Lat > 90 || p.Lng < -180 || p.Lng > 180 || t.IsZero() || time.Since(t) > 48*time.Hour || time.Until(t) > time.Minute {
+			continue
+		}
+		validos = append(validos, models.PontoTrajeto{Lat: p.Lat, Lng: p.Lng, Em: models.Iso(t)})
+	}
+	if len(validos) == 0 {
+		return core.Invalido("Nenhuma posição válida.")
+	}
+	if err := s.repo.InserirPosicoes(ctx, v.ID, v.VanID, "gps", validos); err != nil {
+		return err
+	}
+	if v.Status != "em_andamento" {
+		return nil
+	}
+	u := validos[len(validos)-1]
+	return s.Posicao(ctx, e, viagemID, models.LatLng{Lat: u.Lat, Lng: u.Lng})
 }
 
 // Simular move as vans em modo demonstração (roda em segundo plano, a cada segundo).
@@ -916,6 +985,7 @@ func (s *service) passo(ctx context.Context, dt time.Duration) {
 			log.Printf("simulação: %v", err)
 			continue
 		}
+		s.registrar(ctx, v, v.Pos, "simulacao", mudou)
 		if mudou {
 			s.tx.Van(ctx, v.VanID)
 		}

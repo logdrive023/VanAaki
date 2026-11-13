@@ -27,6 +27,11 @@ type PosicaoRequest struct {
 	Lng float64 `json:"lng"`
 }
 
+// PosicoesRequest: posições guardadas pelo celular quando ficou sem internet.
+type PosicoesRequest struct {
+	Pontos []models.PontoTrajeto `json:"pontos"`
+}
+
 type EntradaRequest struct {
 	AlunoIDs []string `json:"alunoIds"`
 }

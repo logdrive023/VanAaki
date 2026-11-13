@@ -255,7 +255,16 @@ func (s *Service) Restaurar(ctx context.Context) error {
 		x.ID, x.CriadoEm = uuid.NewString(), models.AgoraIso()
 		_ = s.repo.InserirNotificacao(ctx, x)
 	}
-	log.Printf("dados de demonstração criados (%d eventos de pontos)", n)
+	// trajetos das últimas semanas (relatório de fiscalização / PL 1240/2026)
+	mapaEsc := map[string]models.Escola{}
+	for _, e := range esc {
+		mapaEsc[e.ID] = e
+	}
+	nv, err := s.historicoDemo(ctx, vans[0], lista, mapaEsc, 21)
+	if err != nil {
+		log.Printf("histórico de trajetos da demonstração: %v", err)
+	}
+	log.Printf("dados de demonstração criados (%d eventos de pontos, %d viagens no histórico)", n, nv)
 	s.tx.Van(ctx, VanPrincipal)
 	return nil
 }

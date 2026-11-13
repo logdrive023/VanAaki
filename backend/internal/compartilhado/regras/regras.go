@@ -227,6 +227,18 @@ func VisaoFamilia(v *models.Viagem, aluno models.Aluno, escola *models.Escola) m
 		b.Fase, b.Eta, b.ParadasAntes, b.HoraFase = fase, ptr(EtaAte(v, ate)), PendentesEntre(v, v.Alvo, ate), hora
 		return b
 	}
+	// a bordo: a família acompanha a van durante todo o trajeto do filho (PL 1240/2026).
+	// Vai só a posição da van e o destino do filho: nada do caminho nem das paradas dos outros.
+	bordo := func(fase string, ate int, hora string, tipo string) models.VisaoFamilia {
+		b := espera(fase, ate, hora)
+		b.MostrarMapa, b.ABordo, b.AlvoTipo, b.Caminho = true, true, tipo, []models.LatLng{}
+		if tipo == "casa" {
+			b.Alvo = ptr(aluno.Local)
+		} else if escola != nil {
+			b.Alvo = ptr(escola.Local)
+		}
+		return b
+	}
 	casaFase := func() string {
 		if v.NaParada {
 			return "na_porta"
@@ -262,7 +274,7 @@ func VisaoFamilia(v *models.Viagem, aluno models.Aluno, escola *models.Escola) m
 			}
 			return mapa("a_bordo_final", s, "escola")
 		}
-		return espera("a_bordo", s, p.Hora)
+		return bordo("a_bordo", s, p.Hora, "escola")
 	}
 
 	// volta
@@ -291,7 +303,8 @@ func VisaoFamilia(v *models.Viagem, aluno models.Aluno, escola *models.Escola) m
 	if ps != nil {
 		hora = ps.Hora
 	}
-	return espera("aguardando", k, hora)
+	// já saiu da escola com a van: está a bordo
+	return bordo("aguardando", k, hora, "casa")
 }
 
 // VisaoEscola: a escola vê quantos alunos dela, a previsão e a van no mapa só quando ela é o próximo destino.

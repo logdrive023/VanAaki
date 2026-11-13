@@ -41,6 +41,7 @@ func main() {
 		}
 	}
 	go c.Viagens.Simular(ctx) // anda com as vans em modo demonstração
+	go limparHistorico(ctx, c) // PL 1240/2026: guarda os trajetos pelo prazo e apaga o que passou
 
 	srv := server.New(c)
 	go func() {
@@ -54,4 +55,22 @@ func main() {
 	defer cancelar()
 	_ = srv.Shutdown(desligar)
 	log.Println("até logo")
+}
+
+// limparHistorico apaga, uma vez por dia, as posições mais velhas que o prazo de guarda.
+func limparHistorico(ctx context.Context, c *container.Container) {
+	tk := time.NewTicker(24 * time.Hour)
+	defer tk.Stop()
+	for {
+		if n, err := c.Conformidade.Limpar(ctx); err != nil {
+			log.Printf("limpeza do histórico: %v", err)
+		} else if n > 0 {
+			log.Printf("histórico: %d posições antigas apagadas", n)
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-tk.C:
+		}
+	}
 }

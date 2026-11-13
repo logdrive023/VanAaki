@@ -1,12 +1,13 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { api, salvarSessao, type Sessao } from '../api/cliente';
 import type { Perfil } from '../db/types';
+import { I, Logo, type NomeIcone } from '../components/Icone';
 
-const INFO: Record<Perfil, { ic: string; nome: string; frase: string; codigo?: string; dicaCodigo?: string }> = {
-  motorista: { ic: '🧑‍✈️', nome: 'Motorista', frase: 'Alunos, rota do dia, mensalidades e conduta num lugar só.' },
-  pais: { ic: '👨‍👩‍👧', nome: 'Família', frase: 'Saiba quando seu filho é o próximo, embarcou e chegou.', codigo: 'Código de convite', dicaCodigo: 'O tio da van manda esse código pelo WhatsApp.' },
-  aluno: { ic: '🎒', nome: 'Aluno', frase: 'Seus pontos, missões e prêmios da van.', codigo: 'Código do aluno', dicaCodigo: 'Seus pais encontram esse código no app deles.' },
-  escola: { ic: '🏫', nome: 'Escola', frase: 'As vans chegando na portaria, por turno.', codigo: 'Código da escola', dicaCodigo: 'O código aparece para o tio da van em "Turnos e escolas".' },
+const INFO: Record<Perfil, { ic: NomeIcone; nome: string; frase: string; codigo?: string; dicaCodigo?: string }> = {
+  motorista: { ic: 'van', nome: 'Motorista', frase: 'Alunos, rota do dia, mensalidades e conduta num lugar só.' },
+  pais: { ic: 'casa', nome: 'Família', frase: 'Saiba quando seu filho é o próximo, embarcou e chegou.', codigo: 'Código de convite', dicaCodigo: 'O tio da van manda esse código pelo WhatsApp.' },
+  aluno: { ic: 'aluno', nome: 'Aluno', frase: 'Seus pontos, missões e prêmios da van.', codigo: 'Código do aluno', dicaCodigo: 'Seus pais encontram esse código no app deles.' },
+  escola: { ic: 'escola', nome: 'Escola', frase: 'As vans chegando na portaria, por turno.', codigo: 'Código da escola', dicaCodigo: 'O código aparece para o tio da van em "Turnos e escolas".' },
 };
 
 function Campo({ rotulo, children }: { rotulo: string; children: ReactNode }) {
@@ -41,10 +42,10 @@ export default function Entrar({ perfil }: { perfil: Perfil }) {
 
   return (
     <div className="entrar">
-      <a href="./index.html" className="logo"><div className="logo-icone">🚐</div><span>Van<b>Aaki</b></span></a>
+      <Logo />
       <div className="entrar-card">
         <div className="entrar-topo">
-          <span className="entrar-ic">{info.ic}</span>
+          <span className="entrar-ic"><I n={info.ic} /></span>
           <div><h1>{info.nome}</h1><p className="muted">{info.frase}</p></div>
         </div>
 
@@ -81,17 +82,20 @@ export default function Entrar({ perfil }: { perfil: Perfil }) {
             </div>
           )}
           {erro && <div className="aviso-erro">{erro}</div>}
-          <button className="btn btn-primario btn-bloco" disabled={enviando}>
+          <button className="btn btn-primario btn-bloco btn-grande" disabled={enviando}>
             {enviando ? 'Um instante…' : modo === 'entrar' ? 'Entrar' : perfil === 'aluno' ? 'Entrar no app' : 'Criar conta'}
           </button>
         </form>
 
         <div className="entrar-demo">
           <span className="muted small">Só quer conhecer?</span>
-          <button type="button" className="btn btn-claro btn-bloco" disabled={enviando} onClick={() => void chamar('/auth/demo', { perfil })}>Entrar na demonstração</button>
+          <button type="button" className="btn btn-claro btn-bloco" disabled={enviando} onClick={() => void chamar('/auth/demo', { perfil })}><I n="teste" />Entrar na demonstração</button>
         </div>
       </div>
-      <a className="muted small" href="./index.html">← Voltar para o site</a>
+      <div className="entrar-rodape">
+        <a href="./index.html">Voltar para o site</a>
+        {(['motorista', 'pais', 'aluno', 'escola'] as Perfil[]).filter((x) => x !== perfil).map((x) => <a key={x} href={`./app.html#/${x}`}>{INFO[x].nome}</a>)}
+      </div>
     </div>
   );
 }

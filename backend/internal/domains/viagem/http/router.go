@@ -20,6 +20,7 @@ func (rt *Router) Register(api *mux.Router) {
 	tio.HandleFunc("/viagens/{id}/encerrar", rt.ct.Encerrar).Methods("POST")
 	tio.HandleFunc("/viagens/{id}/config", rt.ct.Configurar).Methods("PATCH")
 	tio.HandleFunc("/viagens/{id}/posicao", rt.ct.Posicao).Methods("POST")
+	tio.HandleFunc("/viagens/{id}/posicoes", rt.ct.Posicoes).Methods("POST")
 
 	familia := api.NewRoute().Subrouter()
 	familia.Use(middleware.Perfis(models.PerfilAluno, models.PerfilPais))

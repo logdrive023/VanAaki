@@ -47,6 +47,33 @@ export const marcarParada = (viagemId: string, status: 'feito' | 'ausente') => p
 export const marcarPronto = (alunoId: string) => post('/viagens/pronto', { alunoId });
 export const encerrarViagem = (viagemId: string) => post(`/viagens/${viagemId}/encerrar`);
 export const configurarViagem = (viagemId: string, mud: Partial<Pick<Viagem, 'automatico' | 'velocidade' | 'simulado'>>) => patch(`/viagens/${viagemId}/config`, mud);
-export const enviarPosicao = (viagemId: string, p: LatLng) => post(`/viagens/${viagemId}/posicao`, p);
+// ---------------- posição do GPS (com fila sem internet) ----------------
+
+interface PontoFila { lat: number; lng: number; em: string }
+const chaveFila = (viagemId: string) => `vanaaki-fila-gps-${viagemId}`;
+const lerFila = (viagemId: string): PontoFila[] => { try { return JSON.parse(localStorage.getItem(chaveFila(viagemId)) ?? '[]') as PontoFila[]; } catch { return []; } };
+const gravarFila = (viagemId: string, l: PontoFila[]) => { try { if (l.length) localStorage.setItem(chaveFila(viagemId), JSON.stringify(l.slice(-5000))); else localStorage.removeItem(chaveFila(viagemId)); } catch { /* sem storage */ } };
+
+/**
+ * Manda a posição da van. Se a internet cair, guarda na fila do aparelho e manda tudo junto
+ * (com o horário de cada ponto) assim que voltar. Devolve quantos pontos ainda estão na fila.
+ */
+export async function enviarPosicao(viagemId: string, p: LatLng): Promise<number> {
+  const fila = lerFila(viagemId);
+  const ponto: PontoFila = { lat: p.lat, lng: p.lng, em: new Date().toISOString() };
+  try {
+    if (fila.length) {
+      await post(`/viagens/${viagemId}/posicoes`, { pontos: [...fila, ponto] });
+      gravarFila(viagemId, []);
+    } else {
+      await post(`/viagens/${viagemId}/posicao`, p);
+    }
+    return 0;
+  } catch (e) {
+    // só guarda se foi falta de conexão (status 0); erro do servidor não adianta repetir
+    if ((e as { status?: number }).status === 0) { gravarFila(viagemId, [...fila, ponto]); return fila.length + 1; }
+    throw e;
+  }
+}
 export const confirmarEntradaEscola = (viagemId: string, alunoIds: string | string[]) =>
   post(`/viagens/${viagemId}/entrada`, { alunoIds: Array.isArray(alunoIds) ? alunoIds : [alunoIds] });

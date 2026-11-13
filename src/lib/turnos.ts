@@ -40,11 +40,11 @@ export function atrasoPrevisto(etaMin: number, horario: string | undefined, agor
 /** O combinado do dia: van nos dois trechos, só em um, ou não vai. */
 export type Plano = 'ambos' | 'so_ida' | 'so_volta' | 'nao_vai';
 
-export const PLANOS: { id: Plano; icone: string; nome: string; desc: string }[] = [
-  { id: 'ambos', icone: '🚐', nome: 'Ida e volta', desc: 'A van leva e traz' },
-  { id: 'so_volta', icone: '🏫', nome: 'Só a volta', desc: 'Eu levo, o tio traz' },
-  { id: 'so_ida', icone: '🏠', nome: 'Só a ida', desc: 'O tio leva, eu busco' },
-  { id: 'nao_vai', icone: '🚫', nome: 'Não vai hoje', desc: 'Sem van nos dois trechos' },
+export const PLANOS: { id: Plano; icone: string; ic: 'van' | 'escola' | 'casa' | 'fechar'; nome: string; desc: string }[] = [
+  { id: 'ambos', icone: '🚐', ic: 'van', nome: 'Ida e volta', desc: 'A van leva e traz' },
+  { id: 'so_volta', icone: '🏫', ic: 'escola', nome: 'Só a volta', desc: 'Eu levo, o tio traz' },
+  { id: 'so_ida', icone: '🏠', ic: 'casa', nome: 'Só a ida', desc: 'O tio leva, eu busco' },
+  { id: 'nao_vai', icone: '🚫', ic: 'fechar', nome: 'Não vai hoje', desc: 'Sem van nos dois trechos' },
 ];
 
 export function planoDe(p?: Pick<Presenca, 'ida' | 'volta'>): Plano {

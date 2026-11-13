@@ -1,0 +1,83 @@
+/* =========================================================
+   VanAaki — tokens de design
+   A cor da marca é o AMARELO ESCOLAR com o GRAFITE: as mesmas cores
+   que a lei exige na faixa "ESCOLAR" das vans (CTB, art. 136).
+   O amarelo aparece pouco (ação principal, estado ativo, destaque);
+   o resto é neutro: papel, tinta e bordas finas.
+   ========================================================= */
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@500;600;700&display=swap');
+
+:root {
+  /* marca */
+  --amarelo: #FFC20E;
+  --amarelo-forte: #F2B200;
+  --amarelo-suave: #FFF6D9;
+  --amarelo-texto: #765600;
+  --tinta: #111318;
+  --tinta-2: #262931;
+
+  /* neutros */
+  --papel: #F6F6F3;
+  --superficie: #FFFFFF;
+  --superficie-2: #FAFAF8;
+  --borda: #E7E6E1;
+  --borda-forte: #D6D5CF;
+  --texto: #111318;
+  --texto-2: #5E626D;
+  --texto-3: #9A9DA6;
+
+  /* estados */
+  --verde: #12924A;
+  --verde-suave: #E7F5EC;
+  --verde-texto: #0B6634;
+  --vermelho: #D93636;
+  --vermelho-suave: #FCEBEB;
+  --vermelho-texto: #9E2121;
+  --laranja: #DD7410;
+  --laranja-suave: #FDF0E1;
+  --laranja-texto: #8F4A05;
+  --azul: #2E5BD8;
+  --azul-suave: #EBF0FD;
+
+  /* forma */
+  --raio-s: 8px;
+  --raio: 12px;
+  --raio-l: 16px;
+  --raio-xl: 22px;
+  --sombra: 0 1px 2px rgba(17, 19, 24, .05);
+  --sombra-m: 0 6px 20px rgba(17, 19, 24, .07);
+  --sombra-forte: 0 18px 48px rgba(17, 19, 24, .16);
+  --fonte: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* nomes antigos usados nas telas (mantidos como apelidos) */
+  --fundo: var(--papel);
+  --amarelo-claro: var(--amarelo-suave);
+  --amarelo-escuro: var(--amarelo-forte);
+  --azul-claro: #F0F0EC;
+  --azul-2: var(--tinta-2);
+  --verde-claro: var(--verde-suave);
+  --vermelho-claro: var(--vermelho-suave);
+  --laranja-claro: var(--laranja-suave);
+  --branco: #fff;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: var(--fonte); font-size: 15px; line-height: 1.5; color: var(--texto); background: var(--papel);
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; font-feature-settings: 'ss01', 'cv11';
+}
+a { color: inherit; text-decoration: none; }
+img, svg { display: block; max-width: 100%; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; border: 0; background: none; }
+:focus-visible { outline: 2px solid var(--tinta); outline-offset: 2px; border-radius: 6px; }
+::selection { background: var(--amarelo); color: var(--tinta); }
+h1, h2, h3, h4 { font-weight: 650; letter-spacing: -.015em; line-height: 1.2; }
+
+/* marca */
+.logo { display: inline-flex; align-items: center; gap: 9px; font-weight: 700; font-size: 18px; letter-spacing: -.02em; color: var(--texto); }
+.logo-marca { width: 30px; height: 30px; flex-shrink: 0; }
+.logo b { font-weight: 800; }
+.faixa { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; background: var(--amarelo); color: var(--tinta); font: 700 11px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; border-radius: 4px; }

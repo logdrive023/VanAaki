@@ -1,7 +1,8 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useRef, useState } from 'react';
 import { Feed, Ranking, usePontosVan } from '../../components/gamificacao';
-import { Avatar, Toggle, Vazio } from '../../components/ui';
+import { Avatar, Kpi, Toggle, Vazio } from '../../components/ui';
+import { I } from '../../components/Icone';
 import { db } from '../../db/db';
 import type { Aluno, Pagamento } from '../../db/types';
 import { CATALOGO, saldoDe } from '../../lib/gamificacao';
@@ -32,15 +33,14 @@ export function Financeiro({ d }: { d: DadosVan }) {
   return (
     <>
       <section className="kpis">
-        <div className="kpi"><div className="ic" style={{ background: 'var(--azul-claro)' }}>🧾</div><div><div className="num">{reais(total)}</div><div className="rot">A receber em {nomeMes(mes).toLowerCase()}</div></div></div>
-        <div className="kpi"><div className="ic" style={{ background: 'var(--verde-claro)' }}>✅</div><div><div className="num">{reais(recebido)}</div><div className="rot">Recebido · {pct}%</div></div></div>
-        <div className="kpi"><div className="ic" style={{ background: 'var(--vermelho-claro)' }}>⏰</div><div><div className="num">{reais(total - recebido)}</div><div className="rot">Em aberto</div><div className="delta vermelho">{daVan.filter(atrasado).length} atrasado(s)</div></div></div>
-        <div className="kpi"><div className="ic" style={{ background: 'var(--amarelo-claro)' }}>📅</div><div style={{ flex: 1 }}>
-          <div className="rot">Próximo mês</div>
-          <button className="btn btn-primario btn-sm" style={{ marginTop: 6 }} onClick={async () => { const n = await gerarCobrancas(d.van!.id, prox); setMsg(`${n} cobrança(s) de ${nomeMes(prox).toLowerCase()} geradas e famílias avisadas.`); setMes(prox); }}>Gerar {nomeMes(prox).toLowerCase()}</button>
-        </div></div>
+        <Kpi ic="documento" rot={`A receber em ${nomeMes(mes).toLowerCase()}`} num={reais(total)} sub={`${daVan.length} mensalidade(s)`} />
+        <Kpi ic="check" rot="Recebido" num={reais(recebido)} sub={`${pct}% do mês`} subCls="verde" />
+        <Kpi ic="relogio" rot="Em aberto" num={reais(total - recebido)} sub={`${daVan.filter(atrasado).length} atrasada(s)`} subCls={daVan.some(atrasado) ? 'vermelho' : 'muted'} />
+        <Kpi ic="calendario" rot="Próximo mês">
+          <button className="btn btn-primario btn-sm" style={{ marginTop: 8, alignSelf: 'start' }} onClick={async () => { const n = await gerarCobrancas(d.van!.id, prox); setMsg(`${n} cobrança(s) de ${nomeMes(prox).toLowerCase()} geradas e famílias avisadas.`); setMes(prox); }}><I n="mais" />Gerar {nomeMes(prox).toLowerCase()}</button>
+        </Kpi>
       </section>
-      {msg && <div className="alerta-otim">✅ {msg}</div>}
+      {msg && <div className="aviso-ok"><I n="check" />{msg}</div>}
       <section className="card">
         <div className="card-topo">
           <div className="linha">
@@ -60,13 +60,13 @@ export function Financeiro({ d }: { d: DadosVan }) {
                     <td><div className="aluno-cel"><Avatar aluno={a} tam={36} /><div><strong>{a.nome}</strong><span className="muted small">{a.responsavel}</span></div></div></td>
                     <td data-rot="Vencimento">{p.vencimento.split('-').reverse().join('/')}</td>
                     <td data-rot="Valor"><strong>{reais(p.valor)}</strong></td>
-                    <td data-rot="Situação">{p.status === 'pago' ? <span className="tag tag-verde">✓ Pago {p.metodo ? `· ${p.metodo}` : ''}</span> : atrasado(p) ? <span className="tag tag-vermelho">Atrasado</span> : <span className="tag tag-laranja">Pendente</span>}</td>
+                    <td data-rot="Situação">{p.status === 'pago' ? <span className="tag tag-verde">Pago{p.metodo ? ` · ${p.metodo}` : ''}</span> : atrasado(p) ? <span className="tag tag-vermelho">Atrasado</span> : <span className="tag tag-laranja">Pendente</span>}</td>
                     <td className="td-acoes" style={{ textAlign: 'right' }}>
                       {p.status === 'pago'
                         ? <button className="btn btn-claro btn-sm" onClick={() => void desfazerPagamento(p.id)}>Desfazer</button>
                         : <div className="linha" style={{ justifyContent: 'flex-end' }}>
-                            <a className="btn btn-contorno btn-sm" href={cobrar(p, a)} target="_blank" rel="noreferrer">📩 Cobrar</a>
-                            <button className="btn btn-verde btn-sm" onClick={() => void pagar(p.id, 'dinheiro', 'motorista')}>Recebi</button>
+                            <a className="btn btn-claro btn-sm" href={cobrar(p, a)} target="_blank" rel="noreferrer"><I n="enviar" />Cobrar</a>
+                            <button className="btn btn-escuro btn-sm" onClick={() => void pagar(p.id, 'dinheiro', 'motorista')}><I n="check" />Recebi</button>
                           </div>}
                     </td>
                   </tr>
@@ -74,7 +74,7 @@ export function Financeiro({ d }: { d: DadosVan }) {
               })}
             </tbody>
           </table>
-          {lista.length === 0 && <Vazio ic="🧾">Nada neste filtro</Vazio>}
+          {lista.length === 0 && <Vazio ic="documento">Nada neste filtro</Vazio>}
         </div>
       </section>
     </>
@@ -107,11 +107,11 @@ export function Conduta({ d }: { d: DadosVan }) {
           ))}
         </div>
         <label className="fld"><span>Observação (opcional — vai para os pais)</span><input value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Ex.: ajudou a colega a fechar o cinto" /></label>
-        <strong className="verde">👍 Elogios</strong>
+        <strong className="ic-txt verde"><I n="joinha" />Elogios</strong>
         <div className="conduta-btns">{CATALOGO.filter((c) => c.grupo === 'elogio').map((c) => <button key={c.tipo} className="pos" onClick={() => void registrar(c.tipo)}>{c.icone} {c.nome}<b className="verde">+{c.pontos}</b></button>)}</div>
-        <strong className="vermelho">⚠️ Ocorrências (avisa os pais na hora)</strong>
+        <strong className="ic-txt vermelho"><I n="alerta" />Ocorrências · avisa os pais na hora</strong>
         <div className="conduta-btns">{CATALOGO.filter((c) => c.grupo === 'ocorrencia').map((c) => <button key={c.tipo} className="neg" onClick={() => void registrar(c.tipo)}>{c.icone} {c.nome}<b className="vermelho">{c.pontos}</b></button>)}</div>
-        {feito && <div className="alerta-otim">✅ {feito}</div>}
+        {feito && <div className="aviso-ok"><I n="check" />{feito}</div>}
         <hr className="sep" />
         <h3>Histórico da van</h3>
         <Feed ev={ev} limite={20} alunos={d.mapaAlunos} />
@@ -142,7 +142,7 @@ export function Premios({ d }: { d: DadosVan }) {
     <div className="grade-painel">
       <section className="card">
         <div className="card-topo"><h3>Pedidos dos alunos</h3><span className="tag tag-amarelo">{pend.length} aguardando</span></div>
-        {pend.length === 0 && <Vazio ic="🎁">Nenhum pedido agora</Vazio>}
+        {pend.length === 0 && <Vazio ic="premio">Nenhum pedido agora</Vazio>}
         {pend.map((r) => {
           const a = d.mapaAlunos.get(r.alunoId);
           if (!a) return null;
@@ -151,7 +151,7 @@ export function Premios({ d }: { d: DadosVan }) {
             <div key={r.id} className="premio">
               <div className="ic">{r.icone}</div>
               <div><strong>{a.nome} quer "{r.nome}"</strong><div className="small muted">{r.custo} ⭐ · saldo antes do pedido: {saldo} ⭐ · {haQuanto(r.criadoEm)}</div></div>
-              <div className="linha"><button className="btn btn-claro btn-sm" onClick={() => void decidirResgate(r.id, false)}>Recusar</button><button className="btn btn-verde btn-sm" onClick={() => void decidirResgate(r.id, true)}>Aprovar</button></div>
+              <div className="linha"><button className="btn btn-claro btn-sm" onClick={() => void decidirResgate(r.id, false)}>Recusar</button><button className="btn btn-escuro btn-sm" onClick={() => void decidirResgate(r.id, true)}>Aprovar</button></div>
             </div>
           );
         })}
@@ -177,7 +177,7 @@ export function Premios({ d }: { d: DadosVan }) {
             <input className="inp" style={{ flex: 1, minWidth: 140 }} placeholder="Ex.: Escolher o lanche da sexta" value={novo.nome} onChange={(e) => setNovo({ ...novo, nome: e.target.value })} />
             <input className="inp" style={{ width: 90 }} type="number" min={5} value={novo.custo} onChange={(e) => setNovo({ ...novo, custo: Number(e.target.value) || 5 })} />
           </div>
-          <button className="btn btn-primario" disabled={!novo.nome.trim()} onClick={async () => { await salvarRecompensa({ icone: novo.icone || '🎉', nome: novo.nome.trim(), custo: Math.max(5, novo.custo), ativo: true }); setNovo({ icone: '🎉', nome: '', custo: 50 }); }}>＋ Adicionar prêmio</button>
+          <button className="btn btn-primario" disabled={!novo.nome.trim()} onClick={async () => { await salvarRecompensa({ icone: novo.icone || '🎉', nome: novo.nome.trim(), custo: Math.max(5, novo.custo), ativo: true }); setNovo({ icone: '🎉', nome: '', custo: 50 }); }}><I n="mais" />Adicionar prêmio</button>
           <small className="muted">Dica: prêmios que custam pouco e mexem com o dia a dia da van (música, janela, ajudante) engajam mais que brindes caros.</small>
         </div>
       </section>
@@ -216,10 +216,10 @@ export function Mensagens({ d }: { d: DadosVan }) {
       <section className="card painel-conversa">
         {atual ? (
           <>
-            <button type="button" className="btn btn-claro btn-sm so-celular" style={{ marginBottom: 10 }} onClick={() => setSel(null)}>← Conversas</button>
+            <button type="button" className="btn btn-claro btn-sm so-celular" style={{ marginBottom: 10 }} onClick={() => setSel(null)}><I n="voltar" />Conversas</button>
             <Chat alunoId={atual.a.id} eu="motorista" titulo={`${atual.a.responsavel} · ${primeiroNome(atual.a.nome)}`} />
           </>
-        ) : <Vazio ic="💬">Sem conversas</Vazio>}
+        ) : <Vazio ic="mensagem">Sem conversas</Vazio>}
       </section>
     </div>
   );
@@ -233,19 +233,19 @@ export function Chat({ alunoId, eu, titulo }: { alunoId: string; eu: 'pais' | 'm
   const enviar = async () => { await enviarMensagem(alunoId, eu, txt); setTxt(''); };
   const rapidas = eu === 'pais'
     ? ['Hoje ele vai mais tarde', 'Pode buscar na casa da avó?', 'Obrigado, tio!']
-    : ['Bom dia! Estou a caminho 🚐', 'Chegando em 5 min', 'Combinado!'];
+    : ['Bom dia! Estou a caminho', 'Chegando em 5 min', 'Combinado!'];
   return (
     <div>
       <strong>{titulo}</strong>
       <div className="chat" style={{ marginTop: 10 }}>
-        {msgs.length === 0 && <Vazio ic="💬">Comece a conversa</Vazio>}
+        {msgs.length === 0 && <Vazio ic="mensagem">Comece a conversa</Vazio>}
         {msgs.map((m) => <div key={m.id} className={`bolha ${m.de === eu ? 'minha' : 'dele'}`}>{m.texto}<small>{hora(m.criadoEm)}</small></div>)}
         <div ref={fim} />
       </div>
       <div className="respostas-rapidas">{rapidas.map((r) => <button key={r} type="button" className="tag tag-cinza" onClick={() => void enviarMensagem(alunoId, eu, r)}>{r}</button>)}</div>
       <form className="chat-envio" onSubmit={(e) => { e.preventDefault(); void enviar(); }}>
         <input className="inp" value={txt} onChange={(e) => setTxt(e.target.value)} placeholder="Escreva uma mensagem…" enterKeyHint="send" />
-        <button className="btn btn-primario chat-enviar" disabled={!txt.trim()} aria-label="Enviar">➤</button>
+        <button className="btn btn-escuro chat-enviar" disabled={!txt.trim()} aria-label="Enviar"><I n="enviar" /></button>
       </form>
     </div>
   );

@@ -10,6 +10,9 @@ import (
 	"github.com/logdrive023/vanaaki/backend/internal/compartilhado/repositorio"
 	"github.com/logdrive023/vanaaki/backend/internal/compartilhado/transmissao"
 	"github.com/logdrive023/vanaaki/backend/internal/config"
+	conformidadectl "github.com/logdrive023/vanaaki/backend/internal/domains/conformidade/controller"
+	conformidadehttp "github.com/logdrive023/vanaaki/backend/internal/domains/conformidade/http"
+	conformidadesvc "github.com/logdrive023/vanaaki/backend/internal/domains/conformidade/service"
 	comunicacaohttp "github.com/logdrive023/vanaaki/backend/internal/domains/comunicacao/http"
 	comunicacaosvc "github.com/logdrive023/vanaaki/backend/internal/domains/comunicacao/service"
 	contactl "github.com/logdrive023/vanaaki/backend/internal/domains/conta/controller"
@@ -46,6 +49,10 @@ type Container struct {
 	Conta   contasvc.Service
 	Viagens viagemsvc.Service
 	Demo    *demosvc.Service
+	// PL 1240/2026: histórico dos trajetos e link de fiscalização
+	Conformidade *conformidadesvc.Service
+
+	FiscalRouter *conformidadehttp.Router
 
 	ContaRouter *contahttp.Router
 	DemoRouter  *demohttp.Router
@@ -64,9 +71,11 @@ func New(cfg config.Config, db *sql.DB) *Container {
 	viagens := viagemsvc.New(repo, av, tx, rotas)
 	van := vansvc.New(repo, av, tx, viagens)
 	demo := demosvc.New(repo, tx)
+	conformidade := conformidadesvc.New(repo)
+	fiscal := conformidadehttp.NewRouter(conformidadectl.New(conformidade))
 
 	return &Container{
-		Cfg: cfg, Hub: hub, Tokens: tokens, Conta: conta, Viagens: viagens, Demo: demo,
+		Cfg: cfg, Hub: hub, Tokens: tokens, Conta: conta, Viagens: viagens, Demo: demo, Conformidade: conformidade, FiscalRouter: fiscal,
 		ContaRouter: contahttp.NewRouter(contactl.New(conta)),
 		DemoRouter:  demohttp.NewRouter(demo),
 		Protegidas: []Registravel{
@@ -78,6 +87,7 @@ func New(cfg config.Config, db *sql.DB) *Container {
 			financeirohttp.NewRouter(financeirosvc.New(repo, av, tx)),
 			comunicacaohttp.NewRouter(comunicacaosvc.New(repo, av, tx, hub)),
 			gamificacaohttp.NewRouter(gamificacaosvc.New(repo, av, tx)),
+			fiscal,
 		},
 	}
 }

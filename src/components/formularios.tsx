@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { api } from '../api/cliente';
 import { TURNOS, type Escola, type Horario, type LatLng, type Turno } from '../db/types';
-import { ICONE_TURNO, NOME_TURNO } from '../lib/turnos';
+import { NOME_TURNO } from '../lib/turnos';
+import { I } from './Icone';
 import { salvarEscola } from '../services/acoes';
 import Mapa3D from './Mapa3D';
 import { Modal, Toggle } from './ui';
@@ -26,7 +27,7 @@ export function BuscaEndereco({ valor, onTexto, onLocal }: { valor: string; onTe
       <div className="linha" style={{ flexWrap: 'nowrap' }}>
         <input style={{ flex: 1, minWidth: 0 }} value={valor} onChange={(e) => onTexto(e.target.value)} placeholder="Rua, número, bairro, cidade"
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void buscar(); } }} />
-        <button type="button" className="btn btn-claro" disabled={buscando || valor.trim().length < 4} onClick={() => void buscar()}>{buscando ? '…' : 'Buscar'}</button>
+        <button type="button" className="btn btn-claro" disabled={buscando || valor.trim().length < 4} onClick={() => void buscar()}><I n={buscando ? 'carregando' : 'busca'} />Buscar</button>
       </div>
       {erro && <small className="muted">{erro}</small>}
       {res && res.length > 1 && (
@@ -67,7 +68,7 @@ export function FormEscola({ inicial, onFechar, onSalva }: { inicial?: Escola; o
             return (
               <div key={t} className="horario-linha">
                 <Toggle on={!!h} onChange={(on) => setHorarios((x) => { const n = { ...x }; if (on) n[t] = padrao[t]; else delete n[t]; return n; })} />
-                <span className="horario-nome">{ICONE_TURNO[t]} {NOME_TURNO[t]}</span>
+                <span className="horario-nome"><I n={t} />{NOME_TURNO[t]}</span>
                 {h ? (
                   <span className="linha" style={{ gap: 6 }}>
                     <input type="time" value={h.entrada} onChange={(e) => setHorarios((x) => ({ ...x, [t]: { ...h, entrada: e.target.value } }))} />

@@ -72,6 +72,15 @@ func (ct *Controller) Posicao(w http.ResponseWriter, r *http.Request) {
 	responder(w, ct.service.Posicao(r.Context(), httpx.Escopo(r), httpx.Param(r, "id"), models.LatLng{Lat: req.Lat, Lng: req.Lng}))
 }
 
+func (ct *Controller) Posicoes(w http.ResponseWriter, r *http.Request) {
+	var req entities.PosicoesRequest
+	if err := httpx.Bind(r, &req); err != nil {
+		core.Responder{W: w}.Erro(err)
+		return
+	}
+	responder(w, ct.service.PosicoesLote(r.Context(), httpx.Escopo(r), httpx.Param(r, "id"), req.Pontos))
+}
+
 func (ct *Controller) ConfirmarEntrada(w http.ResponseWriter, r *http.Request) {
 	var req entities.EntradaRequest
 	if err := httpx.Bind(r, &req); err != nil {

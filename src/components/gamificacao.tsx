@@ -41,14 +41,14 @@ export function Ranking({ alunos, ev, eu, nomesReais = false }: { alunos: Aluno[
   const nome = (a: Aluno) => (nomesReais ? a.nome : a.apelido);
   return (
     <div className="pilha">
-      <div className="entre"><strong>🏆 Ranking da van</strong><SeletorPeriodo valor={periodo} onChange={setPeriodo} /></div>
+      <div className="entre"><strong>Ranking da van</strong><SeletorPeriodo valor={periodo} onChange={setPeriodo} /></div>
       {top.length === 3 && (
         <div className="podio">
           {[top[1], top[0], top[2]].map((l) => (
             <div key={l.aluno.id} className={`p${l.pos}`}>
               <div style={{ fontSize: 22 }}>{l.pos === 1 ? '👑' : l.pos === 2 ? '🥈' : '🥉'}</div>
               <Avatar nome={nome(l.aluno)} cor={l.aluno.cor} />
-              <div className="small" style={{ fontWeight: 900 }}>{nome(l.aluno)}{l.aluno.id === eu ? ' (você)' : ''}</div>
+              <div className="small" style={{ fontWeight: 650 }}>{nome(l.aluno)}{l.aluno.id === eu ? ' (você)' : ''}</div>
               <div className="deg">{l.pontos} ⭐</div>
             </div>
           ))}
@@ -64,7 +64,7 @@ export function Ranking({ alunos, ev, eu, nomesReais = false }: { alunos: Aluno[
           </div>
         ))}
       </div>
-      {!nomesReais && <small className="muted">🔒 O ranking usa apelidos: ninguém vê o nome completo nem o endereço dos colegas.</small>}
+      {!nomesReais && <small className="muted">O ranking usa apelidos: ninguém vê o nome completo nem o endereço dos colegas.</small>}
     </div>
   );
 }
@@ -77,11 +77,11 @@ export function NivelCard({ ev, saldo, sequencia }: { ev: EventoPontos[]; saldo:
       <div className="entre">
         <div>
           <small>Seu nível</small>
-          <div style={{ fontSize: 22, fontWeight: 900 }}>{n.atual.icone} {n.atual.nome}</div>
+          <div style={{ fontSize: 20, fontWeight: 700, marginTop: 2 }}>{n.atual.icone} {n.atual.nome}</div>
         </div>
         <div style={{ textAlign: 'right' }}>
           <small>Saldo</small>
-          <div style={{ fontSize: 22, fontWeight: 900 }}>{saldo} ⭐</div>
+          <div style={{ fontSize: 20, fontWeight: 700, marginTop: 2, color: 'var(--amarelo)' }}>{saldo} ⭐</div>
         </div>
       </div>
       <div className="barra-xp"><i style={{ width: `${n.pct}%` }} /></div>
@@ -128,7 +128,7 @@ export function Missoes({ ev }: { ev: EventoPontos[] }) {
 /** Histórico de pontos (elogios, ocorrências, automáticos). */
 export function Feed({ ev, limite = 15, alunos }: { ev: EventoPontos[]; limite?: number; alunos?: Map<string, Aluno> }) {
   const l = [...ev].sort((a, b) => b.criadoEm.localeCompare(a.criadoEm)).slice(0, limite);
-  if (!l.length) return <Vazio ic="⭐">Ainda sem pontos</Vazio>;
+  if (!l.length) return <Vazio ic="estrela">Ainda sem pontos</Vazio>;
   return (
     <div>
       {l.map((e) => {

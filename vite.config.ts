@@ -22,14 +22,14 @@ export default defineConfig({
       manifest: {
         name: 'VanAaki — Van escolar',
         short_name: 'VanAaki',
-        description: 'Gestão da van escolar, rastreio para os pais e gamificação para os alunos.',
+        description: 'Gestão da van escolar, rastreio seguro para os pais e o registro de trajetos do PL 1240/2026.',
         lang: 'pt-BR',
         start_url: './app.html',
         scope: './',
         display: 'standalone',
         orientation: 'portrait',
-        background_color: '#14213D',
-        theme_color: '#14213D',
+        background_color: '#F6F6F3',
+        theme_color: '#111318',
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },

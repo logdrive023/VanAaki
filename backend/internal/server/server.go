@@ -21,6 +21,7 @@ func New(c *container.Container) *http.Server {
 
 	api := r.PathPrefix("/api").Subrouter()
 	c.ContaRouter.Publicas(api)
+	c.FiscalRouter.Publicas(api)
 	if c.Cfg.Demo {
 		c.DemoRouter.Publicas(api)
 	}
