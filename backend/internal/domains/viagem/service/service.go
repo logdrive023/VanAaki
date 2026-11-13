@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"sort"
 	"sync"
 	"time"
 
@@ -38,7 +39,8 @@ const raioSaida = 90.0
 
 type Service interface {
 	Iniciar(ctx context.Context, e models.Escopo, req entities.IniciarRequest) (models.Viagem, error)
-	MarcarParada(ctx context.Context, e models.Escopo, viagemID, status string) error
+	// chave = qual parada (aluno ou esc:escola); em = quando aconteceu no aparelho (a ação pode chegar atrasada, sem internet)
+	MarcarParada(ctx context.Context, e models.Escopo, viagemID, status, chave, em string) error
 	MarcarPronto(ctx context.Context, e models.Escopo, alunoID string) error
 	Encerrar(ctx context.Context, e models.Escopo, viagemID string) error
 	Configurar(ctx context.Context, e models.Escopo, viagemID string, req entities.ConfigurarRequest) error
@@ -60,6 +62,16 @@ type service struct {
 	// última posição gravada no histórico, por viagem (grava no máximo a cada intervaloRegistro)
 	muReg    sync.Mutex
 	gravados map[string]time.Time
+}
+
+// horaDoAparelho: usa o horário em que a ação aconteceu no celular (chegou atrasada por falta de internet),
+// desde que faça sentido (depois do início da viagem e não no futuro). Senão, agora.
+func horaDoAparelho(em string, v models.Viagem) string {
+	t := models.ParseIso(em)
+	if em == "" || t.IsZero() || time.Until(t) > 2*time.Minute || t.Before(models.ParseIso(v.IniciadaEm).Add(-time.Minute)) {
+		return models.AgoraIso()
+	}
+	return models.Iso(t)
 }
 
 // Intervalo mínimo entre duas posições gravadas no histórico de trajetos (PL 1240/2026).
@@ -272,6 +284,18 @@ func (s *service) Iniciar(ctx context.Context, e models.Escopo, req entities.Ini
 	if len(e.VanIDs) == 0 || (req.Tipo != "ida" && req.Tipo != "volta") || !req.Turno.Valido() {
 		return models.Viagem{}, core.Invalido("Escolha o turno e se é ida ou volta.")
 	}
+	// o app manda o id da viagem: se a rota começou sem internet e o pedido chega duas vezes, é a mesma viagem
+	if req.ID != "" {
+		if _, err := uuid.Parse(req.ID); err != nil {
+			return models.Viagem{}, core.Invalido("Identificador de viagem inválido.")
+		}
+		if ja, err := s.repo.Viagem(ctx, req.ID); err == nil {
+			if !e.TemVan(ja.VanID) {
+				return models.Viagem{}, core.ErrProibido
+			}
+			return ja, nil
+		}
+	}
 	van, err := s.repo.Van(ctx, e.VanIDs[0])
 	if err != nil {
 		return models.Viagem{}, err
@@ -308,6 +332,12 @@ func (s *service) Iniciar(ctx context.Context, e models.Escopo, req entities.Ini
 		Caminho: append([]models.LatLng(nil), p.trechos[regras.ChaveParada(p.paradas[0])]...), Trechos: p.trechos, RotaReal: p.real,
 		Rastro: []models.LatLng{inicio}, Automatico: req.Automatico, Simulado: req.Simulado, Velocidade: vel,
 		IniciadaEm: models.AgoraIso(), Avisados: []string{}, EconomiaKm: p.economiaKm, Fixa: fixa, AtualizadoEm: models.AgoraIso(),
+	}
+	if req.ID != "" {
+		v.ID = req.ID
+	}
+	if t := models.ParseIso(req.Em); req.Em != "" && !t.IsZero() && time.Since(t) < 12*time.Hour && time.Until(t) < 2*time.Minute {
+		v.IniciadaEm = models.Iso(t) // começou sem internet: vale a hora em que o tio tocou em "Começar"
 	}
 
 	s.mu.Lock()
@@ -486,9 +516,14 @@ func (s *service) avisarFamilia(ctx context.Context, v *models.Viagem, L locais,
 
 // concluirParada: efeito de confirmar a parada atual (botão do tio ou automático). true = precisa retraçar.
 func (s *service) concluirParada(ctx context.Context, v *models.Viagem, L locais, status string) bool {
+	return s.concluirParadaEm(ctx, v, L, status, models.AgoraIso())
+}
+
+// concluirParadaEm = concluirParada com o horário real (ação ou GPS que chegou depois, sem internet).
+func (s *service) concluirParadaEm(ctx context.Context, v *models.Viagem, L locais, status, em string) bool {
 	p := &v.Paradas[v.Alvo]
 	vanJaChegou := v.NaParada
-	p.Status, p.Hora, v.NaParada = status, models.AgoraIso(), false
+	p.Status, p.Hora, v.NaParada = status, em, false
 	van, _ := s.repo.Van(ctx, v.VanID)
 	if p.Tipo == "aluno" {
 		a := L.Alunos[p.AlunoID]
@@ -549,7 +584,7 @@ func (s *service) concluirParada(ctx context.Context, v *models.Viagem, L locais
 	return pulou
 }
 
-func (s *service) MarcarParada(ctx context.Context, e models.Escopo, viagemID, status string) error {
+func (s *service) MarcarParada(ctx context.Context, e models.Escopo, viagemID, status, chave, em string) error {
 	if status != "feito" && status != "ausente" {
 		return core.Invalido("Status inválido.")
 	}
@@ -559,11 +594,36 @@ func (s *service) MarcarParada(ctx context.Context, e models.Escopo, viagemID, s
 		s.mu.Unlock()
 		return err
 	}
-	if v.Status != "em_andamento" || v.Alvo >= len(v.Paradas) {
+	hora := horaDoAparelho(em, v)
+	k := v.Alvo
+	if chave != "" {
+		// a ação diz QUAL parada: se chegou atrasada (sem internet), não confirma a parada errada
+		k = -1
+		for i, p := range v.Paradas {
+			if regras.ChaveParada(p) == chave {
+				k = i
+			}
+		}
+		if k < 0 {
+			s.mu.Unlock()
+			return core.Invalido("Parada não encontrada nesta viagem.")
+		}
+		if v.Paradas[k].Status != "pendente" || v.Status != "em_andamento" {
+			s.mu.Unlock()
+			return nil // já resolvida (ex.: o GPS confirmou antes) — nada a fazer
+		}
+	}
+	if v.Status != "em_andamento" || k >= len(v.Paradas) {
 		s.mu.Unlock()
 		return core.Invalido("Não há parada para confirmar.")
 	}
-	retracar := s.concluirParada(ctx, &v, s.tx.Locais(ctx, &v), status)
+	foraDeOrdem := k != v.Alvo
+	if foraDeOrdem {
+		// fora da ordem do servidor (ex.: sem internet o aparelho usou outra ordem): conclui essa parada
+		// do mesmo jeito (aviso para a família, pontos) e a viagem segue para a próxima pendente
+		v.Alvo, v.NaParada = k, false
+	}
+	retracar := s.concluirParadaEm(ctx, &v, s.tx.Locais(ctx, &v), status, hora) || foraDeOrdem // refaz o caminho pelas ruas
 	err = s.repo.SalvarViagem(ctx, v)
 	s.mu.Unlock()
 	if err != nil {
@@ -775,6 +835,10 @@ func (s *service) AjustarPorPresenca(ctx context.Context, alunoID string) error 
 func (s *service) Encerrar(ctx context.Context, e models.Escopo, viagemID string) error {
 	s.mu.Lock()
 	v, err := s.viagemDoTio(ctx, e, viagemID)
+	if err == nil && v.Status != "em_andamento" {
+		s.mu.Unlock()
+		return nil // já terminou (reenvio de quem estava sem internet)
+	}
 	if err == nil {
 		v.Status, v.AtualizadoEm = "cancelada", models.AgoraIso()
 		err = s.repo.SalvarViagem(ctx, v)
@@ -885,7 +949,37 @@ func (s *service) chegou(ctx context.Context, v *models.Viagem, L locais) {
 	_ = s.av.Escola(ctx, e.ID, "📍", tit, "Às "+regras.Hora(v.ChegouParadaEm))
 }
 
-// Posicao: GPS do celular do tio. Corta o caminho que ficou para trás e detecta a chegada.
+// aplicarPosicao: uma posição do GPS (ao vivo ou da fila do aparelho). Detecta a chegada na parada
+// e, com a confirmação automática ligada, a saída dela (confirma o embarque/entrega no horário do ponto).
+func (s *service) aplicarPosicao(ctx context.Context, v *models.Viagem, pos models.LatLng, em string, L locais, auto bool) (mudou, retracar bool) {
+	v.Simulado = false
+	v.Pos = pos
+	if em > v.UltimaPosEm {
+		v.UltimaPosEm = em
+	}
+	v.Rastro = append(v.Rastro, pos)
+	if len(v.Rastro) > 1500 {
+		v.Rastro = append(v.Rastro[:1], v.Rastro[len(v.Rastro)-1499:]...)
+	}
+	if !v.NaParada {
+		v.Caminho = geo.Aparar(pos, v.Caminho)
+		alvo := v.Destino
+		if v.Alvo < len(v.Paradas) {
+			alvo = localDe(v.Paradas[v.Alvo], L)
+		}
+		if geo.DistM(pos, alvo) < raioChegada {
+			s.chegou(ctx, v, L)
+			mudou = true
+		}
+	} else if auto && v.Alvo < len(v.Paradas) && geo.DistM(pos, localDe(v.Paradas[v.Alvo], L)) > raioSaida {
+		// o tio só dirige: parou na parada e saiu dela → o GPS confirma sozinho
+		retracar = s.concluirParadaEm(ctx, v, L, "feito", em)
+		mudou = true
+	}
+	return mudou, retracar
+}
+
+// Posicao: GPS do celular do tio, ao vivo.
 func (s *service) Posicao(ctx context.Context, e models.Escopo, viagemID string, pos models.LatLng) error {
 	s.mu.Lock()
 	v, err := s.viagemDoTio(ctx, e, viagemID)
@@ -893,32 +987,11 @@ func (s *service) Posicao(ctx context.Context, e models.Escopo, viagemID string,
 		s.mu.Unlock()
 		return err
 	}
-	v.Simulado = false
-	v.Pos = pos
-	v.Rastro = append(v.Rastro, pos)
-	if len(v.Rastro) > 1500 {
-		v.Rastro = append(v.Rastro[:1], v.Rastro[len(v.Rastro)-1499:]...)
+	auto := true
+	if van, e2 := s.repo.Van(ctx, v.VanID); e2 == nil {
+		auto = !van.Config.ConfirmarManual
 	}
-	mudou, retracar := false, false
-	if !v.NaParada {
-		v.Caminho = geo.Aparar(pos, v.Caminho)
-		alvo := v.Destino
-		if v.Alvo < len(v.Paradas) {
-			alvo = localDe(v.Paradas[v.Alvo], s.tx.Locais(ctx, &v))
-		}
-		if geo.DistM(pos, alvo) < raioChegada {
-			s.chegou(ctx, &v, s.tx.Locais(ctx, &v))
-			mudou = true
-		}
-	} else if v.Alvo < len(v.Paradas) {
-		// o tio só dirige: parou na parada e saiu dela → o GPS confirma o embarque/entrega sozinho
-		// (ele ainda pode marcar "não estava" antes de sair, ou desligar isso em Configurações)
-		L := s.tx.Locais(ctx, &v)
-		if van, e2 := s.repo.Van(ctx, v.VanID); e2 == nil && !van.Config.ConfirmarManual && geo.DistM(pos, localDe(v.Paradas[v.Alvo], L)) > raioSaida {
-			retracar = s.concluirParada(ctx, &v, L, "feito")
-			mudou = true
-		}
-	}
+	mudou, retracar := s.aplicarPosicao(ctx, &v, pos, models.AgoraIso(), s.tx.Locais(ctx, &v), auto)
 	v.AtualizadoEm = models.AgoraIso()
 	err = s.repo.SalvarViagem(ctx, v)
 	s.mu.Unlock()
@@ -935,6 +1008,9 @@ func (s *service) Posicao(ctx context.Context, e models.Escopo, viagemID string,
 	return err
 }
 
+// PosicoesLote: o que o celular guardou sem internet. Vai tudo para o histórico (PL 1240) e cada ponto
+// é reprocessado em ordem, como se tivesse chegado na hora: chegadas e saídas das paradas são detectadas
+// e confirmadas com o horário real de cada ponto.
 func (s *service) PosicoesLote(ctx context.Context, e models.Escopo, viagemID string, pts []models.PontoTrajeto) error {
 	if len(pts) == 0 {
 		return nil
@@ -944,8 +1020,8 @@ func (s *service) PosicoesLote(ctx context.Context, e models.Escopo, viagemID st
 	}
 	s.mu.Lock()
 	v, err := s.viagemDoTio(ctx, e, viagemID)
-	s.mu.Unlock()
 	if err != nil {
+		s.mu.Unlock()
 		return err
 	}
 	validos := make([]models.PontoTrajeto, 0, len(pts))
@@ -956,17 +1032,45 @@ func (s *service) PosicoesLote(ctx context.Context, e models.Escopo, viagemID st
 		}
 		validos = append(validos, models.PontoTrajeto{Lat: p.Lat, Lng: p.Lng, Em: models.Iso(t)})
 	}
+	sort.SliceStable(validos, func(i, j int) bool { return validos[i].Em < validos[j].Em })
 	if len(validos) == 0 {
+		s.mu.Unlock()
 		return core.Invalido("Nenhuma posição válida.")
 	}
 	if err := s.repo.InserirPosicoes(ctx, v.ID, v.VanID, "gps", validos); err != nil {
+		s.mu.Unlock()
 		return err
 	}
 	if v.Status != "em_andamento" {
+		s.mu.Unlock()
 		return nil
 	}
-	u := validos[len(validos)-1]
-	return s.Posicao(ctx, e, viagemID, models.LatLng{Lat: u.Lat, Lng: u.Lng})
+	auto := true
+	if van, e2 := s.repo.Van(ctx, v.VanID); e2 == nil {
+		auto = !van.Config.ConfirmarManual
+	}
+	L := s.tx.Locais(ctx, &v)
+	ultimo := v.UltimaPosEm
+	mudou, retracar := false, false
+	for _, p := range validos {
+		if p.Em <= ultimo || v.Status != "em_andamento" {
+			continue // ponto mais velho que o estado atual da viagem
+		}
+		m, r := s.aplicarPosicao(ctx, &v, models.LatLng{Lat: p.Lat, Lng: p.Lng}, p.Em, L, auto)
+		mudou, retracar = mudou || m, retracar || r
+	}
+	v.AtualizadoEm = models.AgoraIso()
+	err = s.repo.SalvarViagem(ctx, v)
+	s.mu.Unlock()
+	if err != nil {
+		return err
+	}
+	s.tx.Van(ctx, v.VanID)
+	s.tx.Viagem(ctx, v, false)
+	if retracar {
+		go s.retracar(context.Background(), v.ID)
+	}
+	return nil
 }
 
 // Simular move as vans em modo demonstração (roda em segundo plano, a cada segundo).

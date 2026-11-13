@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useEu } from '../../api/sync';
+import { useFila } from '../../api/fila';
 import Mapa3D, { type Linha, type Marcador } from '../../components/Mapa3D';
 import { SeletorPlano } from '../../components/presenca';
 import { Avatar, Toggle } from '../../components/ui';
@@ -225,7 +226,6 @@ function PrepararRota({ d, turnoInicial }: { d: DadosVan; turnoInicial?: Turno }
  */
 function useGPS(v: Viagem) {
   const [estado, setEstado] = useState<'off' | 'buscando' | 'ok' | 'negado' | 'sem'>('off');
-  const [fila, setFila] = useState(0);
   const ultimo = useRef(0);
   useEffect(() => {
     if (v.simulado || v.status !== 'em_andamento') { setEstado('off'); return; }
@@ -236,7 +236,7 @@ function useGPS(v: Viagem) {
         setEstado('ok');
         if (Date.now() - ultimo.current < 3000) return;
         ultimo.current = Date.now();
-        void enviarPosicao(v.id, { lat: p.coords.latitude, lng: p.coords.longitude }).then(setFila).catch(() => undefined);
+        void enviarPosicao(v.id, { lat: p.coords.latitude, lng: p.coords.longitude }).catch(() => undefined);
       },
       (e) => setEstado(e.code === e.PERMISSION_DENIED ? 'negado' : 'buscando'),
       { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 },
@@ -247,7 +247,8 @@ function useGPS(v: Viagem) {
     nav.wakeLock?.request('screen').then((t) => { trava = t; }).catch(() => undefined);
     return () => { navigator.geolocation.clearWatch(id); void trava?.release().catch(() => undefined); };
   }, [v.id, v.simulado, v.status]);
-  return [estado, fila] as const;
+  const { pontosGps } = useFila();
+  return [estado, pontosGps] as const;
 }
 
 function RotaAoVivo({ d, v }: { d: DadosVan; v: Viagem }) {

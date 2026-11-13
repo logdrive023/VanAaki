@@ -28,6 +28,7 @@ func New(c *container.Container) *http.Server {
 
 	protegida := api.NewRoute().Subrouter()
 	protegida.Use(middleware.Autenticar(c.Tokens, c.Conta))
+	protegida.Use(middleware.Idempotencia(c.Repo)) // internet ruim: reenvio não duplica a ação
 	for _, d := range c.Protegidas {
 		d.Register(protegida)
 	}

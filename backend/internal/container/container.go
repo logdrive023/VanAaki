@@ -51,6 +51,7 @@ type Container struct {
 	Demo    *demosvc.Service
 	// PL 1240/2026: histórico dos trajetos e link de fiscalização
 	Conformidade *conformidadesvc.Service
+	Repo         *repositorio.Repo
 
 	FiscalRouter *conformidadehttp.Router
 
@@ -75,7 +76,7 @@ func New(cfg config.Config, db *sql.DB) *Container {
 	fiscal := conformidadehttp.NewRouter(conformidadectl.New(conformidade))
 
 	return &Container{
-		Cfg: cfg, Hub: hub, Tokens: tokens, Conta: conta, Viagens: viagens, Demo: demo, Conformidade: conformidade, FiscalRouter: fiscal,
+		Cfg: cfg, Hub: hub, Tokens: tokens, Conta: conta, Viagens: viagens, Demo: demo, Conformidade: conformidade, FiscalRouter: fiscal, Repo: repo,
 		ContaRouter: contahttp.NewRouter(contactl.New(conta)),
 		DemoRouter:  demohttp.NewRouter(demo),
 		Protegidas: []Registravel{

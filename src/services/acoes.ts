@@ -1,4 +1,5 @@
 import { post, put } from '../api/cliente';
+import { enfileirar } from '../api/fila';
 import type { Aluno, ConfigVan, Escola, Horario, LatLng, Pagamento, Recompensa, RotaFixa, TipoViagem, Turno, TurnoVan, Van } from '../db/types';
 import type { Plano } from '../lib/turnos';
 import { hoje } from '../lib/util';
@@ -12,11 +13,12 @@ import { hoje } from '../lib/util';
 
 /** O combinado do dia. Pais e tio podem mudar; se a rota já está andando, ela é reotimizada. */
 export const definirPresenca = (alunoId: string, plano: Plano, motivo?: string, _porQuem?: 'pais' | 'motorista', data?: string) =>
-  put('/presencas', { alunoId, plano, motivo: motivo ?? '', data: data ?? '' });
+  enfileirar({ tipo: 'presenca', caminho: '/presencas', metodo: 'PUT', corpo: { alunoId, plano, motivo: motivo ?? '', data: data ?? '' } });
 
 // ---------------- pagamentos ----------------
 
-export const pagar = (pagamentoId: string, metodo: Pagamento['metodo'], _porQuem?: 'pais' | 'motorista') => post(`/pagamentos/${pagamentoId}/pagar`, { metodo });
+export const pagar = (pagamentoId: string, metodo: Pagamento['metodo'], porQuem?: 'pais' | 'motorista') =>
+  enfileirar({ tipo: 'pagar', caminho: `/pagamentos/${pagamentoId}/pagar`, metodo: 'POST', corpo: { metodo, porPais: porQuem === 'pais' } });
 export const desfazerPagamento = (pagamentoId: string) => post(`/pagamentos/${pagamentoId}/desfazer`);
 export const gerarCobrancas = async (_vanId: string, mes: string) => (await post<{ criadas: number }>('/pagamentos/gerar', { mes })).criadas;
 export const atrasado = (p: Pagamento) => p.status === 'pendente' && p.vencimento < hoje();
@@ -38,7 +40,8 @@ export const salvarRotaFixa = (_vanId: string, turno: Turno, tipo: TipoViagem, m
 
 // ---------------- mensagens ----------------
 
-export const enviarMensagem = (alunoId: string, _de: 'pais' | 'motorista', texto: string) => (texto.trim() ? post('/mensagens', { alunoId, texto }) : Promise.resolve());
+export const enviarMensagem = (alunoId: string, de: 'pais' | 'motorista', texto: string) =>
+  (texto.trim() ? enfileirar({ tipo: 'mensagem', caminho: '/mensagens', metodo: 'POST', corpo: { alunoId, texto: texto.trim(), de } }).then(() => undefined) : Promise.resolve());
 export const lerMensagens = (alunoId: string, _quemLe?: 'pais' | 'motorista') => post('/mensagens/lidas', { alunoId });
 
 // ---------------- escola ----------------

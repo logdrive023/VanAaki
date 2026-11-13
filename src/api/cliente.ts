@@ -35,18 +35,35 @@ export class ErroApi extends Error {
 }
 
 /** Chama a API. Erros viram ErroApi com a mensagem pronta para a tela. */
-export async function api<T = unknown>(caminho: string, op: { metodo?: string; corpo?: unknown; perfil?: string; semToken?: boolean } = {}): Promise<T> {
+export interface OpcoesApi {
+  metodo?: string; corpo?: unknown; perfil?: string; semToken?: boolean;
+  /** chave da ação (Idempotency-Key): se a internet cair e o app reenviar, o servidor não faz duas vezes */
+  chave?: string;
+  /** internet ruim não pode travar o app: desiste depois disso e trata como "sem conexão" (padrão 20 s) */
+  timeoutMs?: number;
+}
+
+export async function api<T = unknown>(caminho: string, op: OpcoesApi = {}): Promise<T> {
   const perfil = op.perfil ?? perfilDaAba();
   const sessao = op.semToken ? null : lerSessao(perfil);
   let r: Response;
+  const ctl = new AbortController();
+  const limite = setTimeout(() => ctl.abort(), op.timeoutMs ?? 20000);
   try {
     r = await fetch(`${API_URL}/api${caminho}`, {
       method: op.metodo ?? (op.corpo === undefined ? 'GET' : 'POST'),
-      headers: { 'Content-Type': 'application/json', ...(sessao ? { Authorization: `Bearer ${sessao.token}` } : {}) },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(sessao ? { Authorization: `Bearer ${sessao.token}` } : {}),
+        ...(op.chave ? { 'Idempotency-Key': op.chave } : {}),
+      },
       body: op.corpo === undefined ? undefined : JSON.stringify(op.corpo),
+      signal: ctl.signal,
     });
   } catch {
     throw new ErroApi('Sem conexão com o servidor. Confira a internet.', 0);
+  } finally {
+    clearTimeout(limite);
   }
   const j = await r.json().catch(() => ({})) as { sucesso?: boolean; msg?: string; dados?: T };
   if (r.status === 401 && sessao) { sair(perfil); }

@@ -198,6 +198,8 @@ export interface Viagem {
   /** km economizados pela otimização */
   economiaKm?: number;
   atualizadoEm: string;
+  /** horário do último ponto de GPS aplicado no servidor */
+  ultimaPosEm?: string;
   /** só na cópia da família: o que ela pode ver de cada filho (calculado no servidor) */
   visoes?: Record<string, unknown>;
   /** só na cópia da escola */
@@ -227,6 +229,8 @@ export interface Mensagem {
   texto: string;
   criadoEm: string;
   lida: boolean;
+  /** ainda na fila do aparelho (sem internet) */
+  enviando?: boolean;
 }
 
 /** Evento de gamificação (pontos positivos ou negativos). */
@@ -281,3 +285,22 @@ export interface Usuario {
 
 /** Quem está usando o app e o que pode ver (vem do servidor junto com os dados). */
 export interface Eu { usuario: Usuario; vanIds: string[]; alunoIds: string[]; escolaId?: string }
+
+// ---------------- offline-first ----------------
+
+export type TipoOp = 'iniciar' | 'parada' | 'posicoes' | 'encerrar' | 'presenca' | 'pagar' | 'mensagem' | 'pronto';
+
+/** Uma ação guardada no aparelho até o servidor confirmar. `id` vira a Idempotency-Key. */
+export interface OpFila {
+  seq?: number;
+  id: string;
+  tipo: TipoOp;
+  caminho: string;
+  metodo: 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  corpo: Record<string, unknown>;
+  criadoEm: string;
+  viagemId?: string;
+  tentativas: number;
+  /** viagem montada no aparelho (rota iniciada sem internet) */
+  local?: Viagem;
+}

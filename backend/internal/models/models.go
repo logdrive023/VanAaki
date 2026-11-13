@@ -246,6 +246,8 @@ type Viagem struct {
 	EconomiaKm   float64  `json:"economiaKm,omitempty"`
 	Fixa         bool     `json:"fixa,omitempty"`
 	AtualizadoEm string   `json:"atualizadoEm"`
+	// horário do último ponto de GPS aplicado (o replay da fila offline não volta no tempo)
+	UltimaPosEm string `json:"ultimaPosEm,omitempty"`
 
 	// só nas cópias enviadas para família/escola (calculado no servidor, respeitando a privacidade)
 	Visoes       map[string]VisaoFamilia `json:"visoes,omitempty"`

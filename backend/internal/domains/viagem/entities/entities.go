@@ -10,10 +10,15 @@ type IniciarRequest struct {
 	Velocidade float64      `json:"velocidade"`
 	// true = o servidor anda com a van (demonstração); false = GPS do celular
 	Simulado bool `json:"simulado"`
+	// offline-first: id gerado no aparelho (reenvio não cria outra viagem) e a hora em que o tio tocou em "Começar"
+	ID string `json:"id"`
+	Em string `json:"em"`
 }
 
 type ParadaRequest struct {
 	Status string `json:"status"` // feito | ausente
+	Chave  string `json:"chave"`  // qual parada (alunoId ou esc:escolaId)
+	Em     string `json:"em"`     // quando aconteceu no aparelho
 }
 
 type ConfigurarRequest struct {

@@ -115,6 +115,22 @@ O tio não vai usar o app do jeito "certo" todo dia. Então o essencial funciona
 - **Navegação do celular:** Hoje · Agenda · Rota · Alunos · Mais. A tela "Hoje" mostra a próxima rota com a hora de sair e um botão "Começar";
   conta nova vê os primeiros passos.
 
+## Sem internet (offline-first)
+
+Na rua a internet cai ou fica lenta. O app foi feito para isso:
+
+| | Como funciona |
+|---|---|
+| **Fila no aparelho** | Começar rota, embarque/não estava, encerrar, GPS, combinado do dia, "já paguei" e mensagens vão para uma fila no IndexedDB (`src/api/fila.ts`). Sobrevive a fechar o app e reiniciar o celular. |
+| **A tela não espera** | Cada ação já muda a tela na hora (efeito otimista). Dá para começar a rota na garagem sem sinal: a viagem é montada no aparelho e o servidor cria a mesma depois (mesmo id). |
+| **Reenvio sem duplicar** | Cada ação tem um id único enviado como `Idempotency-Key`. Se a resposta se perder, o app manda de novo e o servidor devolve a resposta guardada (`operacoes`, 7 dias). |
+| **Hora real** | Embarque, início e GPS levam o horário do aparelho (`em`); o servidor registra a hora em que aconteceu, não a hora em que chegou. |
+| **Ordem e parada certa** | A fila sai em ordem, uma ação por vez. O embarque diz QUAL parada (`chave`); se o GPS já confirmou, é ignorado sem erro; se o servidor usou outra ordem, a parada é concluída mesmo assim (aviso e pontos). |
+| **GPS acumulado** | Pontos de até 400 por envio; o servidor reprocessa ponto a ponto (`PosicoesLote`): chegadas e saídas das paradas são detectadas e confirmadas no horário de cada ponto. |
+| **Internet lenta** | Toda chamada tem tempo limite (20–25 s) e conta como "sem conexão"; tenta de novo em 2 s, 4 s… até 30 s, ao voltar a internet (`online`) e ao reabrir o app. |
+| **Recusa do servidor** | Erro de regra (4xx) descarta a ação e avisa na tela; erro do servidor (5xx) tenta de novo. |
+| **Na tela** | Selo "Sem internet · N ações guardadas no aparelho" → "Enviando N…" → some. Sair da conta com ação pendente pede confirmação. |
+
 ## Regras principais
 
 **Turnos e várias escolas:** o motorista escolhe os turnos em que trabalha (manhã, tarde, noite) e as escolas de cada um.

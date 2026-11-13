@@ -239,7 +239,7 @@ export function Chat({ alunoId, eu, titulo }: { alunoId: string; eu: 'pais' | 'm
       <strong>{titulo}</strong>
       <div className="chat" style={{ marginTop: 10 }}>
         {msgs.length === 0 && <Vazio ic="mensagem">Comece a conversa</Vazio>}
-        {msgs.map((m) => <div key={m.id} className={`bolha ${m.de === eu ? 'minha' : 'dele'}`}>{m.texto}<small>{hora(m.criadoEm)}</small></div>)}
+        {msgs.map((m) => <div key={m.id} className={`bolha ${m.de === eu ? 'minha' : 'dele'}`}>{m.texto}<small>{hora(m.criadoEm)}{m.enviando ? ' · aguardando internet' : ''}</small></div>)}
         <div ref={fim} />
       </div>
       <div className="respostas-rapidas">{rapidas.map((r) => <button key={r} type="button" className="tag tag-cinza" onClick={() => void enviarMensagem(alunoId, eu, r)}>{r}</button>)}</div>

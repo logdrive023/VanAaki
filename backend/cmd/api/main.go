@@ -62,6 +62,7 @@ func limparHistorico(ctx context.Context, c *container.Container) {
 	tk := time.NewTicker(24 * time.Hour)
 	defer tk.Stop()
 	for {
+		_, _ = c.Repo.PurgarOperacoes(ctx, time.Now().AddDate(0, 0, -7))
 		if n, err := c.Conformidade.Limpar(ctx); err != nil {
 			log.Printf("limpeza do histórico: %v", err)
 		} else if n > 0 {

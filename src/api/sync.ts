@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { db } from '../db/db';
 import type { Aluno, Escola, Eu, EventoPontos, LatLng, Mensagem, Notificacao, Pagamento, Presenca, Recompensa, Resgate, Van, Viagem } from '../db/types';
 import { api, API_URL, lerSessao } from './cliente';
+import { reaplicar } from './fila';
 
 interface Pacote {
   eu: Eu; hoje: string;
@@ -29,6 +30,8 @@ export async function sincronizar() {
     await db.config.put({ id: 'eu', valor: p.eu });
     await db.config.put({ id: 'hoje', valor: p.hoje });
   });
+  // o que o tio fez sem internet e ainda não chegou ao servidor continua valendo na tela
+  await reaplicar();
 }
 
 let fila: ReturnType<typeof setTimeout> | undefined;
@@ -51,14 +54,14 @@ export function conectarTempoReal(perfil: string, onEstado: (online: boolean) =>
     es = new EventSource(`${API_URL}/api/eventos?token=${encodeURIComponent(s.token)}`);
     es.addEventListener('ola', () => { espera = 1000; onEstado(true); sincronizarLogo(); });
     es.addEventListener('sync', sincronizarLogo);
-    es.addEventListener('viagem', (e) => { void db.viagens.put(JSON.parse((e as MessageEvent).data) as Viagem); });
+    es.addEventListener('viagem', (e) => { const v = JSON.parse((e as MessageEvent).data) as Viagem; void db.viagens.put(v).then(() => reaplicar(v.id)); });
     es.addEventListener('mov', (e) => {
       const m = JSON.parse((e as MessageEvent).data) as Movimento;
       void db.viagens.get(m.id).then((v) => {
         if (!v) return;
         const ult = v.rastro[v.rastro.length - 1];
         const rastro = !ult || ult.lat !== m.pos.lat || ult.lng !== m.pos.lng ? [...v.rastro, m.pos] : v.rastro;
-        return db.viagens.put({ ...v, pos: m.pos, caminho: m.caminho, naParada: m.naParada, chegouParadaEm: m.chegouParadaEm, alvo: m.alvo, atualizadoEm: m.atualizadoEm, rastro });
+        return db.viagens.put({ ...v, pos: m.pos, caminho: m.caminho, naParada: m.naParada, chegouParadaEm: m.chegouParadaEm, alvo: m.alvo, atualizadoEm: m.atualizadoEm, rastro }).then(() => reaplicar(m.id));
       });
     });
     es.onerror = () => {

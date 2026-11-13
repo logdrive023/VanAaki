@@ -4,6 +4,7 @@ import { db } from '../db/db';
 import type { Aluno, Notificacao, Perfil } from '../db/types';
 import { api, perfilDaAba, sair } from '../api/cliente';
 import { sincronizar, useEu } from '../api/sync';
+import { pendentes } from '../api/fila';
 import { marcarLidas } from '../services/notificar';
 import { haQuanto, iniciais } from '../lib/util';
 import { I, type NomeIcone } from './Icone';
@@ -190,7 +191,7 @@ export function PainelTeste({ lateral, compacto }: { lateral?: boolean; compacto
             )}
             {promptInstalar && <button onClick={() => { void promptInstalar?.prompt(); promptInstalar = null; setAberto(false); }}><I n="celular" />Instalar o app</button>}
             <a href="./index.html"><I n="externo" />Site do VanAaki</a>
-            <button onClick={() => sair(perfil)}><I n="sair" />Sair</button>
+            <button onClick={async () => { const n = await pendentes(); if (n && !confirm(`Ainda tem ${n} ação(ões) guardada(s) esperando internet. Se sair agora, elas se perdem. Sair mesmo assim?`)) return; sair(perfil); }}><I n="sair" />Sair</button>
           </div>
         </>
       )}

@@ -34,7 +34,7 @@ func (ct *Controller) MarcarParada(w http.ResponseWriter, r *http.Request) {
 		core.Responder{W: w}.Erro(err)
 		return
 	}
-	responder(w, ct.service.MarcarParada(r.Context(), httpx.Escopo(r), httpx.Param(r, "id"), req.Status))
+	responder(w, ct.service.MarcarParada(r.Context(), httpx.Escopo(r), httpx.Param(r, "id"), req.Status, req.Chave, req.Em))
 }
 
 func (ct *Controller) Pronto(w http.ResponseWriter, r *http.Request) {

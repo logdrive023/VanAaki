@@ -1,6 +1,7 @@
 import { Component, useEffect, useRef, type ReactNode } from 'react';
 import { lerSessao } from './api/cliente';
 import { useConexao, useEu } from './api/sync';
+import { useFila } from './api/fila';
 import { useHash } from './components/ui';
 import { I } from './components/Icone';
 import Fiscal from './screens/Fiscal';
@@ -35,6 +36,18 @@ function Carregando({ texto = 'Carregando…' }: { texto?: string }) {
   return <div className="carregando"><div className="giro" /><span className="muted">{texto}</span></div>;
 }
 
+/**
+ * Selo de conexão: sem internet, mostra que as ações ficaram guardadas no aparelho;
+ * quando volta, mostra o envio. Nada se perde.
+ */
+function StatusConexao({ online }: { online: boolean }) {
+  const f = useFila();
+  if (f.pendentes > 0 && (f.semInternet || !online)) return <div className="offline"><I n="semWifi" tam={15} />Sem internet · {f.pendentes} {f.pendentes === 1 ? 'ação guardada' : 'ações guardadas'} no aparelho</div>;
+  if (f.pendentes > 0 && f.enviando) return <div className="offline enviando"><I n="carregando" tam={15} className="girando" />Enviando {f.pendentes}…</div>;
+  if (!online) return <div className="offline"><I n="semWifi" tam={15} />Sem conexão · tudo que você fizer fica guardado</div>;
+  return null;
+}
+
 /** Logado: sincroniza com o servidor, fica ouvindo o tempo real e mostra a área do perfil. */
 function Conectado({ perfil, aba, extra }: { perfil: Perfil; aba?: string; extra?: string }) {
   const { online, pronto, erro } = useConexao(perfil);
@@ -55,7 +68,7 @@ function Conectado({ perfil, aba, extra }: { perfil: Perfil; aba?: string; extra
     : <Escola aba={aba} />;
   return (
     <>
-      {!online && <div className="offline"><I n="semWifi" tam={15} />Sem conexão · mostrando os últimos dados</div>}
+      <StatusConexao online={online} />
       <Protecao key={`${perfil}/${aba}`}>{tela}</Protecao>
     </>
   );
