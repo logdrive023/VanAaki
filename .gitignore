@@ -6,3 +6,6 @@ telas.zip
 backend/*.exe
 backend/vanaaki-api
 .env
+
+# pagamentos: credenciais
+pagamentos/.env
