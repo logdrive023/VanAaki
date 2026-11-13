@@ -95,7 +95,7 @@ export function Configuracoes({ d, onMinhaVan, onTurnos }: { d: DadosVan; onMinh
             <button className="btn btn-claro btn-sm" onClick={onMinhaVan}>Editar</button>
           </div>
           <div className="opcao-linha">
-            <div><strong>Turnos e escolas</strong><small>{d.van!.turnos.filter((t) => t.ativo).length} turno(s) · {d.van!.escolaIds.length} escola(s)</small></div>
+            <div><strong>Minhas escolas</strong><small>{d.van!.escolaIds.length} escola(s) · {d.van!.turnos.filter((t) => t.ativo).length} período(s)</small></div>
             <button className="btn btn-claro btn-sm" onClick={onTurnos}>Editar</button>
           </div>
         </section>

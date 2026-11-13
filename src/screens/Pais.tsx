@@ -7,7 +7,7 @@ import { I } from '../components/Icone';
 import { db } from '../db/db';
 import type { Pagamento } from '../db/types';
 import { saldoDe, sequencia, tipoEvento } from '../lib/gamificacao';
-import { haQuanto, nomeMes, primeiroNome, reais } from '../lib/util';
+import { nomeMes, primeiroNome, reais } from '../lib/util';
 import { atrasado, vincularFilho } from '../services/acoes';
 import { useEu } from '../api/sync';
 import { PainelTeste } from '../components/ui';
@@ -75,40 +75,87 @@ function StatusCard({ f, compacto }: { f: F; compacto?: boolean }) {
 function Inicio({ f }: { f: F }) {
   const a = f.aluno!;
   const notifs = useNotificacoes({ para: 'pais', alunoId: a.id });
+  const ev = usePontosAluno(a.id);
+  const pags = useLiveQuery(() => db.pagamentos.where('alunoId').equals(a.id).toArray(), [a.id]) ?? [];
   const [escolha, setEscolha] = useState<Plano | null>(null);
+  const nome = primeiroNome(a.nome);
+  const hj = hoje();
+  // o que aconteceu hoje (os avisos que a família recebeu) — a prova de que o app está trabalhando
+  const deHoje = notifs.filter((n) => n.criadoEm.slice(0, 10) === hj || new Date(n.criadoEm).toDateString() === new Date().toDateString())
+    .sort((x, y) => x.criadoEm.localeCompare(y.criadoEm));
+  // o mês com a van
+  const mes = hj.slice(0, 7);
+  const doMes = ev.filter((e) => e.data.startsWith(mes));
+  const diasVan = new Set(doMes.filter((e) => e.tipo === 'embarque' || e.tipo === 'pronto_portao').map((e) => e.data)).size;
+  const noPortao = doMes.filter((e) => e.tipo === 'pronto_portao').length;
+  const avisosMes = notifs.filter((n) => n.criadoEm.slice(0, 7) === mes).length;
+  const pendente = pags.find((p) => p.status === 'pendente' && !p.informadoEm);
+  const emDia = !pendente;
+  const credenciada = f.van && f.escola && f.van.credenciamento?.[f.escola.id] === 'credenciada';
   return (
     <>
       <StatusCard f={f} />
-      {(f.visao!.fase === 'aguardando' || f.visao!.fase === 'volta_outra_escola') && (
-        <div className="privacidade"><span className="ic"><I n="escudo" /></span><span><b>Por segurança</b>, a van aparece no mapa quando {primeiroNome(a.nome)} for o próximo e durante todo o tempo em que estiver a bordo. Ninguém vê o endereço de outras crianças.</span></div>
-      )}
+
+      <div className="acoes-rapidas">
+        <button type="button" className="acao-rapida" onClick={() => setEscolha('nao_vai')}><span><I n="calendario" /></span>Não vai hoje</button>
+        <button type="button" className="acao-rapida" onClick={() => ir('pais/chat')}><span><I n="mensagem" /></span>Falar com o tio</button>
+        <button type="button" className={`acao-rapida ${pendente ? 'destaque' : ''}`} onClick={() => ir('pais/pagamentos')}><span><I n="financeiro" /></span>{pendente ? 'Pagar' : 'Pago'}</button>
+        <button type="button" className="acao-rapida" onClick={() => ir('pais/rastreio')}><span><I n="mapa" /></span>Mapa</button>
+      </div>
+
       <div className="m-card">
-        <h4>Van hoje para {primeiroNome(a.nome)} <span className="tag"><I n={a.turno} />{NOME_TURNO[a.turno]}</span></h4>
+        <h4>Hoje com {nome} <span className="tag"><I n={a.turno} />{NOME_TURNO[a.turno]}</span></h4>
+        {deHoje.length ? (
+          <ul className="hoje-lista">
+            {deHoje.slice(-6).map((n, k, l) => (
+              <li key={n.id} className={k === l.length - 1 && f.viagem?.status === 'em_andamento' ? 'agora' : ''}>
+                <time>{new Date(n.criadoEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</time><i />
+                <div><strong>{n.titulo}</strong><small>{n.texto}</small></div>
+              </li>
+            ))}
+          </ul>
+        ) : <p className="muted small">Quando o tio sair, cada passo aparece aqui: saiu, está chegando, embarcou, chegou na escola.</p>}
+      </div>
+
+      <div className="m-card">
+        <h4>Van hoje para {nome}</h4>
         {/* um toque abre a confirmação: um toque errado não avisa o tio por engano */}
         <EscolhaPlano valor={f.plano} onChange={(p) => p !== f.plano && setEscolha(p)} />
-        <p className="muted small" style={{ marginTop: 8 }}>{f.plano !== 'ambos' ? `Combinado com o tio${f.presenca?.motivo ? ` · ${f.presenca.motivo}` : ''}. A rota já foi ajustada e ninguém perde ponto.` : `${f.escola?.nome} · avise antes da rota: o tio não perde tempo e a criança não perde ponto.`}</p>
+        <p className="muted small" style={{ marginTop: 8 }}>{f.plano !== 'ambos' ? `Combinado com o tio${f.presenca?.motivo ? ` · ${f.presenca.motivo}` : ''}. A rota já foi ajustada.` : 'Mudou algo? Avise antes da rota: o tio se organiza e ninguém espera à toa.'}</p>
       </div>
+
       <div className="m-card">
-        <h4>Motorista</h4>
+        <h4>Este mês com a van</h4>
+        <div className="valor-grade">
+          <div className="valor-item"><b>{diasVan}</b><span>dia{diasVan === 1 ? '' : 's'} de van, com cada embarque avisado</span></div>
+          <div className="valor-item"><b>{avisosMes}</b><span>aviso{avisosMes === 1 ? '' : 's'} no seu celular, sem precisar perguntar</span></div>
+          <div className="valor-item"><b>{noPortao}</b><span>vez{noPortao === 1 ? '' : 'es'} no portão antes da van chegar</span></div>
+          <div className={`valor-item ${emDia ? 'verde' : ''}`}><b>{emDia ? 'Em dia' : reais(pendente!.valor)}</b><span>{emDia ? 'mensalidade paga' : `mensalidade vence ${pendente!.vencimento.split('-').reverse().slice(0, 2).join('/')}`}</span></div>
+        </div>
+      </div>
+
+      <div className="m-card">
+        <h4>Quem leva {nome}</h4>
         <div className="motorista-box">
           <Avatar nome={f.van?.motorista ?? ''} cor="#6C5CE7" />
           <div><strong>{f.van?.motorista}</strong><br /><span className="muted small">{f.van?.modelo} · <span className="placa">{f.van?.placa}</span></span></div>
           <div className="acoes"><button className="icone-btn" onClick={() => ir('pais/chat')} aria-label="Mensagem"><I n="mensagem" /></button><a className="icone-btn verde" href={`tel:${f.van?.telefone}`} aria-label="Ligar"><I n="telefone" /></a></div>
         </div>
+        <div className="confianca">
+          {credenciada && <span><I n="selo" />Credenciado pelo {f.escola!.nome}</span>}
+          <span><I n="escudo" />Ninguém vê a sua casa: o mapa abre só na sua vez e com {nome} a bordo</span>
+          <span><I n="historico" />Cada trajeto fica registrado com data e hora</span>
+        </div>
       </div>
+
       {!f.van?.config?.semGamificacao && (
         <button type="button" className="m-card mais-item" style={{ padding: 14 }} onClick={() => ir('pais/conduta')}>
           <span className="mi-ic"><I n="estrela" /></span>
-          <span className="mi-txt">Conduta de {primeiroNome(a.nome)}<small>Pontos, elogios e ocorrências do tio</small></span>
+          <span className="mi-txt">Conduta de {nome}<small>Pontos, elogios e ocorrências do tio</small></span>
           <I n="chevron" />
         </button>
       )}
-      <div className="m-card">
-        <h4>Últimos avisos</h4>
-        {notifs.length === 0 && <Vazio ic="semSino">Nada ainda</Vazio>}
-        {notifs.slice(0, 6).map((n) => <div key={n.id} className="linha-item"><div className="aluno-cel"><span className="nota-ic">{n.icone}</span><div><strong>{n.titulo}</strong><span className="muted small">{n.texto} · {haQuanto(n.criadoEm)}</span></div></div></div>)}
-      </div>
-      {escolha && <MudarDia aluno={a} dia={hoje()} atual={escolha} motivoAtual={f.presenca?.motivo ?? ''} nome={primeiroNome(a.nome)} onFechar={() => setEscolha(null)} />}
+      {escolha && <MudarDia aluno={a} dia={hoje()} atual={escolha} motivoAtual={f.presenca?.motivo ?? ''} nome={nome} onFechar={() => setEscolha(null)} />}
     </>
   );
 }

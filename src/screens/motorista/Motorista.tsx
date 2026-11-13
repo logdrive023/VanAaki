@@ -5,19 +5,22 @@ import { MenuMais, ShellPainel, type ItemMenu } from '../../components/Shell';
 import { Agenda } from './Agenda';
 import { Configuracoes } from './Configuracoes';
 import { Economia } from './Economia';
+import { MinhasEscolas } from './Escolas';
+import { AssistenteAluno } from './AssistenteAluno';
+import { convite } from './convite';
 import { ConversasRecados } from '../../components/recados';
 import { planejarTrecho } from './plano';
 import { SeletorPlano } from '../../components/presenca';
-import { Avatar, ir, Kpi, Modal, saudacao, Toggle, useNotificacoes, Vazio } from '../../components/ui';
+import { Avatar, ir, Kpi, Modal, saudacao, useNotificacoes, Vazio } from '../../components/ui';
 import { I } from '../../components/Icone';
 import { Conformidade } from './Conformidade';
 import { db } from '../../db/db';
 import { useEu } from '../../api/sync';
-import { BuscaEndereco, FormEscola } from '../../components/formularios';
-import { TURNOS, type Aluno, type Escola, type Turno, type TurnoVan } from '../../db/types';
+import { BuscaEndereco } from '../../components/formularios';
+import { TURNOS, type Aluno, type Turno, type TurnoVan } from '../../db/types';
 import { horarioAlvo, NOME_TURNO, nomePlano, planoDe } from '../../lib/turnos';
-import { arquivarAluno, atrasado, definirPresenca, salvarAluno, salvarTurnos, salvarVan } from '../../services/acoes';
-import { centavos, CORES, dataLonga, haQuanto, hora, linkWhats, nomeMes, mesAtual, primeiroNome, reais, uid, agoraIso } from '../../lib/util';
+import { arquivarAluno, atrasado, definirPresenca, salvarAluno, salvarVan } from '../../services/acoes';
+import { centavos, dataLonga, haQuanto, hora, nomeMes, mesAtual, primeiroNome, reais } from '../../lib/util';
 import { useDadosVan, type DadosVan } from './dados';
 import { Conduta, Financeiro, Mensagens, Premios } from './Gestao';
 import { Rota } from './Rota';
@@ -42,7 +45,7 @@ export default function Motorista({ aba = 'painel', extra }: { aba?: string; ext
     { id: 'financeiro', ic: 'financeiro', nome: 'Financeiro', desc: 'Mensalidades e cobranças', grupo: 'Gestão', badge: pend + informados },
     { id: 'mensagens', ic: 'mensagem', nome: 'Mensagens', desc: 'Famílias e escolas', grupo: 'Gestão', badge: msgs },
     { id: 'economia', ic: 'combustivel', nome: 'Economia', desc: 'Combustível, km e se a rota compensa', grupo: 'Gestão' },
-    { id: 'conformidade', ic: 'escudo', nome: 'Fiscalização', desc: 'PL 1240: trajetos e relatórios', grupo: 'Gestão' },
+    { id: 'conformidade', ic: 'escudo', nome: 'Fiscalização', desc: 'Trajetos guardados e relatórios', grupo: 'Gestão' },
     ...(d.gamificacao ? [
       { id: 'conduta', ic: 'estrela', nome: 'Conduta', desc: 'Elogios e ocorrências', grupo: 'Extras' },
       { id: 'premios', ic: 'premio', nome: 'Prêmios', desc: 'Loja de prêmios dos alunos', grupo: 'Extras', badge: pedidos },
@@ -68,7 +71,7 @@ export default function Motorista({ aba = 'painel', extra }: { aba?: string; ext
       {aba === 'agenda' && <Agenda d={d} />}
       {aba === 'mais' && <MenuMais base="motorista" menu={menu} />}
       {aba === 'configuracoes' && <Configuracoes d={d} onMinhaVan={() => setModal('van')} onTurnos={() => setModal('turnos')} />}
-      {modal === 'turnos' && <EditarTurnos d={d} onFechar={() => setModal(null)} />}
+      {modal === 'turnos' && <MinhasEscolas d={d} onFechar={() => setModal(null)} />}
       {modal === 'van' && <MinhaVan d={d} onFechar={() => setModal(null)} />}
       {aba === 'rota' && <Rota d={d} turnoInicial={extra as Turno | undefined} />}
       {aba === 'alunos' && <Alunos d={d} />}
@@ -106,7 +109,7 @@ function Painel({ d, pedidos, onMinhaVan, onTurnos }: { d: DadosVan; pedidos: nu
           <div className="card-topo"><h3>Turnos de hoje</h3><button className="btn btn-fantasma btn-sm" onClick={() => ir('motorista/agenda')}><I n="calendario" />Agenda</button></div>
           <div className="pilha">
             {d.van!.turnos.filter((t) => t.ativo).map((t) => <CartaoTurno key={t.turno} d={d} t={t} />)}
-            {!d.van!.turnos.some((t) => t.ativo && t.escolaIds.length) && <span className="muted small">Nenhum turno configurado. <a style={{ textDecoration: 'underline', cursor: 'pointer' }} onClick={() => setEditarTurnos(true)}>Configurar turnos e escolas</a></span>}
+            {!d.van!.turnos.some((t) => t.ativo && t.escolaIds.length) && <span className="muted small">Nenhum turno configurado. <a style={{ textDecoration: 'underline', cursor: 'pointer' }} onClick={() => setEditarTurnos(true)}>Adicionar escola</a></span>}
           </div>
           <hr className="sep" style={{ margin: '16px 0' }} />
           <h3 style={{ marginBottom: 8 }}>Combinados de hoje</h3>
@@ -210,7 +213,7 @@ function ProximaRota({ d }: { d: DadosVan }) {
 /** Conta nova: o caminho até a primeira rota, passo a passo. */
 function PrimeirosPassos({ d, onMinhaVan, onTurnos }: { d: DadosVan; onMinhaVan: () => void; onTurnos: () => void }) {
   const passos = [
-    { ok: d.van!.turnos.some((t) => t.ativo && t.escolaIds.length), t: 'Escolas e turnos', s: 'Cadastre as escolas com o horário de entrada e saída.', acao: onTurnos, rot: 'Cadastrar' },
+    { ok: d.van!.turnos.some((t) => t.ativo && t.escolaIds.length), t: 'Suas escolas', s: 'Qual escola e que horas entra e sai. O app monta o resto.', acao: onTurnos, rot: 'Adicionar' },
     { ok: d.ativos.length > 0, t: 'Alunos', s: 'Endereço de cada um, conferido no mapa.', acao: () => ir('motorista/alunos'), rot: 'Adicionar' },
     { ok: d.van!.garagem.lat !== 0 && d.ativos.length > 0, t: 'Garagem', s: 'De onde a van sai de manhã.', acao: onMinhaVan, rot: 'Marcar' },
     { ok: d.ativos.some((a) => a.familiaConectada), t: 'Convidar as famílias', s: 'Um toque manda o convite pelo WhatsApp.', acao: () => ir('motorista/alunos'), rot: 'Convidar' },
@@ -257,87 +260,23 @@ function CartaoTurno({ d, t }: { d: DadosVan; t: TurnoVan }) {
   );
 }
 
-/** O motorista escolhe em quais turnos trabalha e quais escolas atende em cada um. */
-function EditarTurnos({ d, onFechar }: { d: DadosVan; onFechar: () => void }) {
-  const [turnos, setTurnos] = useState<TurnoVan[]>(TURNOS.map((t) => d.van!.turnos.find((x) => x.turno === t) ?? { turno: t, ativo: false, escolaIds: [] }));
-  const alterar = (t: Turno, mud: Partial<TurnoVan>) => setTurnos((l) => l.map((x) => (x.turno === t ? { ...x, ...mud } : x)));
-  // escolas da van + as que ele acabou de cadastrar/adicionar nesta tela
-  const [minhas, setMinhas] = useState<string[]>(d.van!.escolaIds);
-  const [nova, setNova] = useState<Escola | 'nova' | null>(null);
-  const [erro, setErro] = useState('');
-  const outras = d.escolas.filter((e) => !minhas.includes(e.id));
-  const lista = d.escolas.filter((e) => minhas.includes(e.id));
-  const salvar = async () => {
-    setErro('');
-    try { await salvarTurnos(turnos); onFechar(); } catch (e) { setErro((e as Error).message); }
-  };
-  return (
-    <Modal titulo="Turnos e escolas" onFechar={onFechar}>
-      <div className="pilha">
-        <p className="muted small">Marque os turnos em que você trabalha e as escolas de cada um. Na ida a van passa nas escolas pela ordem da entrada; na volta, pela ordem da saída.</p>
-        {turnos.map((t) => (
-          <div key={t.turno} className={`turno-card ${t.ativo ? '' : 'off'}`}>
-            <div className="entre"><span className="turno-titulo"><I n={t.turno} />{NOME_TURNO[t.turno]}</span><Toggle on={t.ativo} onChange={(v) => alterar(t.turno, { ativo: v })} /></div>
-            {lista.map((e) => {
-              const h = e.horarios[t.turno];
-              return (
-                <label key={e.id} className="check" style={{ opacity: h ? 1 : 0.5 }}>
-                  <input type="checkbox" disabled={!h || !t.ativo} checked={t.escolaIds.includes(e.id)}
-                    onChange={(ev) => alterar(t.turno, { escolaIds: ev.target.checked ? [...t.escolaIds, e.id] : t.escolaIds.filter((x) => x !== e.id) })} />
-                  <span>{e.nome} <span className="muted small">{h ? `entra ${h.entrada} · sai ${h.saida}` : 'sem aula neste turno'}{d.van!.credenciamento[e.id] === 'pendente' ? ' · credenciamento pendente' : ''}</span></span>
-                </label>
-              );
-            })}
-          </div>
-        ))}
-        <div className="pilha" style={{ gap: 8 }}>
-          <strong className="small">Escolas que você atende</strong>
-          {lista.map((e) => (
-            <div key={e.id} className="linha-item">
-              <div><strong>{e.nome}</strong><span className="muted small">{TURNOS.filter((t) => e.horarios[t]).map((t) => `${NOME_TURNO[t]} ${e.horarios[t]!.entrada}–${e.horarios[t]!.saida}`).join(' · ')}</span>
-                {e.codigo && <span className="muted small">Código da portaria: <b className="codigo">{e.codigo}</b> (se a escola quiser acompanhar)</span>}</div>
-              <button className="btn btn-claro btn-sm" onClick={() => setNova(e)}>Editar</button>
-            </div>
-          ))}
-          <div className="linha">
-            <button className="btn btn-claro btn-sm" onClick={() => setNova('nova')}><I n="mais" />Cadastrar escola</button>
-            {outras.length > 0 && (
-              <select className="seletor-perfil" value="" onChange={(ev) => ev.target.value && setMinhas((m) => [...m, ev.target.value])}>
-                <option value="">Adicionar escola já cadastrada…</option>
-                {outras.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
-              </select>
-            )}
-          </div>
-        </div>
-        {erro && <div className="aviso-erro">{erro}</div>}
-        <button className="btn btn-primario btn-bloco" onClick={() => void salvar()}>Salvar</button>
-      </div>
-      {nova && <FormEscola inicial={nova === 'nova' ? undefined : nova} onFechar={() => setNova(null)} onSalva={(e) => setMinhas((m) => (m.includes(e.id) ? m : [...m, e.id]))} />}
-    </Modal>
-  );
-}
-
 // ---------------- alunos ----------------
 
 function Alunos({ d }: { d: DadosVan }) {
   const [busca, setBusca] = useState('');
   const [editando, setEditando] = useState<Aluno | null>(null);
+  const [novoAberto, setNovo] = useState(false);
   const [verArquivados, setVerArquivados] = useState(false);
   const [turno, setTurno] = useState<Turno | 'todos'>('todos');
   const pagMap = new Map(d.pagamentosMes.map((p) => [p.alunoId, p]));
   const lista = d.alunos.filter((a) => a.ativo !== verArquivados && (turno === 'todos' || a.turno === turno) && `${a.nome} ${a.responsavel} ${a.endereco}`.toLowerCase().includes(busca.toLowerCase()));
-  const novo = (): Aluno => ({
-    id: uid(), vanId: d.van!.id, escolaId: d.van!.escolaIds[0] ?? '', nome: '', apelido: '', cor: CORES[d.alunos.length % CORES.length],
-    serie: '', turno: d.van!.turnos.find((t) => t.ativo)?.turno ?? 'manha', responsavel: '', telefoneResp: '', endereco: '', local: { ...d.van!.garagem },
-    mensalidade: d.van!.precoPadrao, diaVencimento: d.cfg.diaVencimento, ativo: true, criadoEm: agoraIso(), completo: true,
-  });
   return (
     <section className="card">
       <div className="card-topo">
         <label className="busca-mini"><I n="busca" /><input placeholder="Buscar aluno, responsável, endereço…" value={busca} onChange={(e) => setBusca(e.target.value)} /></label>
         <div className="linha">
           <div className="abas"><a className={!verArquivados ? 'ativo' : ''} onClick={() => setVerArquivados(false)}>Ativos</a><a className={verArquivados ? 'ativo' : ''} onClick={() => setVerArquivados(true)}>Arquivados</a></div>
-          <button className="btn btn-primario btn-sm" onClick={() => setEditando(novo())}><I n="mais" />Novo aluno</button>
+          <button className="btn btn-primario btn-sm" onClick={() => setNovo(true)}><I n="mais" />Novo aluno</button>
         </div>
       </div>
       <div className="chips-turno" style={{ marginBottom: 12 }}>
@@ -369,6 +308,7 @@ function Alunos({ d }: { d: DadosVan }) {
         {lista.length === 0 && <Vazio ic="alunos">Nenhum aluno {verArquivados ? 'arquivado' : 'encontrado'}</Vazio>}
       </div>
       {editando && <FormAluno inicial={editando} d={d} onFechar={() => setEditando(null)} />}
+      {novoAberto && <AssistenteAluno d={d} onFechar={() => setNovo(false)} />}
     </section>
   );
 }
@@ -435,12 +375,6 @@ function FormAluno({ inicial, d, onFechar }: { inicial: Aluno; d: DadosVan; onFe
       </div>
     </Modal>
   );
-}
-
-/** Mensagem pronta do convite (abre o WhatsApp do tio com o texto; ele só aperta enviar). */
-function convite(a: Aluno, motorista: string) {
-  const link = `${location.origin}${location.pathname}#/pais/convite/${a.codigoFamilia}`;
-  return linkWhats(a.telefoneResp, `Olá! Aqui é o ${motorista}, da van de ${primeiroNome(a.nome)}. Pelo app VanAaki você recebe um aviso quando a van estiver chegando, quando ${primeiroNome(a.nome)} embarcar e chegar na escola. É só tocar no link: ${link}`);
 }
 
 /** Dados da van e o ponto da garagem (de onde sai a ida e onde termina a volta). */

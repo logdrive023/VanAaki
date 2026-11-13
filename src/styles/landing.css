@@ -173,7 +173,7 @@ h1, h2, h3 { font-family: var(--display); }
 .b-offline { grid-column: span 4; background: var(--tinta); color: #fff; }
 .b-offline p { color: #A9ADB6; }
 .b-gps, .b-pix { grid-column: span 2; }
-.b-priv, .b-extra { grid-column: span 3; }
+.b-priv, .b-extra, .b-fiscal { grid-column: span 2; }
 .b-gps { grid-row: span 1; }
 .m-dias { display: flex; gap: 6px; }
 .m-dias span { position: relative; flex: 1; background: var(--superficie); border: 1.5px solid var(--tinta); border-radius: 12px; padding: 6px 0; text-align: center; font-size: 11px; font-weight: 600; }
@@ -340,7 +340,7 @@ h1, h2, h3 { font-family: var(--display); }
   .hero-grade { padding-bottom: 56px; }
   .planos { grid-template-columns: 1fr; }
   .bento { grid-template-columns: 1fr 1fr; }
-  .b-card, .b-agenda, .b-offline, .b-gps, .b-pix, .b-priv, .b-extra { grid-column: span 2; }
+  .b-card, .b-agenda, .b-offline, .b-gps, .b-pix, .b-priv, .b-extra, .b-fiscal { grid-column: span 2; }
   .b-gps, .b-pix { grid-column: span 1; }
   .secao { padding: 72px 0; }
 }

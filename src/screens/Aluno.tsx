@@ -1,11 +1,11 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Feed, Missoes, NivelCard, Ranking, Selos, usePontosAluno, usePontosVan } from '../components/gamificacao';
+import { calcularRanking, Feed, Missoes, Ranking, Selos, usePontosAluno, usePontosVan } from '../components/gamificacao';
 import { ShellFone, type ItemMenu } from '../components/Shell';
-import { Avatar, Vazio } from '../components/ui';
+import { Avatar, ir, Vazio } from '../components/ui';
 import { I } from '../components/Icone';
 import { db } from '../db/db';
-import { saldoDe, sequencia } from '../lib/gamificacao';
-import { haQuanto } from '../lib/util';
+import { missoesDe, nivelDe, saldoDe, sequencia, xpDe } from '../lib/gamificacao';
+import { haQuanto, hoje } from '../lib/util';
 import { resgatar } from '../services/pontos';
 import { idxAluno, marcarPronto } from '../services/viagem';
 import { AgendaFamilia } from './familiaAgenda';
@@ -47,18 +47,17 @@ type F = ReturnType<typeof useFamilia>;
 function Inicio({ f, jogo }: { f: F; jogo: boolean }) {
   const a = f.aluno!, v = f.visao!;
   const ev = usePontosAluno(a.id);
+  const evVan = usePontosVan(a.vanId);
   const resgates = useLiveQuery(() => db.resgates.where('alunoId').equals(a.id).toArray(), [a.id]) ?? [];
+  const premios = useLiveQuery(() => db.recompensas.where('vanId').equals(a.vanId).filter((r) => r.ativo).toArray(), [a.vanId]) ?? [];
+  const colegas = useLiveQuery(() => db.alunos.where('vanId').equals(a.vanId).toArray(), [a.vanId]) ?? [];
   const s = textoStatus(v, a, f.viagem, f.escola?.nome ?? 'escola', f.plano, true);
   const parada = f.viagem?.paradas[idxAluno(f.viagem, a.id)];
   const podePronto = f.viagem?.status === 'em_andamento' && f.viagem.tipo === 'ida' && parada?.status === 'pendente';
+  const saldo = saldoDe(ev, resgates);
   return (
     <>
-      <div className="aluno-ola">
-        <p><I n={s.ic} tam={16} />{f.viagem?.status === 'em_andamento' ? 'Agora' : 'Hoje'}</p>
-        <h2>{s.titulo}</h2>
-        <p style={{ marginTop: 4 }}>{s.sub}</p>
-        {s.chegada && <div className="grande">{s.chegada}<small> {s.rotuloChegada}</small></div>}
-      </div>
+      <Estrada v={v} titulo={s.titulo} sub={s.sub} chegada={s.chegada} rotulo={s.rotuloChegada} viagemAtiva={f.viagem?.status === 'em_andamento'} />
       {podePronto && (
         <div className="checkin">
           {parada!.prontoEm ? (
@@ -72,9 +71,136 @@ function Inicio({ f, jogo }: { f: F; jogo: boolean }) {
           )}
         </div>
       )}
-      {v.mostrarMapa && f.viagem && <div className="m-card" style={{ padding: 8 }}><MapaFamilia v={v} aluno={a} escola={f.escola} viagem={f.viagem} altura={260} /></div>}
-      {jogo && <NivelCard ev={ev} saldo={saldoDe(ev, resgates)} sequencia={sequencia(ev)} />}
+      {v.mostrarMapa && f.viagem && <div className="m-card" style={{ padding: 8 }}><MapaFamilia v={v} aluno={a} escola={f.escola} viagem={f.viagem} altura={240} /></div>}
+      {jogo && (
+        <>
+          <PainelJogo ev={ev} saldo={saldo} />
+          <SemanaFogo ev={ev} />
+          <MissoesMini ev={ev} />
+          <div className="jogo-dupla">
+            <RankingMini alunoId={a.id} colegas={colegas} ev={evVan} />
+            <PremioMini saldo={saldo} premios={premios} />
+          </div>
+        </>
+      )}
     </>
+  );
+}
+
+/** A van vindo: estrada com as paradas que faltam até você (ou até a escola). Dá para entender sem ler. */
+function Estrada({ v, titulo, sub, chegada, rotulo, viagemAtiva }: { v: NonNullable<F['visao']>; titulo: string; sub: string; chegada?: string; rotulo?: string; viagemAtiva: boolean }) {
+  const antes = Math.min(v.paradasAntes ?? 0, 6);
+  const destino: 'casa' | 'escola' = v.alvoTipo === 'escola' || v.fase === 'a_bordo' || v.fase === 'a_bordo_final' ? 'escola' : 'casa';
+  const chegou = ['na_porta', 'chegou_escola', 'entregue', 'volta_na_escola'].includes(v.fase);
+  return (
+    <section className={`estrada-card ${chegou ? 'chegou' : ''} ${v.fase === 'proximo' ? 'proximo' : ''}`}>
+      <span className="ec-rot">{viagemAtiva ? 'Agora' : 'Hoje'}</span>
+      <h2>{titulo}</h2>
+      <p>{sub}</p>
+      {chegada && <div className="ec-hora"><b>{chegada}</b><span>{rotulo}</span></div>}
+      <div className="estrada" aria-hidden>
+        <span className={`es-van ${viagemAtiva ? '' : 'dormindo'}`}><I n="van" /></span>
+        <span className="es-faixa">
+          {Array.from({ length: !viagemAtiva || chegou ? 0 : antes }).map((_, k) => <i key={k} className="es-parada" />)}
+        </span>
+        <span className="es-destino"><I n={destino} /><small>{destino === 'casa' ? 'você' : 'escola'}</small></span>
+      </div>
+    </section>
+  );
+}
+
+/** Nível em anel + saldo de estrelas: o "placar" do aluno. */
+function PainelJogo({ ev, saldo }: { ev: Parameters<typeof xpDe>[0]; saldo: number }) {
+  const xp = xpDe(ev);
+  const n = nivelDe(xp);
+  return (
+    <section className="jogo-placar">
+      <div className="anel" style={{ background: `conic-gradient(var(--amarelo) ${n.pct * 3.6}deg, rgba(255,255,255,.12) 0)` }}>
+        <span>{n.atual.icone}</span>
+      </div>
+      <div className="jp-txt">
+        <small>Seu nível</small>
+        <strong>{n.atual.nome}</strong>
+        <span>{n.prox ? <>faltam <b>{n.falta} XP</b> para {n.prox.icone} {n.prox.nome}</> : 'nível máximo!'}</span>
+      </div>
+      <div className="jp-saldo"><b>{saldo}</b><span>⭐</span><small>para gastar</small></div>
+    </section>
+  );
+}
+
+/** A semana: um foguinho por dia que esteve pronto no portão. */
+function SemanaFogo({ ev }: { ev: Parameters<typeof xpDe>[0] }) {
+  const seg = new Date(); seg.setDate(seg.getDate() - ((seg.getDay() + 6) % 7));
+  const dias = Array.from({ length: 5 }, (_, k) => { const d = new Date(seg); d.setDate(seg.getDate() + k); return d; });
+  const prontos = new Set(ev.filter((e) => e.tipo === 'pronto_portao').map((e) => e.data));
+  const foi = new Set(ev.filter((e) => e.tipo === 'embarque' || e.tipo === 'pronto_portao').map((e) => e.data));
+  const seq = sequencia(ev);
+  const hj = hoje();
+  return (
+    <section className="m-card semana-fogo">
+      <h4>Sua semana {seq > 0 && <span className="tag tag-amarelo">🔥 {seq} dia{seq > 1 ? 's' : ''} seguido{seq > 1 ? 's' : ''}</span>}</h4>
+      <div className="sf-dias">
+        {dias.map((d) => {
+          const k = hoje(d);
+          const est = prontos.has(k) ? 'fogo' : foi.has(k) ? 'foi' : k < hj ? 'perdeu' : k === hj ? 'hoje' : '';
+          return (
+            <div key={k} className={`sf-dia ${est}`}>
+              <span>{est === 'fogo' ? '🔥' : est === 'foi' ? '✓' : est === 'perdeu' ? '·' : ''}</span>
+              <small>{d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')}</small>
+            </div>
+          );
+        })}
+      </div>
+      <small className="muted">🔥 = estava no portão antes da van chegar</small>
+    </section>
+  );
+}
+
+function MissoesMini({ ev }: { ev: Parameters<typeof xpDe>[0] }) {
+  const ms = missoesDe(ev).slice(0, 3);
+  return (
+    <section className="m-card">
+      <h4>Missões da semana <a className="ver-tudo" onClick={() => ir('aluno/missoes')}>ver todas</a></h4>
+      {ms.map((m) => {
+        const ok = m.atual >= m.meta;
+        return (
+          <div key={m.id} className={`missao-mini ${ok ? 'ok' : ''}`}>
+            <span className="mm-ic">{ok ? '✅' : m.icone}</span>
+            <div><strong>{m.nome}</strong><div className="prog"><i style={{ width: `${Math.min(100, (m.atual / m.meta) * 100)}%` }} /></div></div>
+            <b>+{m.premio}</b>
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
+function RankingMini({ alunoId, colegas, ev }: { alunoId: string; colegas: Parameters<typeof calcularRanking>[0]; ev: Parameters<typeof calcularRanking>[1] }) {
+  const r = calcularRanking(colegas, ev, 'semana');
+  const eu = r.find((l) => l.aluno.id === alunoId);
+  const acima = eu && eu.pos > 1 ? r[eu.pos - 2] : undefined;
+  return (
+    <button type="button" className="m-card jogo-mini" onClick={() => ir('aluno/ranking')}>
+      <span className="jm-ic">🏆</span>
+      <small>Ranking da semana</small>
+      <strong>{eu ? `${eu.pos}º lugar` : '—'}</strong>
+      <span className="muted small">{!eu ? '' : eu.pos === 1 ? 'Você está na frente!' : `${Math.max(1, (acima?.pontos ?? 0) - eu.pontos + 1)} ⭐ para passar ${acima?.aluno.apelido}`}</span>
+    </button>
+  );
+}
+
+function PremioMini({ saldo, premios }: { saldo: number; premios: { id: string; icone: string; nome: string; custo: number }[] }) {
+  const ordem = [...premios].sort((x, y) => x.custo - y.custo);
+  const prox = ordem.find((p) => p.custo > saldo) ?? ordem[ordem.length - 1];
+  if (!prox) return null;
+  const pode = saldo >= prox.custo;
+  return (
+    <button type="button" className="m-card jogo-mini" onClick={() => ir('aluno/loja')}>
+      <span className="jm-ic">{prox.icone}</span>
+      <small>{pode ? 'Já dá para trocar!' : 'Próximo prêmio'}</small>
+      <strong className="jm-nome">{prox.nome}</strong>
+      {!pode && <><div className="prog"><i style={{ width: `${Math.min(100, (saldo / prox.custo) * 100)}%`, background: 'var(--amarelo)' }} /></div><span className="muted small">faltam {prox.custo - saldo} ⭐</span></>}
+    </button>
   );
 }
 

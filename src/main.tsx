@@ -6,6 +6,7 @@ import './styles/tokens.css';
 import './styles/app.css';
 import './styles/telas.css';
 import './styles/login.css';
+import './styles/jogo.css';
 
 registerSW({ immediate: true });
 

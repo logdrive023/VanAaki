@@ -210,7 +210,7 @@ function PrepararRota({ d, turnoInicial }: { d: DadosVan; turnoInicial?: Turno }
           )}
             </div>
           </details>
-          <small className="muted">Antes do embarque a família só vê a van quando ela é a próxima; com o filho a bordo, acompanha o trajeto todo. Os trajetos ficam guardados para a fiscalização (PL 1240).</small>
+          <small className="muted">Antes do embarque a família só vê a van quando ela é a próxima; com o filho a bordo, acompanha o trajeto todo. Os trajetos ficam guardados para a fiscalização.</small>
         </section>
       </div>
     </>

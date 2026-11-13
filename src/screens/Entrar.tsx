@@ -8,7 +8,7 @@ const INFO: Record<Perfil, {
   criar: string; codigo?: string; dicaCodigo?: string;
 }> = {
   motorista: {
-    ic: 'van', nome: 'Motorista', titulo: 'Sua van organizada. Você só dirige.', frase: 'Alunos, rota do dia, mensalidades e o registro do PL 1240 num app só.',
+    ic: 'van', nome: 'Motorista', titulo: 'Sua van organizada. Você só dirige.', frase: 'Alunos, rota do dia, mensalidades e os trajetos guardados, num app só.',
     pontos: [{ ic: 'navegar', t: 'O GPS confirma o embarque sozinho' }, { ic: 'calendario', t: 'Agenda: quem vai e quem não vai' }, { ic: 'dinheiro', t: 'Mensalidade direto no seu Pix' }],
     criar: 'Criar conta',
   },
@@ -78,6 +78,7 @@ export default function Entrar({ perfil, autoDemo, convite }: { perfil: Perfil; 
   const [modo, setModo] = useState<'entrar' | 'criar'>(perfil === 'aluno' || convite ? 'criar' : 'entrar');
   const [f, setF] = useState<Record<string, string>>(convite ? { codigo: convite.toUpperCase().replace(/[^A-Z0-9]/g, '') } : {});
   const [verSenha, setVerSenha] = useState(false);
+  const [etapa, setEtapa] = useState(0);
   const [erro, setErro] = useState('');
   const [enviando, setEnviando] = useState<'' | 'form' | 'demo'>('');
   const [demorando, setDemorando] = useState(false);
@@ -104,12 +105,14 @@ export default function Entrar({ perfil, autoDemo, convite }: { perfil: Perfil; 
   };
   const enviar = (e: FormEvent) => {
     e.preventDefault();
+    if (assistente && etapa < 2) { setErro(''); setEtapa(etapa + 1); return; } // cadastro do tio em 3 passos
     if (modo === 'entrar') return void chamar('/auth/entrar', { email: f.email, senha: f.senha }, 'form');
     if (perfil === 'aluno') return void chamar('/auth/aluno', { codigo: f.codigo }, 'form');
     if (perfil === 'motorista') return void chamar('/auth/cadastro/motorista', { nome: f.nome, telefone: f.telefone, email: f.email, senha: f.senha, nomeVan: f.nomeVan, placa: f.placa, modelo: f.modelo }, 'form');
     return void chamar(`/auth/cadastro/${perfil === 'pais' ? 'familia' : 'escola'}`, { codigo: f.codigo, nome: f.nome, telefone: f.telefone, email: f.email, senha: f.senha }, 'form');
   };
   const ocupado = !!enviando;
+  const assistente = perfil === 'motorista' && modo === 'criar';
   const jaFoi = useRef(false);
   useEffect(() => {
     if (!autoDemo || jaFoi.current || SEM_API) return;
@@ -182,38 +185,49 @@ export default function Entrar({ perfil, autoDemo, convite }: { perfil: Perfil; 
           )}
 
           <form className="login-form" onSubmit={enviar}>
+            {assistente && (
+              <ol className="passos-assist" aria-label="Passos">
+                {['Você', 'A van', 'Acesso'].map((t, k) => <li key={t} className={etapa > k ? 'feito' : etapa === k ? 'agora' : ''}><b>{etapa > k ? <I n="check" tam={13} /> : k + 1}</b>{t}</li>)}
+              </ol>
+            )}
+            {assistente && <h2 className="pergunta">{['Como te chamam?', 'E a sua van?', 'Para entrar das próximas vezes'][etapa]}</h2>}
+
             {modo === 'criar' && info.codigo && (
               <Campo rotulo={info.codigo} dica={info.dicaCodigo}>
                 <input className="inp-codigo" required value={f.codigo ?? ''} onChange={(e) => setF((x) => ({ ...x, codigo: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '') }))} placeholder="AB12CD" maxLength={8} autoCapitalize="characters" autoComplete="one-time-code" />
               </Campo>
             )}
-            {modo === 'criar' && perfil !== 'aluno' && (
-              <div className="dupla">
-                <Campo rotulo={perfil === 'escola' ? 'Seu nome (portaria)' : 'Seu nome'} ic="usuario"><input required value={f.nome ?? ''} onChange={set('nome')} autoComplete="name" /></Campo>
-                <Campo rotulo="WhatsApp" ic="telefone"><input value={f.telefone ?? ''} onChange={set('telefone')} inputMode="tel" autoComplete="tel" placeholder="11 90000-0000" /></Campo>
+            {modo === 'criar' && perfil !== 'aluno' && (!assistente || etapa === 0) && (
+              <div className={assistente ? 'pilha' : 'dupla'} style={assistente ? { gap: 14 } : undefined}>
+                <Campo rotulo={perfil === 'escola' ? 'Seu nome (portaria)' : perfil === 'motorista' ? 'Seu nome (ex.: Tio Carlos)' : 'Seu nome'} ic="usuario"><input required value={f.nome ?? ''} onChange={set('nome')} autoComplete="name" autoFocus={assistente} /></Campo>
+                <Campo rotulo="WhatsApp" ic="telefone" dica={assistente ? 'As famílias falam com você por aqui.' : undefined}><input value={f.telefone ?? ''} onChange={set('telefone')} inputMode="tel" autoComplete="tel" placeholder="11 90000-0000" /></Campo>
               </div>
             )}
-            {perfil !== 'aluno' && (
+            {assistente && etapa === 1 && (
+              <div className="pilha" style={{ gap: 14 }}>
+                <Campo rotulo="Placa" ic="van" dica="Aparece para as famílias e na fiscalização."><input value={f.placa ?? ''} onChange={set('placa')} placeholder="ABC-1D23" autoCapitalize="characters" autoFocus /></Campo>
+                <Campo rotulo="Modelo e cor"><input value={f.modelo ?? ''} onChange={set('modelo')} placeholder="Sprinter branca" /></Campo>
+              </div>
+            )}
+            {perfil !== 'aluno' && (!assistente || etapa === 2) && (
               <>
-                <Campo rotulo="E-mail" ic="email"><input required type="email" value={f.email ?? ''} onChange={set('email')} autoComplete="email" placeholder="voce@email.com" /></Campo>
+                <Campo rotulo="E-mail" ic="email"><input required type="email" value={f.email ?? ''} onChange={set('email')} autoComplete="email" placeholder="voce@email.com" autoFocus={assistente} /></Campo>
                 <Campo rotulo="Senha" ic="cadeado" dica={modo === 'criar' ? 'Pelo menos 6 caracteres.' : undefined}>
                   <input required type={verSenha ? 'text' : 'password'} minLength={6} value={f.senha ?? ''} onChange={set('senha')} autoComplete={modo === 'entrar' ? 'current-password' : 'new-password'} />
                   <button type="button" className="cl-olho" onClick={() => setVerSenha(!verSenha)} aria-label={verSenha ? 'Esconder senha' : 'Mostrar senha'}>{verSenha ? 'Esconder' : 'Mostrar'}</button>
                 </Campo>
               </>
             )}
-            {modo === 'criar' && perfil === 'motorista' && (
-              <div className="dupla">
-                <Campo rotulo="Placa da van" ic="van"><input value={f.placa ?? ''} onChange={set('placa')} placeholder="ABC-1D23" autoCapitalize="characters" /></Campo>
-                <Campo rotulo="Modelo"><input value={f.modelo ?? ''} onChange={set('modelo')} placeholder="Sprinter branca" /></Campo>
-              </div>
-            )}
             {erro && <div className="aviso-erro" role="alert">{erro}</div>}
-            <button className="btn btn-escuro btn-bloco btn-grande" disabled={ocupado || fora}>
-              {enviando === 'form' ? <><I n="carregando" className="girando" />{demorando ? 'Acordando o servidor…' : 'Um instante…'}</>
-                : modo === 'entrar' ? 'Entrar' : perfil === 'aluno' ? 'Entrar no app' : perfil === 'motorista' ? 'Criar minha conta' : 'Criar acesso'}
-            </button>
-            {modo === 'criar' && perfil === 'motorista' && <small className="muted small" style={{ textAlign: 'center' }}>Grátis para testar com todos os seus alunos.</small>}
+            <div className="linha" style={{ flexWrap: 'nowrap' }}>
+              {assistente && etapa > 0 && <button type="button" className="btn btn-claro btn-grande" onClick={() => setEtapa(etapa - 1)} aria-label="Voltar"><I n="voltar" /></button>}
+              <button className="btn btn-escuro btn-bloco btn-grande" disabled={ocupado || fora}>
+                {enviando === 'form' ? <><I n="carregando" className="girando" />{demorando ? 'Acordando o servidor…' : 'Um instante…'}</>
+                  : assistente && etapa < 2 ? <>Continuar<I n="seguir" /></>
+                  : modo === 'entrar' ? 'Entrar' : perfil === 'aluno' ? 'Entrar no app' : perfil === 'motorista' ? 'Criar minha conta' : 'Criar acesso'}
+              </button>
+            </div>
+            {assistente && <small className="muted small" style={{ textAlign: 'center' }}>Grátis para testar com todos os seus alunos.</small>}
           </form>
         </div>
         <footer className="login-rodape">© 2026 VanAaki · <a href="./index.html">Site</a></footer>
